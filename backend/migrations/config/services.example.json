@@ -1,0 +1,34 @@
+{
+  "services": [
+    {
+      "name": "booking-service",
+      "path": "../booking-service",
+      "migrations-versions-path": "../booking-service/migrations/versions/",
+      "docker-volume": "desk-booking-system_booking_db_data"
+    },
+    {
+      "name": "occupancy-service",
+      "path": "../occupancy-service",
+      "migrations-versions-path": "../occupancy-service/migrations/versions/",
+      "docker-volume": "desk-booking-system_occupancy_db_data"
+    },
+    {
+      "name": "scheduler-service",
+      "path": "../scheduler-service",
+      "migrations-versions-path": "../scheduler-service/migrations/versions/",
+      "docker-volume": "desk-booking-system_scheduler_db_data"
+    },
+    {
+      "name": "desk-inventory-service",
+      "path": "../desk-inventory-service",
+      "migrations-versions-path": "../desk-inventory-service/migrations/versions/",
+      "docker-volume": "desk-booking-system_desk_inventory_db_data"
+    },
+    {
+      "name": "user-service",
+      "path": "../user-service",
+      "migrations-versions-path": "../user-service/migrations/versions/",
+      "docker-volume": "desk-booking-system_user_db_data"
+    }
+  ]
+}
