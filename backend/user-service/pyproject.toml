@@ -1,0 +1,71 @@
+[project]
+name = "user-service"
+version = "0.1.0"
+description = "OPD-Vertex – user-service"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.120",
+    "sqlmodel>=0.0.27",
+    "psycopg2-binary>=2.9",
+    "alembic>=1.17",
+    "aio-pika>=9.5",
+    "python-dotenv>=1.1",
+    "passlib[bcrypt]>=1.7",]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3",
+    "pytest>=8.4",
+    "pytest-asyncio>=1.2",
+    "pytest-cov>=7.0",
+    "ruff>=0.14",
+]
+
+# ── Ruff ──────────────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length   = 88
+indent-width  = 4
+target-version = "py313"
+exclude = [
+    ".venv", "__pycache__", "migrations",
+    "build", "dist", ".git", ".pytest_cache",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "W",     # pycodestyle warnings
+    "I",     # isort
+    "N",     # naming
+    "D",     # pydocstyle
+    "B",     # bugbear
+    "S",     # bandit security
+    "ANN",   # annotations
+    "ASYNC", # async issues
+    "SIM",   # simplify
+    "PL",    # pylint
+    "C4",    # comprehensions
+    "COM",   # commas
+]
+ignore = [
+    "D100", "D104", "D107",   # missing module/package/__init__ docstrings
+    "D203", "D213",           # conflicting docstring styles
+    "COM812",                 # trailing comma (conflicts with formatter)
+    "B008",                   # function calls in defaults (FastAPI Depends)
+    "S101",                   # assert in tests
+    "ANN101", "ANN102",       # self/cls annotations
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style    = "double"
+indent-style   = "space"
+line-ending    = "auto"
+skip-magic-trailing-comma = false
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]

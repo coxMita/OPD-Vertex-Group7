@@ -1,0 +1,50 @@
+name: CI ai-service
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/ai-service/**"]
+  pull_request:
+    branches: [main]
+    paths: ["backend/ai-service/**"]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/ai-service
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy_db
+      AMQP_URL: amqp://dummy:dummy@localhost:5672/
+      WHISPER_MODEL_SIZE: tiny
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ruff format check
+        run: uv run ruff format --check
+
+      - name: Ruff lint
+        run: uv run ruff check
+
+      - name: Run pytest
+        run: uv run pytest --cov=src --cov-report=xml
+
+      - name: Upload coverage
+        if: hashFiles('coverage.xml') != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ai-service
+          fail_ci_if_error: false

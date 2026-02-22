@@ -1,0 +1,5 @@
+.env
+*.pid
+__pycache__/
+*.py[oc]
+.venv/

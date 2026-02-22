@@ -1,0 +1,269 @@
+name: opd-vertex
+
+networks:
+    frontend:
+        driver: bridge
+    internal-api:
+        driver: bridge
+    bus:
+        driver: bridge
+    appointment-net:
+        driver: bridge
+    consultation-net:
+        driver: bridge
+    prescription-net:
+        driver: bridge
+    user-net:
+        driver: bridge
+
+volumes:
+    appointment_db_data:
+    consultation_db_data:
+    prescription_db_data:
+    user_db_data:
+    pgadmin_data:
+
+services:
+
+    # ── Gateway ───────────────────────────────────────────────────────────────
+    gateway:
+        build: backend/gateway/.
+        container_name: gateway
+        restart: unless-stopped
+        ports:
+            - "8080:8000"
+        networks:
+            - frontend
+            - internal-api
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+
+    # ── AI Service ────────────────────────────────────────────────────────────
+    ai-service:
+        build: backend/ai-service/.
+        container_name: ai-service
+        restart: unless-stopped
+        ports:
+            - "8081:8000"
+        networks:
+            - internal-api
+            - bus
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+
+    # ── Appointment Service ───────────────────────────────────────────────────
+    appointment-service:
+        build: backend/appointment-service/.
+        container_name: appointment-service
+        restart: unless-stopped
+        ports:
+            - "8082:8000"
+        networks:
+            - internal-api
+            - bus
+            - appointment-net
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            appointment-db:
+                condition: service_healthy
+
+    appointment-db:
+        image: postgres:17
+        container_name: appointment-db
+        restart: always
+        environment:
+            POSTGRES_USER: ${APPOINTMENT_DB_USER}
+            POSTGRES_PASSWORD: ${APPOINTMENT_DB_PASS}
+            POSTGRES_DB: ${APPOINTMENT_DB_NAME}
+        ports:
+            - "5432:5432"
+        volumes:
+            - appointment_db_data:/var/lib/postgresql/data
+        networks:
+            - appointment-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${APPOINTMENT_DB_USER} -d ${APPOINTMENT_DB_NAME}"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+    # ── Consultation Service ──────────────────────────────────────────────────
+    consultation-service:
+        build: backend/consultation-service/.
+        container_name: consultation-service
+        restart: unless-stopped
+        ports:
+            - "8083:8000"
+        networks:
+            - internal-api
+            - bus
+            - consultation-net
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            consultation-db:
+                condition: service_healthy
+
+    consultation-db:
+        image: postgres:17
+        container_name: consultation-db
+        restart: always
+        environment:
+            POSTGRES_USER: ${CONSULTATION_DB_USER}
+            POSTGRES_PASSWORD: ${CONSULTATION_DB_PASS}
+            POSTGRES_DB: ${CONSULTATION_DB_NAME}
+        ports:
+            - "5433:5432"
+        volumes:
+            - consultation_db_data:/var/lib/postgresql/data
+        networks:
+            - consultation-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${CONSULTATION_DB_USER} -d ${CONSULTATION_DB_NAME}"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+    # ── Email Service ─────────────────────────────────────────────────────────
+    email-service:
+        build: backend/email-service/.
+        container_name: email-service
+        restart: unless-stopped
+        ports:
+            - "8084:8000"
+        networks:
+            - internal-api
+            - bus
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+
+    # ── Prescription Service ──────────────────────────────────────────────────
+    prescription-service:
+        build: backend/prescription-service/.
+        container_name: prescription-service
+        restart: unless-stopped
+        ports:
+            - "8085:8000"
+        networks:
+            - internal-api
+            - bus
+            - prescription-net
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            prescription-db:
+                condition: service_healthy
+
+    prescription-db:
+        image: postgres:17
+        container_name: prescription-db
+        restart: always
+        environment:
+            POSTGRES_USER: ${PRESCRIPTION_DB_USER}
+            POSTGRES_PASSWORD: ${PRESCRIPTION_DB_PASS}
+            POSTGRES_DB: ${PRESCRIPTION_DB_NAME}
+        ports:
+            - "5434:5432"
+        volumes:
+            - prescription_db_data:/var/lib/postgresql/data
+        networks:
+            - prescription-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${PRESCRIPTION_DB_USER} -d ${PRESCRIPTION_DB_NAME}"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+    # ── Transcription Service ─────────────────────────────────────────────────
+    transcription-service:
+        build: backend/transcription-service/.
+        container_name: transcription-service
+        restart: unless-stopped
+        ports:
+            - "8086:8000"
+        networks:
+            - internal-api
+            - bus
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+
+    # ── User Service ──────────────────────────────────────────────────────────
+    user-service:
+        build: backend/user-service/.
+        container_name: user-service
+        restart: unless-stopped
+        ports:
+            - "8087:8000"
+        networks:
+            - internal-api
+            - bus
+            - user-net
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            user-db:
+                condition: service_healthy
+
+    user-db:
+        image: postgres:17
+        container_name: user-db
+        restart: always
+        environment:
+            POSTGRES_USER: ${USER_DB_USER}
+            POSTGRES_PASSWORD: ${USER_DB_PASS}
+            POSTGRES_DB: ${USER_DB_NAME}
+        ports:
+            - "5435:5432"
+        volumes:
+            - user_db_data:/var/lib/postgresql/data
+        networks:
+            - user-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_USER}"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+    # ── RabbitMQ ──────────────────────────────────────────────────────────────
+    rabbitmq:
+        image: rabbitmq:4.1.4-management-alpine
+        container_name: rabbitmq
+        restart: always
+        ports:
+            - "9000:15672"
+            - "5672:5672"
+        networks:
+            - bus
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+    # ── pgAdmin ───────────────────────────────────────────────────────────────
+    pgadmin:
+        image: dpage/pgadmin4:9.9.0
+        container_name: pgadmin
+        restart: always
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+        ports:
+            - "5050:80"
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        networks:
+            - appointment-net
+            - consultation-net
+            - prescription-net
+            - user-net
