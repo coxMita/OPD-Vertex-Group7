@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPD-Vertex — Full System Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET + ROOT ── */
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+:root {
+  --ink: #0b1120;
+  --ink2: #1a2340;
+  --ink3: #2d3d5c;
+  --slate: #4a5d7a;
+  --mid: #7a8ba8;
+  --faint: #bccad8;
+  --ghost: #e4ecf4;
+  --paper: #f2f6fb;
+  --white: #ffffff;
+
+  --blue:    #1d4ed8;
+  --blue2:   #3b72f5;
+  --blue-bg: #e8f0ff;
+  --teal:    #0d9488;
+  --teal-bg: #e0faf5;
+  --red:     #dc2626;
+  --red-bg:  #fee2e2;
+  --amber:   #d97706;
+  --amber-bg:#fef3c7;
+  --violet:  #7c3aed;
+  --violet-bg:#f5f3ff;
+  --green:   #16a34a;
+  --green-bg:#dcfce7;
+  --navy:    #0f1e38;
+
+  --r4: 4px; --r8: 8px; --r12: 12px; --r16: 16px; --r24: 24px;
+  --sh1: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+  --sh2: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
+  --sh3: 0 4px 16px rgba(0,0,0,.1),  0 16px 48px rgba(0,0,0,.1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--paper);
+  color: var(--ink2);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ═════════════ HEADER ═════════════ */
+.site-header {
+  background: var(--navy);
+  position: sticky; top:0; z-index:200;
+  height: 58px;
+  display: flex; align-items: center;
+  padding: 0 32px;
+  gap: 20px;
+  box-shadow: 0 2px 20px rgba(0,0,0,.35);
+}
+.logo {
+  font-family:'Syne',sans-serif;
+  font-weight:800; font-size:1.15rem;
+  color:#fff;
+  display:flex; align-items:center; gap:10px;
+  letter-spacing:.01em;
+  flex-shrink:0;
+}
+.logo-mark {
+  width:28px; height:28px;
+  background: linear-gradient(135deg, var(--teal), #06b6d4);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7rem; font-weight:700; color:#fff;
+}
+.header-meta {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; color:rgba(255,255,255,.4);
+  letter-spacing:.12em; text-transform:uppercase;
+  border-left:1px solid rgba(255,255,255,.15);
+  padding-left:20px;
+}
+.nav-pills { display:flex; gap:4px; margin-left:auto; }
+.npill {
+  padding:5px 16px; border-radius:20px;
+  font-size:.75rem; font-weight:600;
+  color:rgba(255,255,255,.5);
+  background:none; border:none; cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;
+  transition:.2s;
+}
+.npill:hover { color:#fff; background:rgba(255,255,255,.1); }
+.npill.on { color:#fff; background:rgba(255,255,255,.18); }
+
+/* ═════════════ SECTIONS ═════════════ */
+.section { display:none; }
+.section.on { display:block; }
+
+/* ═════════════ HERO OVERVIEW ═════════════ */
+.hero {
+  background: linear-gradient(160deg, #0f1e38 0%, #162a50 45%, #0d2e2e 100%);
+  padding: 64px 48px 56px;
+  position:relative; overflow:hidden;
+}
+.hero::before {
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 700px 400px at 80% 50%, rgba(13,148,136,.12), transparent),
+    radial-gradient(ellipse 500px 300px at 20% 80%, rgba(29,78,216,.1), transparent);
+}
+.hero-inner { position:relative; max-width:1200px; margin:0 auto; }
+.hero h1 {
+  font-family:'Syne',sans-serif;
+  font-size:2.6rem; font-weight:800;
+  color:#fff; line-height:1.1;
+  margin-bottom:12px;
+}
+.hero h1 span { color:#2dd4bf; }
+.hero-sub {
+  font-size:.92rem; color:rgba(255,255,255,.5);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.08em; margin-bottom:44px;
+}
+.hero-stats {
+  display:flex; gap:0; flex-wrap:wrap;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius:var(--r16);
+  overflow:hidden;
+  max-width:860px;
+}
+.stat-cell {
+  flex:1; min-width:140px;
+  padding: 22px 28px;
+  border-right: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+}
+.stat-cell:last-child { border-right:none; }
+.stat-val {
+  font-family:'Syne',sans-serif;
+  font-size:2rem; font-weight:800;
+  color:#fff; line-height:1;
+  margin-bottom:4px;
+}
+.stat-val.teal { color:#2dd4bf; }
+.stat-val.blue { color:#60a5fa; }
+.stat-val.violet { color:#a78bfa; }
+.stat-val.amber { color:#fbbf24; }
+.stat-lbl {
+  font-size:.7rem; font-family:'JetBrains Mono',monospace;
+  color:rgba(255,255,255,.35); text-transform:uppercase; letter-spacing:.1em;
+}
+
+/* ═════════════ SECTION WRAPPER ═════════════ */
+.sec-wrap { max-width:1320px; margin:0 auto; padding:48px 32px; }
+.sec-title {
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem; font-weight:800;
+  color:var(--ink2);
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:8px;
+}
+.sec-title .pill {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem; font-weight:600; text-transform:uppercase; letter-spacing:.1em;
+  padding:3px 10px; border-radius:20px;
+}
+.sec-desc {
+  font-size:.88rem; color:var(--slate);
+  margin-bottom:36px; max-width:680px; line-height:1.6;
+}
+
+/* ═════════════ ARCHITECTURE SVG PANEL ═════════════ */
+.arch-panel {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:var(--r16);
+  box-shadow:var(--sh2);
+  overflow:hidden;
+  margin-bottom:40px;
+}
+.arch-panel-header {
+  background: #f8fafd;
+  border-bottom:1px solid var(--ghost);
+  padding:16px 24px;
+  display:flex; align-items:center; gap:10px;
+}
+.arch-panel-header h3 {
+  font-size:.82rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em;
+  color:var(--mid);
+  font-family:'JetBrains Mono',monospace;
+}
+.dot-row { display:flex; gap:6px; }
+.dot { width:10px; height:10px; border-radius:50%; }
+.dt-r { background:#ff5f56; }
+.dt-y { background:#ffbd2e; }
+.dt-g { background:#27c93f; }
+.arch-svg-wrap { padding:24px; overflow-x:auto; }
+.arch-svg-wrap svg { min-width:900px; }
+
+/* ═════════════ COMPONENTS GRID ═════════════ */
+.comp-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px,1fr));
+  gap:20px;
+  margin-bottom:48px;
+}
+.comp-card {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:var(--r12);
+  box-shadow:var(--sh1);
+  overflow:hidden;
+  transition: transform .2s, box-shadow .2s;
+  cursor:default;
+}
+.comp-card:hover { transform:translateY(-2px); box-shadow:var(--sh3); }
+.comp-card-top {
+  padding:18px 20px 14px;
+  border-bottom:1px solid var(--ghost);
+  display:flex; align-items:flex-start; gap:14px;
+}
+.comp-icon {
+  width:42px; height:42px; border-radius:var(--r8);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.15rem; flex-shrink:0;
+}
+.comp-card-info { flex:1; min-width:0; }
+.comp-name {
+  font-weight:700; font-size:.95rem;
+  color:var(--ink2); margin-bottom:4px;
+}
+.comp-tags { display:flex; gap:5px; flex-wrap:wrap; }
+.tag {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.58rem; font-weight:600;
+  padding:2px 7px; border-radius:10px;
+  text-transform:uppercase; letter-spacing:.06em;
+}
+.comp-card-body { padding:16px 20px; }
+.comp-desc {
+  font-size:.82rem; color:var(--slate);
+  line-height:1.6; margin-bottom:14px;
+}
+.comp-details { display:flex; flex-direction:column; gap:6px; }
+.detail-row {
+  display:flex; gap:8px; align-items:flex-start;
+  font-size:.78rem;
+}
+.detail-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.66rem; font-weight:600; text-transform:uppercase;
+  color:var(--mid); letter-spacing:.06em;
+  min-width:72px; flex-shrink:0; padding-top:1px;
+}
+.detail-val { color:var(--ink3); line-height:1.5; }
+.detail-val code {
+  background:var(--paper);
+  border:1px solid var(--ghost);
+  border-radius:4px; padding:1px 6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem; color:var(--blue);
+}
+.comp-footer {
+  padding:12px 20px;
+  background:var(--paper);
+  border-top:1px solid var(--ghost);
+  display:flex; gap:6px; flex-wrap:wrap;
+}
+.endpoint-chip {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; padding:3px 9px; border-radius:20px;
+  background:var(--blue-bg); color:var(--blue);
+  border:1px solid #c7d9ff;
+}
+.endpoint-chip.teal { background:var(--teal-bg); color:var(--teal); border-color:#a7f3d0; }
+.endpoint-chip.amber { background:var(--amber-bg); color:var(--amber); border-color:#fde68a; }
+.endpoint-chip.violet { background:var(--violet-bg); color:var(--violet); border-color:#ddd6fe; }
+.endpoint-chip.red { background:var(--red-bg); color:var(--red); border-color:#fca5a5; }
+.endpoint-chip.green { background:var(--green-bg); color:var(--green); border-color:#86efac; }
+
+/* ═════════════ DATA FLOW ═════════════ */
+.flow-outer {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:var(--r16);
+  box-shadow:var(--sh2);
+  overflow:hidden;
+  margin-bottom:48px;
+}
+.flow-header {
+  background:var(--paper);
+  border-bottom:1px solid var(--ghost);
+  padding:16px 28px;
+  display:flex; align-items:center; gap:12px;
+}
+.flow-header h3 {
+  font-family:'Syne',sans-serif;
+  font-size:1rem; font-weight:700; color:var(--ink2);
+}
+.flow-body { padding:36px 32px; }
+.flow-steps { display:flex; flex-direction:column; gap:0; }
+.flow-step {
+  display:grid;
+  grid-template-columns: 48px 1fr;
+  gap:0 20px;
+  align-items:stretch;
+}
+.flow-spine { display:flex; flex-direction:column; align-items:center; }
+.step-num {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-size:1rem; font-weight:800;
+  color:#fff; flex-shrink:0;
+}
+.spine-line { width:2px; background:var(--ghost); flex:1; margin:4px 0; min-height:24px; }
+.flow-step:last-child .spine-line { display:none; }
+.flow-content {
+  padding-bottom:28px;
+}
+.flow-title {
+  font-weight:700; font-size:.92rem; color:var(--ink2);
+  margin-bottom:6px;
+  display:flex; align-items:center; gap:10px;
+}
+.flow-services {
+  display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;
+}
+.fsvc {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; padding:3px 9px; border-radius:6px;
+  border:1px solid; font-weight:600;
+}
+.flow-detail { font-size:.8rem; color:var(--slate); line-height:1.6; }
+.flow-proto {
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem; font-weight:600;
+  padding:2px 8px; border-radius:10px;
+}
+
+/* ═════════════ INFRA GRID ═════════════ */
+.infra-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  gap:16px;
+  margin-bottom:48px;
+}
+.infra-card {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:var(--r12);
+  box-shadow:var(--sh1);
+  padding:22px 20px;
+  display:flex; flex-direction:column; gap:12px;
+  transition:.2s;
+}
+.infra-card:hover { box-shadow:var(--sh2); }
+.infra-icon {
+  font-size:1.6rem;
+  margin-bottom:2px;
+}
+.infra-name {
+  font-family:'Syne',sans-serif;
+  font-weight:700; font-size:1rem; color:var(--ink2);
+}
+.infra-role { font-size:.8rem; color:var(--slate); line-height:1.5; }
+.infra-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+.ichip {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem; padding:2px 7px; border-radius:4px;
+  background:var(--paper); border:1px solid var(--ghost);
+  color:var(--slate);
+}
+
+/* ═════════════ UI DEMO ═════════════ */
+.ui-demo-wrap {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:var(--r16);
+  box-shadow:var(--sh2);
+  overflow:hidden;
+  margin-bottom:48px;
+}
+.ui-demo-bar {
+  background:var(--paper);
+  border-bottom:1px solid var(--ghost);
+  padding:12px 20px;
+  display:flex; align-items:center; gap:10px;
+}
+.url-bar {
+  background:var(--white);
+  border:1px solid var(--ghost);
+  border-radius:20px;
+  padding:5px 16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem; color:var(--mid);
+  flex:1; max-width:480px;
+}
+.ui-demo-frame { border:none; width:100%; height:780px; }
+
+/* ═════════════ MESSAGING ═════════════ */
+.msg-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:20px; margin-bottom:48px;
+}
+.msg-card {
+  background:var(--white); border:1px solid var(--ghost);
+  border-radius:var(--r12); box-shadow:var(--sh1);
+  overflow:hidden;
+}
+.msg-card-head {
+  padding:14px 18px; border-bottom:1px solid var(--ghost);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.msg-card-head h4 { font-weight:700; font-size:.88rem; color:var(--ink2); }
+.msg-body { padding:16px 18px; }
+.queue-item {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:10px 0; border-bottom:1px solid var(--ghost);
+  font-size:.8rem;
+}
+.queue-item:last-child { border-bottom:none; }
+.qtype {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem; font-weight:700; padding:3px 8px; border-radius:4px;
+  white-space:nowrap; flex-shrink:0;
+}
+.q-info strong { display:block; color:var(--ink2); font-size:.8rem; margin-bottom:2px; }
+.q-info span { color:var(--mid); font-size:.74rem; }
+
+/* ═════════════ DB SCHEMA ═════════════ */
+.schema-grid {
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+  gap:20px; margin-bottom:48px;
+}
+.schema-card {
+  background:var(--white); border:1px solid var(--ghost);
+  border-radius:var(--r12); box-shadow:var(--sh1);
+  overflow:hidden;
+}
+.schema-head {
+  padding:12px 16px; border-bottom:1px solid var(--ghost);
+  background:var(--paper);
+  display:flex; align-items:center; gap:8px;
+}
+.schema-head h4 { font-family:'JetBrains Mono',monospace; font-size:.8rem; font-weight:700; color:var(--blue); }
+.schema-svc {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem; margin-left:auto;
+  color:var(--mid); letter-spacing:.08em; text-transform:uppercase;
+}
+.schema-body { padding:12px 16px; }
+.schema-field {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 0; border-bottom:1px dotted var(--ghost);
+  font-size:.76rem;
+}
+.schema-field:last-child { border-bottom:none; }
+.sf-key {
+  width:14px; height:14px; border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.5rem; font-weight:700;
+  flex-shrink:0;
+}
+.pk { background:#fef3c7; color:#d97706; }
+.fk { background:#ede9fe; color:#7c3aed; }
+.sf-name { font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink2); flex:1; }
+.sf-type { font-family:'JetBrains Mono',monospace; color:var(--mid); font-size:.7rem; }
+.sf-null { color:var(--faint); font-size:.68rem; font-family:'JetBrains Mono',monospace; }
+
+/* ═════════════ SECURITY ═════════════ */
+.sec-grid {
+  display:grid; grid-template-columns: repeat(3,1fr);
+  gap:16px; margin-bottom:48px;
+}
+.sec-card {
+  background:var(--white); border:1px solid var(--ghost);
+  border-radius:var(--r12); box-shadow:var(--sh1);
+  padding:20px;
+}
+.sec-card-icon { font-size:1.4rem; margin-bottom:10px; }
+.sec-card h4 { font-weight:700; font-size:.9rem; color:var(--ink2); margin-bottom:6px; }
+.sec-card p { font-size:.78rem; color:var(--slate); line-height:1.6; }
+.sec-points { margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+.sp { font-size:.75rem; color:var(--slate); display:flex; align-items:flex-start; gap:6px; }
+.sp::before { content:'→'; color:var(--teal); font-weight:700; flex-shrink:0; margin-top:1px; }
+
+/* ═════════════ RESPONSIVE ═════════════ */
+@media (max-width:900px) {
+  .msg-grid { grid-template-columns:1fr; }
+  .sec-grid { grid-template-columns:1fr 1fr; }
+  .hero { padding:40px 24px; }
+  .hero h1 { font-size:2rem; }
+  .sec-wrap { padding:32px 20px; }
+}
+@media (max-width:600px) {
+  .sec-grid { grid-template-columns:1fr; }
+  .hero-stats { flex-direction:column; }
+  .stat-cell { border-right:none; border-bottom:1px solid rgba(255,255,255,.08); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-mark">OV</div>
+    OPD-Vertex
+  </div>
+  <div class="header-meta">Group 7 · System Architecture v1.0</div>
+  <nav class="nav-pills">
+    <button class="npill on" onclick="show('overview',this)">Overview</button>
+    <button class="npill"   onclick="show('components',this)">Components</button>
+    <button class="npill"   onclick="show('flow',this)">Data Flow</button>
+    <button class="npill"   onclick="show('schema',this)">DB Schema</button>
+    <button class="npill"   onclick="show('infra',this)">Infra</button>
+    <button class="npill"   onclick="show('ui',this)">UI Demo</button>
+  </nav>
+</header>
+
+<!-- ═══════════ OVERVIEW ═══════════ -->
+<div id="sec-overview" class="section on">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <h1>OPD-Vertex<br><span>Full System Architecture</span></h1>
+      <p class="hero-sub">AI-Powered Outpatient Department Management · Microservices · Event-Driven</p>
+      <div class="hero-stats">
+        <div class="stat-cell">
+          <div class="stat-val teal">8</div>
+          <div class="stat-lbl">Microservices</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val blue">6</div>
+          <div class="stat-lbl">PostgreSQL DBs</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val violet">RabbitMQ</div>
+          <div class="stat-lbl">Message Broker</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val amber">Llama 3</div>
+          <div class="stat-lbl">Local LLM</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" style="color:#f87171">Whisper</div>
+          <div class="stat-lbl">Transcription</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-wrap">
+    <p class="sec-title">
+      System Architecture Diagram
+      <span class="pill" style="background:var(--blue-bg);color:var(--blue)">SVG · Interactive</span>
+    </p>
+    <p class="sec-desc">Complete component diagram showing all 8 microservices, their databases, the API gateway routing, inter-service communication, and RabbitMQ message broker connections.</p>
+
+    <!-- FULL ARCHITECTURE SVG -->
+    <div class="arch-panel">
+      <div class="arch-panel-header">
+        <div class="dot-row"><div class="dot dt-r"></div><div class="dot dt-y"></div><div class="dot dt-g"></div></div>
+        <h3>OPD-Vertex · Full Component Architecture</h3>
+      </div>
+      <div class="arch-svg-wrap">
+<svg viewBox="0 0 1180 980" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+  <defs>
+    <marker id="mS" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b72f5"/>
+    </marker>
+    <marker id="mAF" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a97a"/>
+    </marker>
+    <marker id="mAR" markerWidth="8" markerHeight="8" refX="1" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#16a97a"/>
+    </marker>
+    <marker id="mI" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#e07820"/>
+    </marker>
+    <filter id="fsh">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#b0c8e0" flood-opacity="0.45"/>
+    </filter>
+    <filter id="fsh2">
+      <feDropShadow dx="0" dy="3" stdDeviation="9" flood-color="#80c8a0" flood-opacity="0.3"/>
+    </filter>
+    <filter id="fshBig">
+      <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#8090c0" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- BACKGROUND -->
+  <rect width="1180" height="980" fill="#f2f6fb" rx="0"/>
+
+  <!-- LAYER BANDS -->
+  <!-- Client layer -->
+  <rect x="20" y="60" width="170" height="850" rx="10" fill="#fffdf5" stroke="#f0d080" stroke-width="1.2" stroke-dasharray="6 4" opacity=".6"/>
+  <text x="105" y="48" text-anchor="middle" font-size="9" fill="#c09030" letter-spacing="0.14em" font-weight="600">CLIENT LAYER</text>
+
+  <!-- Gateway layer -->
+  <rect x="205" y="60" width="150" height="850" rx="10" fill="#fff5f5" stroke="#e08080" stroke-width="1.2" stroke-dasharray="6 4" opacity=".6"/>
+  <text x="280" y="48" text-anchor="middle" font-size="9" fill="#b04040" letter-spacing="0.14em" font-weight="600">GATEWAY</text>
+
+  <!-- Microservices layer -->
+  <rect x="370" y="60" width="390" height="850" rx="10" fill="#f0f5ff" stroke="#90b0e8" stroke-width="1.5" stroke-dasharray="8 5" opacity=".7"/>
+  <text x="565" y="48" text-anchor="middle" font-size="9" fill="#4060b0" letter-spacing="0.14em" font-weight="600">MICROSERVICES LAYER</text>
+
+  <!-- Messaging layer -->
+  <rect x="780" y="60" width="160" height="850" rx="10" fill="#f0faf5" stroke="#60c898" stroke-width="1.5" stroke-dasharray="6 4" opacity=".7"/>
+  <text x="860" y="48" text-anchor="middle" font-size="9" fill="#1a8050" letter-spacing="0.14em" font-weight="600">MESSAGING LAYER</text>
+
+  <!-- AI/Model layer -->
+  <rect x="960" y="60" width="200" height="850" rx="10" fill="#f8f4ff" stroke="#c090f0" stroke-width="1.2" stroke-dasharray="6 4" opacity=".6"/>
+  <text x="1060" y="48" text-anchor="middle" font-size="9" fill="#8030c0" letter-spacing="0.14em" font-weight="600">AI MODEL LAYER</text>
+
+  <!-- ─── CLIENT UI ─── -->
+  <g filter="url(#fsh)">
+    <rect x="30" y="292" width="148" height="96" rx="9" fill="#fffbf0" stroke="#f5a623" stroke-width="1.8"/>
+    <text x="104" y="322" text-anchor="middle" font-size="13" font-weight="700" fill="#b06000">UI Client</text>
+    <text x="104" y="339" text-anchor="middle" font-size="9" fill="#b07020">Vue 3 / React</text>
+    <text x="104" y="354" text-anchor="middle" font-size="9" fill="#c08030">Patient Portal</text>
+    <text x="104" y="368" text-anchor="middle" font-size="9" fill="#c08030">Doctor Dashboard</text>
+  </g>
+
+  <!-- ─── API GATEWAY ─── -->
+  <g filter="url(#fsh)">
+    <rect x="215" y="262" width="130" height="156" rx="9" fill="#fff5f5" stroke="#d04040" stroke-width="1.8"/>
+    <text x="280" y="298" text-anchor="middle" font-size="13" font-weight="700" fill="#b03030">API</text>
+    <text x="280" y="315" text-anchor="middle" font-size="13" font-weight="700" fill="#b03030">Gateway</text>
+    <text x="280" y="334" text-anchor="middle" font-size="8.5" fill="#903030">FastAPI</text>
+    <text x="280" y="348" text-anchor="middle" font-size="8.5" fill="#903030">JWT Auth</text>
+    <text x="280" y="362" text-anchor="middle" font-size="8.5" fill="#903030">Rate Limiting</text>
+    <text x="280" y="376" text-anchor="middle" font-size="8.5" fill="#903030">Request Routing</text>
+    <text x="280" y="390" text-anchor="middle" font-size="8.5" fill="#903030">CORS</text>
+    <text x="280" y="406" text-anchor="middle" font-size="8.5" fill="#903030">SSL/TLS</text>
+  </g>
+
+  <!-- UI → Gateway -->
+  <line x1="178" y1="340" x2="215" y2="340" stroke="#3b72f5" stroke-width="2.2" marker-end="url(#mS)"/>
+  <rect x="164" y="327" width="66" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="197" y="337" text-anchor="middle" font-size="7.5" fill="#3b5ab0">HTTP/REST</text>
+
+  <!-- ─── SERVICE ROWS ───
+       x=385, w=220, h=76, gap=96
+       Centers y: 110,206,302,398,494,590,686,782
+  -->
+
+  <!-- 0: User Service y=72 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="72" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="97" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">User Service</text>
+    <text x="485" y="113" text-anchor="middle" font-size="8.5" fill="#4070a8">Auth · Registration · Profiles</text>
+    <text x="485" y="127" text-anchor="middle" font-size="8.5" fill="#4070a8">Doctors · Patients · JWT tokens</text>
+    <!-- DB icon -->
+    <ellipse cx="596" cy="88" rx="10" ry="4.5" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="586" y="88" width="20" height="14" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="596" cy="102" rx="10" ry="4.5" fill="#b8d8f0" stroke="#8ab4e8" stroke-width="1"/>
+    <text x="596" y="118" text-anchor="middle" font-size="7" fill="#6090c0">users_db</text>
+  </g>
+
+  <!-- 1: Appointment Service y=168 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="168" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="193" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">Appointment Service</text>
+    <text x="485" y="209" text-anchor="middle" font-size="8.5" fill="#4070a8">Booking · Scheduling · Priority</text>
+    <text x="485" y="223" text-anchor="middle" font-size="8.5" fill="#4070a8">Doctor Assignment · Time Slots</text>
+    <ellipse cx="596" cy="184" rx="10" ry="4.5" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="586" y="184" width="20" height="14" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="596" cy="198" rx="10" ry="4.5" fill="#b8d8f0" stroke="#8ab4e8" stroke-width="1"/>
+    <text x="596" y="213" text-anchor="middle" font-size="7" fill="#6090c0">appts_db</text>
+  </g>
+
+  <!-- 2: Consultation Service y=264 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="264" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="289" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">Consultation Service</text>
+    <text x="485" y="305" text-anchor="middle" font-size="8.5" fill="#4070a8">Session Lifecycle · Status</text>
+    <text x="485" y="319" text-anchor="middle" font-size="8.5" fill="#4070a8">Notes · Clinical Records</text>
+    <ellipse cx="596" cy="280" rx="10" ry="4.5" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="586" y="280" width="20" height="14" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="596" cy="294" rx="10" ry="4.5" fill="#b8d8f0" stroke="#8ab4e8" stroke-width="1"/>
+    <text x="596" y="309" text-anchor="middle" font-size="7" fill="#6090c0">consult_db</text>
+  </g>
+
+  <!-- 3: Transcription Service y=360 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="360" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="385" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">Transcription Service</text>
+    <text x="485" y="401" text-anchor="middle" font-size="8.5" fill="#4070a8">Faster-Whisper STT</text>
+    <text x="485" y="415" text-anchor="middle" font-size="8.5" fill="#4070a8">Audio Chunking · Text Output</text>
+    <ellipse cx="596" cy="376" rx="10" ry="4.5" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="586" y="376" width="20" height="14" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="596" cy="390" rx="10" ry="4.5" fill="#b8d8f0" stroke="#8ab4e8" stroke-width="1"/>
+    <text x="596" y="405" text-anchor="middle" font-size="7" fill="#6090c0">trans_db</text>
+  </g>
+
+  <!-- 4: AI Service y=456 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="456" width="220" height="76" rx="8" fill="#fcf5ff" stroke="#c080e8" stroke-width="1.8"/>
+    <text x="485" y="481" text-anchor="middle" font-size="12" font-weight="700" fill="#6020a0">AI Service</text>
+    <text x="485" y="497" text-anchor="middle" font-size="8.5" fill="#8040b0">Llama 3 · Clinical Notes</text>
+    <text x="485" y="511" text-anchor="middle" font-size="8.5" fill="#8040b0">Prescription Generation · Alerts</text>
+    <rect x="556" y="466" width="48" height="13" rx="4" fill="#f0e0ff" stroke="#c080e8" stroke-width=".8"/>
+    <text x="580" y="476" text-anchor="middle" font-size="7.5" fill="#7030a0">No DB</text>
+  </g>
+
+  <!-- 5: Prescription Service y=552 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="552" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="577" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">Prescription Service</text>
+    <text x="485" y="593" text-anchor="middle" font-size="8.5" fill="#4070a8">Review · Approve · PDF Gen</text>
+    <text x="485" y="607" text-anchor="middle" font-size="8.5" fill="#4070a8">Doctor Edits · Medication Store</text>
+    <ellipse cx="596" cy="568" rx="10" ry="4.5" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="586" y="568" width="20" height="14" fill="#d0e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="596" cy="582" rx="10" ry="4.5" fill="#b8d8f0" stroke="#8ab4e8" stroke-width="1"/>
+    <text x="596" y="597" text-anchor="middle" font-size="7" fill="#6090c0">rx_db</text>
+  </g>
+
+  <!-- 6: Email Service y=648 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="648" width="220" height="76" rx="8" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="485" y="673" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4890">Email Service</text>
+    <text x="485" y="689" text-anchor="middle" font-size="8.5" fill="#4070a8">SMTP Dispatch</text>
+    <text x="485" y="703" text-anchor="middle" font-size="8.5" fill="#4070a8">Confirmation · Prescriptions</text>
+    <rect x="556" y="658" width="48" height="13" rx="4" fill="#edf0f8" stroke="#8ab4e8" stroke-width=".8"/>
+    <text x="580" y="668" text-anchor="middle" font-size="7.5" fill="#1a4890">No DB</text>
+  </g>
+
+  <!-- 7: Gateway Service y=744 -->
+  <g filter="url(#fsh)">
+    <rect x="385" y="744" width="220" height="76" rx="8" fill="#fff8f0" stroke="#e0a040" stroke-width="1.5"/>
+    <text x="485" y="769" text-anchor="middle" font-size="12" font-weight="700" fill="#904010">Gateway</text>
+    <text x="485" y="785" text-anchor="middle" font-size="8.5" fill="#a05020">Service Discovery · Health Checks</text>
+    <text x="485" y="799" text-anchor="middle" font-size="8.5" fill="#a05020">Load Balancing · Circuit Breaker</text>
+    <rect x="556" y="754" width="48" height="13" rx="4" fill="#fff0e0" stroke="#e0a040" stroke-width=".8"/>
+    <text x="580" y="764" text-anchor="middle" font-size="7.5" fill="#904010">No DB</text>
+  </g>
+
+  <!-- ─── GATEWAY → SERVICES ─── -->
+  <path d="M345,306 C368,306 368,110 385,110" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,318 C368,318 368,206 385,206" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <line x1="345" y1="326" x2="385" y2="302" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,334 C368,334 368,398 385,398" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,342 C368,342 368,494 385,494" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,354 C368,354 368,590 385,590" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,366 C368,366 368,686 385,686" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+  <path d="M345,380 C368,380 368,782 385,782" fill="none" stroke="#3b72f5" stroke-width="1.7" marker-end="url(#mS)"/>
+
+  <!-- Route labels -->
+  <rect x="348" y="97" width="92" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="394" y="107" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/users</text>
+  <rect x="348" y="192" width="108" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="402" y="202" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/appointments</text>
+  <rect x="348" y="286" width="116" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="406" y="296" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/consultations</text>
+  <rect x="348" y="382" width="104" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="400" y="392" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/transcriptions</text>
+  <rect x="348" y="478" width="100" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="398" y="488" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/ai/generate</text>
+  <rect x="348" y="574" width="116" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="406" y="584" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/prescriptions</text>
+  <rect x="348" y="670" width="88" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".8"/>
+  <text x="392" y="680" text-anchor="middle" font-size="7" fill="#3b5ab0">/api/notifications</text>
+
+  <!-- Token verify: gateway → user -->
+  <path d="M280,262 C280,240 485,240 485,264" fill="none" stroke="#3b72f5" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mS)"/>
+  <rect x="350" y="240" width="80" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width=".7"/>
+  <text x="390" y="250" text-anchor="middle" font-size="7" fill="#3b5ab0">token verify</text>
+
+  <!-- ─── INTER-SERVICE (orange dashed) ─── -->
+  <!-- Consultation → Transcription -->
+  <path d="M390,340 C374,340 374,360 390,360" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <rect x="316" y="344" width="68" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width=".7"/>
+  <text x="350" y="354" text-anchor="middle" font-size="7" fill="#c05810">audio job</text>
+
+  <!-- Transcription → AI -->
+  <path d="M390,436 C374,436 374,456 390,456" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <rect x="316" y="440" width="68" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width=".7"/>
+  <text x="350" y="450" text-anchor="middle" font-size="7" fill="#c05810">transcript</text>
+
+  <!-- AI → Prescription -->
+  <path d="M390,532 C374,532 374,552 390,552" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <rect x="308" y="536" width="76" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width=".7"/>
+  <text x="346" y="546" text-anchor="middle" font-size="7" fill="#c05810">prescription</text>
+
+  <!-- Prescription → Email -->
+  <path d="M390,628 C374,628 374,648 390,648" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <rect x="308" y="632" width="76" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width=".7"/>
+  <text x="346" y="642" text-anchor="middle" font-size="7" fill="#c05810">send email</text>
+
+  <!-- Appointment → Consultation -->
+  <path d="M390,244 C374,244 374,264 390,264" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <rect x="310" y="248" width="74" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width=".7"/>
+  <text x="347" y="258" text-anchor="middle" font-size="7" fill="#c05810">start session</text>
+
+  <!-- ─── MESSAGE BROKER ─── -->
+  <g filter="url(#fsh2)">
+    <rect x="790" y="72" width="140" height="836" rx="10" fill="#e8f8f0" stroke="#40b878" stroke-width="1.8"/>
+    <text x="860" y="500" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1a7a48" transform="rotate(-90,860,500)">RabbitMQ Message Broker</text>
+    <!-- Exchange labels -->
+    <rect x="798" y="92" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="104" text-anchor="middle" font-size="7.5" fill="#1a6040">user.events exchange</text>
+    <rect x="798" y="192" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="204" text-anchor="middle" font-size="7.5" fill="#1a6040">appointment.events</text>
+    <rect x="798" y="288" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="300" text-anchor="middle" font-size="7.5" fill="#1a6040">consultation.events</text>
+    <rect x="798" y="384" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="396" text-anchor="middle" font-size="7.5" fill="#1a6040">transcription.events</text>
+    <rect x="798" y="480" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="492" text-anchor="middle" font-size="7.5" fill="#1a6040">ai.events</text>
+    <rect x="798" y="576" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="588" text-anchor="middle" font-size="7.5" fill="#1a6040">prescription.events</text>
+    <rect x="798" y="672" width="124" height="16" rx="4" fill="#c8f0dc" stroke="#40b878" stroke-width=".8"/>
+    <text x="860" y="684" text-anchor="middle" font-size="7.5" fill="#1a6040">notification.events</text>
+  </g>
+
+  <!-- ─── ASYNC ARROWS ─── -->
+  <!-- User -->
+  <line x1="610" y1="107" x2="790" y2="100" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="108" x2="610" y2="117" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- Appointment -->
+  <line x1="610" y1="203" x2="790" y2="200" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="208" x2="610" y2="213" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- Consultation -->
+  <line x1="610" y1="299" x2="790" y2="296" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="304" x2="610" y2="309" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- Transcription -->
+  <line x1="610" y1="395" x2="790" y2="392" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="400" x2="610" y2="405" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- AI -->
+  <line x1="610" y1="491" x2="790" y2="488" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="496" x2="610" y2="501" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- Prescription -->
+  <line x1="610" y1="587" x2="790" y2="584" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAF)"/>
+  <line x1="790" y1="592" x2="610" y2="597" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <!-- Email (consume only) -->
+  <line x1="790" y1="680" x2="610" y2="675" stroke="#16a97a" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#mAR)"/>
+  <rect x="666" y="663" width="64" height="12" rx="3" fill="#e8f8f0" stroke="#40b878" stroke-width=".7"/>
+  <text x="698" y="673" text-anchor="middle" font-size="7.5" fill="#1a7a48">consumes</text>
+
+  <!-- ─── AI MODELS ─── -->
+  <!-- Llama 3 -->
+  <g filter="url(#fsh)">
+    <rect x="970" y="432" width="188" height="100" rx="9" fill="#faf0ff" stroke="#b060e0" stroke-width="1.8"/>
+    <text x="1064" y="460" text-anchor="middle" font-size="13" font-weight="700" fill="#6010a0">Llama 3</text>
+    <text x="1064" y="478" text-anchor="middle" font-size="9" fill="#8030b0">Local LLM</text>
+    <text x="1064" y="493" text-anchor="middle" font-size="8.5" fill="#9040b0">Clinical note generation</text>
+    <text x="1064" y="507" text-anchor="middle" font-size="8.5" fill="#9040b0">Prescription drafting</text>
+    <text x="1064" y="522" text-anchor="middle" font-size="8.5" fill="#9040b0">Suggestive alert mode</text>
+  </g>
+  <!-- Whisper -->
+  <g filter="url(#fsh)">
+    <rect x="970" y="340" width="188" height="82" rx="9" fill="#faf0ff" stroke="#b060e0" stroke-width="1.8"/>
+    <text x="1064" y="366" text-anchor="middle" font-size="13" font-weight="700" fill="#6010a0">Faster-Whisper</text>
+    <text x="1064" y="384" text-anchor="middle" font-size="9" fill="#8030b0">STT Engine (local)</text>
+    <text x="1064" y="399" text-anchor="middle" font-size="8.5" fill="#9040b0">Audio chunking · CTranslate2</text>
+    <text x="1064" y="413" text-anchor="middle" font-size="8.5" fill="#9040b0">Privacy-preserving inference</text>
+  </g>
+
+  <!-- AI Service → Llama 3 -->
+  <path d="M605,494 C790,494 900,482 970,482" fill="none" stroke="#b060e0" stroke-width="1.6" marker-end="url(#mI)"/>
+  <rect x="760" y="483" width="112" height="12" rx="3" fill="#f5efff" stroke="#d0a0f0" stroke-width=".8"/>
+  <text x="816" y="493" text-anchor="middle" font-size="7.5" fill="#7020c0">local inference call</text>
+
+  <!-- Transcription → Whisper -->
+  <path d="M605,398 C790,398 900,381 970,381" fill="none" stroke="#b060e0" stroke-width="1.6" marker-end="url(#mI)"/>
+  <rect x="768" y="383" width="104" height="12" rx="3" fill="#f5efff" stroke="#d0a0f0" stroke-width=".8"/>
+  <text x="820" y="393" text-anchor="middle" font-size="7.5" fill="#7020c0">audio processing</text>
+
+  <!-- ─── HAPPY PATH CIRCLES ─── -->
+  <circle cx="385" cy="206" r="10" fill="#3b72f5" opacity=".9"/>
+  <text x="385" y="210" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">①</text>
+
+  <circle cx="385" cy="302" r="10" fill="#3b72f5" opacity=".9"/>
+  <text x="385" y="306" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">②</text>
+
+  <circle cx="385" cy="398" r="10" fill="#3b72f5" opacity=".9"/>
+  <text x="385" y="402" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">③</text>
+
+  <circle cx="385" cy="494" r="10" fill="#7c3aed" opacity=".9"/>
+  <text x="385" y="498" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">④</text>
+
+  <circle cx="385" cy="590" r="10" fill="#7c3aed" opacity=".9"/>
+  <text x="385" y="594" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">⑤</text>
+
+  <circle cx="385" cy="686" r="10" fill="#16a97a" opacity=".9"/>
+  <text x="385" y="690" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">⑥</text>
+
+  <!-- ─── INFRA FOOTER ─── -->
+  <rect x="20" y="910" width="1140" height="58" rx="8" fill="#fff" stroke="#d0d8ee" stroke-width="1.2"/>
+  <text x="580" y="930" text-anchor="middle" font-size="9" fill="#8090b0" letter-spacing=".1em" font-weight="600">INFRASTRUCTURE</text>
+
+  <rect x="36" y="934" width="128" height="26" rx="5" fill="#edf3ff" stroke="#8ab4e8" stroke-width="1"/>
+  <text x="100" y="948" text-anchor="middle" font-size="10" fill="#2a56b0" font-weight="700">PostgreSQL</text>
+  <text x="100" y="958" text-anchor="middle" font-size="7.5" fill="#5080b0">Per-Service DB (6)</text>
+
+  <rect x="176" y="934" width="120" height="26" rx="5" fill="#edf8f2" stroke="#40b878" stroke-width="1"/>
+  <text x="236" y="948" text-anchor="middle" font-size="10" fill="#1a7a48" font-weight="700">RabbitMQ</text>
+  <text x="236" y="958" text-anchor="middle" font-size="7.5" fill="#3a9060">Async Events</text>
+
+  <rect x="308" y="934" width="120" height="26" rx="5" fill="#eaeeff" stroke="#7090d8" stroke-width="1"/>
+  <text x="368" y="948" text-anchor="middle" font-size="10" fill="#2a3890" font-weight="700">Docker</text>
+  <text x="368" y="958" text-anchor="middle" font-size="7.5" fill="#4050a0">Compose Orch.</text>
+
+  <rect x="440" y="934" width="120" height="26" rx="5" fill="#fff5f5" stroke="#e05050" stroke-width="1"/>
+  <text x="500" y="948" text-anchor="middle" font-size="10" fill="#c03030" font-weight="700">FastAPI</text>
+  <text x="500" y="958" text-anchor="middle" font-size="7.5" fill="#aa5050">Per Service</text>
+
+  <rect x="572" y="934" width="80" height="26" rx="5" fill="#f5f0ff" stroke="#b070f0" stroke-width="1"/>
+  <text x="612" y="948" text-anchor="middle" font-size="10" fill="#7020c0" font-weight="700">uv</text>
+  <text x="612" y="958" text-anchor="middle" font-size="7.5" fill="#9050c0">Pkg Manager</text>
+
+  <rect x="664" y="934" width="128" height="26" rx="5" fill="#faf5ff" stroke="#c080e8" stroke-width="1"/>
+  <text x="728" y="948" text-anchor="middle" font-size="10" fill="#6010a0" font-weight="700">Llama 3</text>
+  <text x="728" y="958" text-anchor="middle" font-size="7.5" fill="#8030b0">Local LLM Inference</text>
+
+  <rect x="804" y="934" width="148" height="26" rx="5" fill="#fafff5" stroke="#80d090" stroke-width="1"/>
+  <text x="878" y="948" text-anchor="middle" font-size="10" fill="#1a6030" font-weight="700">Faster-Whisper</text>
+  <text x="878" y="958" text-anchor="middle" font-size="7.5" fill="#3a8050">CTranslate2 STT</text>
+
+  <rect x="964" y="934" width="178" height="26" rx="5" fill="#f0f8ff" stroke="#60a0d0" stroke-width="1"/>
+  <text x="1053" y="948" text-anchor="middle" font-size="10" fill="#1040a0" font-weight="700">SQLAlchemy · Alembic</text>
+  <text x="1053" y="958" text-anchor="middle" font-size="7.5" fill="#3060b0">ORM + Migrations</text>
+
+  <!-- ─── LEGEND ─── -->
+  <rect x="20" y="824" width="210" height="80" rx="7" fill="#fff" stroke="#d0d8ee" stroke-width="1.2"/>
+  <text x="125" y="841" text-anchor="middle" font-size="9" fill="#7080a0" letter-spacing=".12em" font-weight="600">LEGEND</text>
+  <line x1="32" y1="858" x2="50" y2="858" stroke="#3b72f5" stroke-width="2" marker-end="url(#mS)"/>
+  <text x="57" y="862" font-size="8.5" fill="#5070a0">Sync HTTP/REST</text>
+  <line x1="32" y1="874" x2="50" y2="874" stroke="#16a97a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#mAF)"/>
+  <text x="57" y="878" font-size="8.5" fill="#5070a0">Async ↔ RabbitMQ</text>
+  <line x1="32" y1="892" x2="50" y2="892" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mI)"/>
+  <text x="57" y="896" font-size="8.5" fill="#5070a0">Inter-service call</text>
+</svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ COMPONENTS ═══════════ -->
+<div id="sec-components" class="section">
+  <div class="sec-wrap">
+    <p class="sec-title">
+      Component Deep-Dive
+      <span class="pill" style="background:var(--blue-bg);color:var(--blue)">8 Services</span>
+    </p>
+    <p class="sec-desc">Every microservice, its responsibilities, tech stack, database ownership, and API surface. Each service owns its data and communicates via well-defined contracts.</p>
+
+    <div class="comp-grid">
+
+      <!-- API Gateway -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--red-bg)">🚪</div>
+          <div class="comp-card-info">
+            <div class="comp-name">API Gateway</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--red-bg);color:var(--red)">Gateway</span>
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Single entry point for all client requests. Handles authentication, routing, rate limiting, CORS, and request/response transformation before forwarding to downstream services.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8000</code></div></div>
+            <div class="detail-row"><div class="detail-label">Auth</div><div class="detail-val">JWT validation, token refresh, bearer extraction</div></div>
+            <div class="detail-row"><div class="detail-label">Features</div><div class="detail-val">Rate limiting, CORS, SSL termination, circuit breaker</div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val">None (stateless proxy)</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip">POST /auth/login</span>
+          <span class="endpoint-chip">POST /auth/refresh</span>
+          <span class="endpoint-chip">GET /health</span>
+        </div>
+      </div>
+
+      <!-- User Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--blue-bg)">👤</div>
+          <div class="comp-card-info">
+            <div class="comp-name">User Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+              <span class="tag" style="background:var(--ghost);color:var(--slate)">PostgreSQL</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Manages all user identity: registration, login, profile management for both patients and doctors. Issues and validates JWT tokens used throughout the system.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8001</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val"><code>users_db</code> — users, doctors, patients, roles</div></div>
+            <div class="detail-row"><div class="detail-label">Events</div><div class="detail-val">Publishes: <code>user.registered</code>, <code>user.updated</code></div></div>
+            <div class="detail-row"><div class="detail-label">Security</div><div class="detail-val">bcrypt passwords, JWT HS256, role-based access</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip">POST /users/register</span>
+          <span class="endpoint-chip">GET /users/{id}</span>
+          <span class="endpoint-chip">PUT /users/{id}</span>
+        </div>
+      </div>
+
+      <!-- Appointment Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--teal-bg)">📅</div>
+          <div class="comp-card-info">
+            <div class="comp-name">Appointment Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+              <span class="tag" style="background:var(--ghost);color:var(--slate)">PostgreSQL</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Handles the full appointment lifecycle from booking to cancellation. Supports priority queuing (urgent/standard), doctor assignment, and time-slot management.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8002</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val"><code>appts_db</code> — appointments, timeslots, assignments</div></div>
+            <div class="detail-row"><div class="detail-label">Events</div><div class="detail-val">Publishes: <code>appt.booked</code>, <code>appt.cancelled</code>, <code>appt.started</code></div></div>
+            <div class="detail-row"><div class="detail-label">Triggers</div><div class="detail-val">Emits <code>consultation.start</code> when appointment begins</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip teal">POST /appointments</span>
+          <span class="endpoint-chip teal">GET /appointments/{id}</span>
+          <span class="endpoint-chip teal">DELETE /appointments/{id}</span>
+        </div>
+      </div>
+
+      <!-- Consultation Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--amber-bg)">🩺</div>
+          <div class="comp-card-info">
+            <div class="comp-name">Consultation Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+              <span class="tag" style="background:var(--ghost);color:var(--slate)">PostgreSQL</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Manages the active consultation session. Tracks session state (waiting → active → completed), coordinates audio upload, and links appointments to transcriptions and prescriptions.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8003</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val"><code>consult_db</code> — sessions, status, notes, recordings</div></div>
+            <div class="detail-row"><div class="detail-label">Events</div><div class="detail-val">Consumes: <code>appt.started</code> → triggers transcription</div></div>
+            <div class="detail-row"><div class="detail-label">Flow</div><div class="detail-val">Receives audio → forwards job to Transcription Service</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip amber">POST /consultations/start</span>
+          <span class="endpoint-chip amber">POST /consultations/{id}/audio</span>
+          <span class="endpoint-chip amber">PUT /consultations/{id}/complete</span>
+        </div>
+      </div>
+
+      <!-- Transcription Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--green-bg)">🎙️</div>
+          <div class="comp-card-info">
+            <div class="comp-name">Transcription Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--green-bg);color:var(--green)">Faster-Whisper</span>
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Runs Faster-Whisper locally for privacy-preserving speech-to-text. Handles audio chunking for long recordings, language detection, and outputs structured text for the AI service.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8004</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val"><code>trans_db</code> — transcripts, audio refs, segments</div></div>
+            <div class="detail-row"><div class="detail-label">Engine</div><div class="detail-val">CTranslate2 backend, GPU/CPU adaptive, Danish/EN</div></div>
+            <div class="detail-row"><div class="detail-label">Output</div><div class="detail-val">Structured transcript JSON → AI Service</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip green">POST /transcribe</span>
+          <span class="endpoint-chip green">GET /transcriptions/{id}</span>
+        </div>
+      </div>
+
+      <!-- AI Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--violet-bg)">✦</div>
+          <div class="comp-card-info">
+            <div class="comp-name">AI Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--violet-bg);color:var(--violet)">Llama 3</span>
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Drives the Llama 3 local LLM to generate structured clinical notes and prescription drafts from transcripts. Implements "suggestive mode" for allergy alerts and drug interaction warnings.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8005</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val">None — stateless inference wrapper</div></div>
+            <div class="detail-row"><div class="detail-label">Model</div><div class="detail-val">Llama 3 (quantized), local inference, no cloud APIs</div></div>
+            <div class="detail-row"><div class="detail-label">Outputs</div><div class="detail-val">Structured prescription JSON + clinical alert flags</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip violet">POST /ai/generate</span>
+          <span class="endpoint-chip violet">POST /ai/suggest-alerts</span>
+        </div>
+      </div>
+
+      <!-- Prescription Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:#fff0f0">💊</div>
+          <div class="comp-card-info">
+            <div class="comp-name">Prescription Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+              <span class="tag" style="background:var(--ghost);color:var(--slate)">PostgreSQL</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Stores and manages prescriptions through their review lifecycle. Doctors edit AI drafts, approve final versions, and the service generates PDFs and dispatches them via the Email Service.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8006</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val"><code>rx_db</code> — prescriptions, medications, approvals</div></div>
+            <div class="detail-row"><div class="detail-label">Events</div><div class="detail-val">Publishes: <code>rx.approved</code> → Email Service consumes</div></div>
+            <div class="detail-row"><div class="detail-label">Features</div><div class="detail-val">PDF generation (ReportLab), version history, e-signature</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip red">POST /prescriptions</span>
+          <span class="endpoint-chip red">PUT /prescriptions/{id}/approve</span>
+          <span class="endpoint-chip red">GET /prescriptions/{id}/pdf</span>
+        </div>
+      </div>
+
+      <!-- Email Service -->
+      <div class="comp-card">
+        <div class="comp-card-top">
+          <div class="comp-icon" style="background:var(--teal-bg)">📧</div>
+          <div class="comp-card-info">
+            <div class="comp-name">Email Service</div>
+            <div class="comp-tags">
+              <span class="tag" style="background:var(--teal-bg);color:var(--teal)">SMTP</span>
+              <span class="tag" style="background:var(--blue-bg);color:var(--blue)">FastAPI</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-desc">Pure consumer service — listens to RabbitMQ events and dispatches transactional emails. Handles appointment confirmations, cancellation notices, and prescription delivery.</div>
+          <div class="comp-details">
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-val"><code>:8007</code></div></div>
+            <div class="detail-row"><div class="detail-label">DB</div><div class="detail-val">None — fire-and-forget dispatcher</div></div>
+            <div class="detail-row"><div class="detail-label">Consumes</div><div class="detail-val"><code>appt.booked</code>, <code>appt.cancelled</code>, <code>rx.approved</code></div></div>
+            <div class="detail-row"><div class="detail-label">Transport</div><div class="detail-val">SMTP (configurable: Mailhog dev / SendGrid prod)</div></div>
+          </div>
+        </div>
+        <div class="comp-footer">
+          <span class="endpoint-chip teal">Internal consumer only</span>
+          <span class="endpoint-chip teal">GET /email/health</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DATA FLOW ═══════════ -->
+<div id="sec-flow" class="section">
+  <div class="sec-wrap">
+    <p class="sec-title">
+      Data Flow — Happy Paths
+      <span class="pill" style="background:var(--green-bg);color:var(--green)">2 Flows</span>
+    </p>
+    <p class="sec-desc">The two primary system flows: patient booking an appointment, and a doctor conducting an AI-assisted consultation with prescription generation.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:48px;">
+
+      <!-- BOOKING FLOW -->
+      <div class="flow-outer">
+        <div class="flow-header">
+          <h3>📅 Patient Appointment Booking</h3>
+          <span class="tag" style="background:var(--teal-bg);color:var(--teal);font-size:.7rem;padding:3px 10px;border-radius:10px;">5 steps</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-steps">
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--blue)">1</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">
+                  Patient submits booking form
+                  <span class="flow-proto" style="background:var(--blue-bg);color:var(--blue)">HTTP POST</span>
+                </div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)">UI Client</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--red-bg);border-color:var(--red);color:var(--red)">API Gateway</span>
+                </div>
+                <div class="flow-detail">Patient fills name, phone, date, department. Form submits to <code>POST /api/appointments</code>.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--blue)">2</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Gateway validates & routes</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--red-bg);border-color:var(--red);color:var(--red)">API Gateway</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Appointment Svc</span>
+                </div>
+                <div class="flow-detail">JWT token checked against User Service (token verify call). Rate limit check passes. Request forwarded to Appointment Service.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--teal)">3</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Appointment created &amp; stored
+                  <span class="flow-proto" style="background:var(--teal-bg);color:var(--teal)">PostgreSQL</span>
+                </div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Appointment Svc</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--teal-bg);border-color:var(--teal);color:var(--teal)">appts_db</span>
+                </div>
+                <div class="flow-detail">Record saved with status <code>SCHEDULED</code>. Time slot locked. Doctor assignment computed based on availability.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--green)">4</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Event published to broker
+                  <span class="flow-proto" style="background:var(--green-bg);color:var(--green)">RabbitMQ</span>
+                </div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Appointment Svc</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--green-bg);border-color:var(--green);color:var(--green)">appt.booked event</span>
+                </div>
+                <div class="flow-detail">Event published to <code>appointment.events</code> exchange. Email Service picks it up asynchronously — Appointment Service doesn't wait.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--teal)">5</div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Confirmation email dispatched</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--teal-bg);border-color:var(--teal);color:var(--teal)">Email Service</span>
+                </div>
+                <div class="flow-detail">Email Service consumes <code>appt.booked</code>, renders HTML template with appointment details, and sends via SMTP to patient's email.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSULTATION FLOW -->
+      <div class="flow-outer">
+        <div class="flow-header">
+          <h3>✦ AI-Assisted Consultation</h3>
+          <span class="tag" style="background:var(--violet-bg);color:var(--violet);font-size:.7rem;padding:3px 10px;border-radius:10px;">7 steps</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-steps">
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--blue)">①</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Doctor starts consultation</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)">Doctor Dashboard</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Consultation Svc</span>
+                </div>
+                <div class="flow-detail">Doctor selects patient from sidebar, session created in <code>consult_db</code> with status <code>ACTIVE</code>.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--blue)">②</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Audio recorded &amp; uploaded</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)">Doctor Dashboard</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Consultation Svc</span>
+                </div>
+                <div class="flow-detail">Browser MediaRecorder API captures audio. On stop, audio binary uploaded via <code>POST /consultations/{id}/audio</code> as multipart.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--teal)">③</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Audio dispatched to Transcription
+                  <span class="flow-proto" style="background:#fff7ee;color:#e07820;border:1px solid #f0c090">inter-svc</span>
+                </div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--blue-bg);border-color:var(--blue);color:var(--blue)">Consultation Svc</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--green-bg);border-color:var(--green);color:var(--green)">Transcription Svc</span>
+                </div>
+                <div class="flow-detail">Consultation service calls Transcription via direct HTTP job. Faster-Whisper processes audio into structured text segments. Stored in <code>trans_db</code>.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--violet)">④</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Transcript sent to AI Service
+                  <span class="flow-proto" style="background:var(--violet-bg);color:var(--violet)">Llama 3</span>
+                </div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--green-bg);border-color:var(--green);color:var(--green)">Transcription Svc</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--violet-bg);border-color:var(--violet);color:var(--violet)">AI Service</span>
+                </div>
+                <div class="flow-detail">Structured transcript JSON forwarded. AI Service prompts Llama 3 to generate clinical notes and a prescription draft in structured JSON format.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--violet)">⑤</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Prescription stored &amp; presented</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--violet-bg);border-color:var(--violet);color:var(--violet)">AI Service</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--red-bg);border-color:var(--red);color:var(--red)">Prescription Svc</span>
+                </div>
+                <div class="flow-detail">AI draft written to <code>rx_db</code> with status <code>DRAFT</code>. Doctor sees editable prescription in dashboard, can regenerate or modify.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--green)">⑥</div>
+                <div class="spine-line"></div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">Doctor approves</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)">Doctor Dashboard</span>
+                  <span>→</span>
+                  <span class="fsvc" style="background:var(--red-bg);border-color:var(--red);color:var(--red)">Prescription Svc</span>
+                </div>
+                <div class="flow-detail">Doctor clicks "Approve &amp; Send". Status → <code>APPROVED</code>. PDF generated. Event <code>rx.approved</code> published to RabbitMQ.</div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-spine">
+                <div class="step-num" style="background:var(--teal)">⑦</div>
+              </div>
+              <div class="flow-content">
+                <div class="flow-title">PDF emailed to patient</div>
+                <div class="flow-services">
+                  <span class="fsvc" style="background:var(--teal-bg);border-color:var(--teal);color:var(--teal)">Email Service</span>
+                </div>
+                <div class="flow-detail">Email Service consumes <code>rx.approved</code>, attaches PDF, sends to patient email. Consultation marked <code>COMPLETED</code>.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RabbitMQ Message Catalog -->
+    <p class="sec-title" style="margin-bottom:20px;">RabbitMQ Message Catalog</p>
+    <div class="msg-grid">
+      <div class="msg-card">
+        <div class="msg-card-head">
+          <h4>Published Events</h4>
+          <span class="tag" style="background:var(--green-bg);color:var(--green)">Producers</span>
+        </div>
+        <div class="msg-body">
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--blue-bg);color:var(--blue)">user.*</span>
+            <div class="q-info"><strong>user.registered / user.updated</strong><span>Published by User Service on profile changes</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--teal-bg);color:var(--teal)">appt.*</span>
+            <div class="q-info"><strong>appt.booked / appt.cancelled / appt.started</strong><span>Published by Appointment Service on state transitions</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--amber-bg);color:var(--amber)">consult.*</span>
+            <div class="q-info"><strong>consultation.started / consultation.completed</strong><span>Published by Consultation Service on session changes</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--green-bg);color:var(--green)">trans.*</span>
+            <div class="q-info"><strong>transcription.completed / transcription.failed</strong><span>Published when Whisper finishes or errors</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--violet-bg);color:var(--violet)">rx.*</span>
+            <div class="q-info"><strong>rx.drafted / rx.approved / rx.sent</strong><span>Published by Prescription Service through review lifecycle</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="msg-card">
+        <div class="msg-card-head">
+          <h4>Consumed Events</h4>
+          <span class="tag" style="background:var(--teal-bg);color:var(--teal)">Consumers</span>
+        </div>
+        <div class="msg-body">
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--red-bg);color:var(--red)">Email</span>
+            <div class="q-info"><strong>appt.booked → confirmation email</strong><span>Sends appointment confirmation to patient email</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--red-bg);color:var(--red)">Email</span>
+            <div class="q-info"><strong>appt.cancelled → cancellation notice</strong><span>Notifies patient of cancellation with next steps</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--red-bg);color:var(--red)">Email</span>
+            <div class="q-info"><strong>rx.approved → prescription delivery</strong><span>Attaches PDF prescription, sends to patient</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--blue-bg);color:var(--blue)">Appt</span>
+            <div class="q-info"><strong>user.registered → welcome slot offer</strong><span>Appointment Service may offer next available slot</span></div>
+          </div>
+          <div class="queue-item">
+            <span class="qtype" style="background:var(--amber-bg);color:var(--amber)">Consult</span>
+            <div class="q-info"><strong>appt.started → open session</strong><span>Consultation Service creates active session record</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DB SCHEMA ═══════════ -->
+<div id="sec-schema" class="section">
+  <div class="sec-wrap">
+    <p class="sec-title">
+      Database Schema
+      <span class="pill" style="background:var(--blue-bg);color:var(--blue)">6 DBs · PostgreSQL</span>
+    </p>
+    <p class="sec-desc">Each service owns its own isolated PostgreSQL database — no cross-service DB queries. Communication happens through APIs and events only.</p>
+
+    <div class="schema-grid">
+
+      <!-- users_db -->
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>users</h4><span class="schema-svc">User Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">email</div><div class="sf-type">varchar unique</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">password_hash</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">role</div><div class="sf-type">enum(patient,doctor,admin)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">full_name</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">phone</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">created_at</div><div class="sf-type">timestamp</div></div>
+        </div>
+      </div>
+
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>doctors</h4><span class="schema-svc">User Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key fk">FK</div><div class="sf-name">user_id</div><div class="sf-type">uuid → users</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">department</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">specialization</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">license_no</div><div class="sf-type">varchar unique</div></div>
+        </div>
+      </div>
+
+      <!-- appts_db -->
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>appointments</h4><span class="schema-svc">Appointment Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">patient_id</div><div class="sf-type">uuid (ref only)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">doctor_id</div><div class="sf-type">uuid (ref only)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">scheduled_at</div><div class="sf-type">timestamp</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">department</div><div class="sf-type">varchar</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">priority</div><div class="sf-type">enum(normal,urgent)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">status</div><div class="sf-type">enum(scheduled,started,done,cancelled)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">reason</div><div class="sf-type">text</div></div>
+        </div>
+      </div>
+
+      <!-- consult_db -->
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>consultations</h4><span class="schema-svc">Consultation Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-name"></div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">appointment_id</div><div class="sf-type">uuid (ref)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">status</div><div class="sf-type">enum(active,completed)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">audio_path</div><div class="sf-type">text nullable</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">started_at</div><div class="sf-type">timestamp</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">ended_at</div><div class="sf-type">timestamp nullable</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">notes</div><div class="sf-type">text nullable</div></div>
+        </div>
+      </div>
+
+      <!-- trans_db -->
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>transcriptions</h4><span class="schema-svc">Transcription Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">consultation_id</div><div class="sf-type">uuid (ref)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">status</div><div class="sf-type">enum(pending,done,failed)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">raw_text</div><div class="sf-type">text</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">segments_json</div><div class="sf-type">jsonb</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">language</div><div class="sf-type">varchar(8)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">duration_s</div><div class="sf-type">float</div></div>
+        </div>
+      </div>
+
+      <!-- rx_db -->
+      <div class="schema-card">
+        <div class="schema-head">
+          <h4>prescriptions</h4><span class="schema-svc">Prescription Service</span>
+        </div>
+        <div class="schema-body">
+          <div class="schema-field"><div class="sf-key pk">PK</div><div class="sf-name">id</div><div class="sf-type">uuid</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">consultation_id</div><div class="sf-type">uuid (ref)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">patient_id</div><div class="sf-type">uuid (ref)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">doctor_id</div><div class="sf-type">uuid (ref)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">status</div><div class="sf-type">enum(draft,approved,sent)</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">medications_json</div><div class="sf-type">jsonb</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">notes</div><div class="sf-type">text</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">pdf_path</div><div class="sf-type">text nullable</div></div>
+          <div class="schema-field"><div class="sf-key" style="background:var(--ghost)"></div><div class="sf-name">approved_at</div><div class="sf-type">timestamp nullable</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ INFRA ═══════════ -->
+<div id="sec-infra" class="section">
+  <div class="sec-wrap">
+    <p class="sec-title">
+      Infrastructure &amp; DevOps
+      <span class="pill" style="background:var(--ghost);color:var(--slate)">Docker · Compose</span>
+    </p>
+    <p class="sec-desc">Fully containerized with Docker Compose. Each service has its own container and isolated network. One-command startup for the entire stack.</p>
+
+    <div class="infra-grid">
+      <div class="infra-card" style="border-top:3px solid var(--blue)">
+        <div class="infra-icon">🐳</div>
+        <div class="infra-name">Docker Compose</div>
+        <div class="infra-role">Orchestrates all 8 services + 6 Postgres instances + RabbitMQ. Named volumes for DB persistence. Custom bridge network for inter-service DNS.</div>
+        <div class="infra-chips">
+          <span class="ichip">docker-compose.yml</span>
+          <span class="ichip">depends_on</span>
+          <span class="ichip">healthcheck</span>
+          <span class="ichip">restart: unless-stopped</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid #336699">
+        <div class="infra-icon">🗄️</div>
+        <div class="infra-name">PostgreSQL 15</div>
+        <div class="infra-role">6 independent databases — one per stateful service. Each runs in its own container. Managed via SQLAlchemy ORM + Alembic migrations.</div>
+        <div class="infra-chips">
+          <span class="ichip">users_db :5432</span>
+          <span class="ichip">appts_db :5433</span>
+          <span class="ichip">consult_db :5434</span>
+          <span class="ichip">trans_db :5435</span>
+          <span class="ichip">rx_db :5436</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--green)">
+        <div class="infra-icon">📨</div>
+        <div class="infra-name">RabbitMQ 3</div>
+        <div class="infra-role">Central async message broker using topic exchanges and durable queues. Enables loose coupling between services. Management UI on :15672.</div>
+        <div class="infra-chips">
+          <span class="ichip">AMQP :5672</span>
+          <span class="ichip">Management :15672</span>
+          <span class="ichip">durable queues</span>
+          <span class="ichip">topic exchange</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--red)">
+        <div class="infra-icon">⚡</div>
+        <div class="infra-name">FastAPI</div>
+        <div class="infra-role">Every service is a FastAPI application with async request handling. Pydantic for validation, automatic OpenAPI docs at <code>/docs</code>.</div>
+        <div class="infra-chips">
+          <span class="ichip">uvicorn</span>
+          <span class="ichip">pydantic v2</span>
+          <span class="ichip">openapi /docs</span>
+          <span class="ichip">async/await</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--violet)">
+        <div class="infra-icon">📦</div>
+        <div class="infra-name">uv Package Manager</div>
+        <div class="infra-role">Rust-based ultra-fast Python package manager. Replaces pip + virtualenv. Lockfiles per service ensure reproducible installs across all team members.</div>
+        <div class="infra-chips">
+          <span class="ichip">pyproject.toml</span>
+          <span class="ichip">uv.lock</span>
+          <span class="ichip">uv sync</span>
+          <span class="ichip">uv run</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--amber)">
+        <div class="infra-icon">🔐</div>
+        <div class="infra-name">Security Layer</div>
+        <div class="infra-role">JWT HS256 tokens, bcrypt password hashing, CORS policy, rate limiting on gateway, role-based access control (patient / doctor / admin).</div>
+        <div class="infra-chips">
+          <span class="ichip">JWT HS256</span>
+          <span class="ichip">bcrypt</span>
+          <span class="ichip">RBAC</span>
+          <span class="ichip">rate limiting</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid #c080e0">
+        <div class="infra-icon">🤖</div>
+        <div class="infra-name">AI Stack (Local)</div>
+        <div class="infra-role">100% local inference. No cloud API calls, no patient data leaves the server. Llama 3 for generation, Faster-Whisper (CTranslate2) for STT.</div>
+        <div class="infra-chips">
+          <span class="ichip">Llama 3 GGUF</span>
+          <span class="ichip">faster-whisper</span>
+          <span class="ichip">ctranslate2</span>
+          <span class="ichip">GPU optional</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--teal)">
+        <div class="infra-icon">📬</div>
+        <div class="infra-name">Email Transport</div>
+        <div class="infra-role">Dev environment uses Mailhog (web UI at :8025). Production config swaps to SendGrid or SMTP relay via environment variables.</div>
+        <div class="infra-chips">
+          <span class="ichip">Mailhog dev</span>
+          <span class="ichip">SMTP prod</span>
+          <span class="ichip">HTML templates</span>
+          <span class="ichip">PDF attachments</span>
+        </div>
+      </div>
+
+      <div class="infra-card" style="border-top:3px solid var(--slate)">
+        <div class="infra-icon">🔄</div>
+        <div class="infra-name">SQLAlchemy + Alembic</div>
+        <div class="infra-role">ORM for all DB-backed services with async session support. Alembic handles migration versioning, with upgrade scripts per service. Init scripts auto-run on startup.</div>
+        <div class="infra-chips">
+          <span class="ichip">async engine</span>
+          <span class="ichip">alembic migrate</span>
+          <span class="ichip">init.sql</span>
+          <span class="ichip">connection pool</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security section -->
+    <p class="sec-title" style="margin-bottom:20px;">
+      Security Architecture
+      <span class="pill" style="background:var(--amber-bg);color:var(--amber)">GDPR Aware</span>
+    </p>
+    <div class="sec-grid">
+      <div class="sec-card">
+        <div class="sec-card-icon">🔑</div>
+        <h4>Authentication &amp; Authorization</h4>
+        <p>JWT-based stateless auth with role-based access control. Every API call authenticated at gateway before routing.</p>
+        <div class="sec-points">
+          <div class="sp">JWT HS256 signed tokens, 24h expiry</div>
+          <div class="sp">Refresh token rotation</div>
+          <div class="sp">Role check: patient / doctor / admin</div>
+          <div class="sp">bcrypt(12) password hashing</div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-card-icon">🏥</div>
+        <h4>Medical Data Privacy</h4>
+        <p>All AI inference is local. No patient audio, transcripts, or prescriptions leave the server infrastructure.</p>
+        <div class="sec-points">
+          <div class="sp">Llama 3 &amp; Whisper run on-premise</div>
+          <div class="sp">No third-party AI API calls</div>
+          <div class="sp">Audio files stored encrypted</div>
+          <div class="sp">Database isolation per service</div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-card-icon">🛡️</div>
+        <h4>Network &amp; API Security</h4>
+        <p>Gateway is the only public-facing entry point. Internal services communicate on a private Docker bridge network.</p>
+        <div class="sec-points">
+          <div class="sp">Rate limiting: 100 req/min per IP</div>
+          <div class="sp">CORS whitelisted origins only</div>
+          <div class="sp">Internal services not port-exposed</div>
+          <div class="sp">Input validation via Pydantic</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ UI DEMO ═══════════ -->
+<div id="sec-ui" class="section">
+  <div class="sec-wrap">
+    <p class="sec-title">
+      UI Preview — Patient Portal &amp; Doctor Dashboard
+      <span class="pill" style="background:var(--amber-bg);color:var(--amber)">Live Demo</span>
+    </p>
+    <p class="sec-desc">Interactive frontend prototype. Switch between Patient Portal (appointment booking) and Doctor Dashboard (AI consultation recording, prescription generation). All data is demo data.</p>
+    <div class="ui-demo-wrap">
+      <div class="ui-demo-bar">
+        <div class="dot-row"><div class="dot dt-r"></div><div class="dot dt-y"></div><div class="dot dt-g"></div></div>
+        <div class="url-bar">localhost:3000 — OPD-Vertex UI</div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--mid);margin-left:auto;">Vue 3 Client · Prototype</span>
+      </div>
+      <iframe class="ui-demo-frame" srcdoc='<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPD-Vertex</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0f1e38;--navy2:#162a4a;--blue:#1a56db;--blue-light:#e8f0fe;--teal:#0d9488;--teal-light:#e0f2f1;--red:#dc2626;--red-light:#fee2e2;--amber:#d97706;--amber-light:#fef3c7;--gray0:#f8fafc;--gray1:#f1f5f9;--gray2:#e2e8f0;--gray3:#cbd5e1;--gray4:#94a3b8;--gray5:#64748b;--gray6:#475569;--gray7:#1e293b;--white:#ffffff;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);--shadow-lg:0 4px 6px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:var(--gray1);color:var(--gray7);min-height:100vh}
+.top-nav{background:var(--navy);height:56px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.logo{font-family:"DM Serif Display",serif;color:#fff;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;background:var(--teal);border-radius:50%}
+.nav-tabs{display:flex;gap:4px;margin-left:auto}
+.nav-tab{padding:6px 18px;border-radius:6px;font-size:.82rem;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;border:none;background:none;font-family:"DM Sans",sans-serif;transition:all .18s}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav-tab.active{color:#fff;background:rgba(255,255,255,.15)}
+.view{display:none}.view.active{display:flex}
+.patient-view{min-height:calc(100vh - 56px);align-items:center;justify-content:center;padding:48px 20px;background:linear-gradient(135deg,#f0f7ff 0%,#f8fafc 50%,#f0fdf9 100%)}
+.patient-card{background:var(--white);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:520px;overflow:hidden}
+.patient-card-header{background:var(--navy);padding:32px 36px 28px;position:relative;overflow:hidden}
+.patient-card-header::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(13,148,136,.15)}
+.patient-card-header h2{font-family:"DM Serif Display",serif;color:#fff;font-size:1.5rem;margin-bottom:6px;position:relative}
+.patient-card-header p{color:rgba(255,255,255,.5);font-size:.82rem;position:relative}
+.patient-card-body{padding:32px 36px}
+.action-row{display:flex;gap:10px;margin-bottom:28px}
+.action-btn{flex:1;padding:14px 8px;border-radius:var(--radius);border:2px solid transparent;font-family:"DM Sans",sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.action-btn .btn-icon{font-size:1.3rem}
+.action-btn.book{background:var(--navy);color:#fff}
+.action-btn.book:hover{background:var(--navy2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,30,56,.3)}
+.action-btn.check{background:var(--white);color:var(--blue);border-color:var(--blue)}
+.action-btn.check:hover{background:var(--blue-light)}
+.action-btn.cancel{background:var(--white);color:var(--red);border-color:var(--red)}
+.action-btn.cancel:hover{background:var(--red-light)}
+.form-panel{display:none}.form-panel.visible{display:block}
+.form-panel-inner{background:var(--gray0);border:1px solid var(--gray2);border-radius:var(--radius);padding:24px;animation:slideDown .2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.form-panel-inner h3{font-size:.92rem;font-weight:600;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.panel-badge{font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:500}
+.badge-book{background:var(--navy);color:#fff}.badge-check{background:var(--blue-light);color:var(--blue)}.badge-cancel{background:var(--red-light);color:var(--red)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.78rem;font-weight:500;color:var(--gray5);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 13px;border:1.5px solid var(--gray2);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:.88rem;color:var(--gray7);background:var(--white);outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.submit-btn{width:100%;padding:12px;border-radius:8px;border:none;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:4px;transition:all .18s}
+.submit-btn.book-submit{background:var(--navy);color:#fff}
+.submit-btn.check-submit,.submit-btn.cancel-submit{background:var(--blue);color:#fff}
+.lookup-result{margin-top:14px;padding:14px;background:var(--white);border:1px solid var(--gray2);border-radius:8px;display:none}
+.lookup-result.visible{display:block;animation:slideDown .2s ease}
+.appt-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray1)}
+.appt-row:last-child{border-bottom:none}
+.appt-info{font-size:.82rem}.appt-info strong{display:block;color:var(--gray7);font-weight:600}.appt-info span{color:var(--gray4);font-size:.76rem}
+.appt-confirmed{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--teal-light);color:var(--teal)}
+.cancel-row-btn{padding:5px 12px;border-radius:6px;border:1px solid #fca5a5;background:var(--red-light);color:var(--red);font-size:.74rem;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif}
+.doctor-view{height:calc(100vh - 56px);overflow:hidden}
+.dashboard{display:grid;grid-template-columns:296px 1fr;height:100%}
+.sidebar{background:var(--white);border-right:1px solid var(--gray2);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:18px 18px 14px;border-bottom:1px solid var(--gray2)}
+.sidebar-header h3{font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--gray4);margin-bottom:12px}
+.sidebar-search{position:relative}
+.sidebar-search input{width:100%;padding:8px 12px 8px 32px;border:1.5px solid var(--gray2);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:.82rem;outline:none}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray4);font-size:.85rem;pointer-events:none}
+.appt-list{flex:1;overflow-y:auto;padding:6px 0}
+.date-label{padding:10px 18px 4px;font-size:.69rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--gray4)}
+.appt-item{padding:12px 18px;cursor:pointer;transition:background .12s;border-left:3px solid transparent}
+.appt-item:hover{background:var(--gray1)}.appt-item.selected{background:var(--blue-light);border-left-color:var(--blue)}.appt-item.urgent{border-left-color:var(--amber)}
+.appt-item-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
+.appt-item-name{font-size:.87rem;font-weight:600;color:var(--gray7)}.appt-item-time{font-size:.72rem;color:var(--gray4)}.appt-item-type{font-size:.76rem;color:var(--gray5);margin-bottom:4px}
+.tag{display:inline-block;font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:10px}
+.tag-new{background:var(--blue-light);color:var(--blue)}.tag-follow{background:var(--teal-light);color:var(--teal)}.tag-urgent{background:var(--amber-light);color:var(--amber)}
+.main-panel{display:flex;flex-direction:column;background:var(--gray0);overflow:hidden}
+.main-panel-header{background:var(--white);border-bottom:1px solid var(--gray2);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.patient-meta h2{font-family:"DM Serif Display",serif;font-size:1.25rem;margin-bottom:4px}
+.meta-row{display:flex;gap:16px;font-size:.78rem;color:var(--gray5)}
+.meta-pill{display:flex;align-items:center;gap:4px}
+.status-badge{padding:5px 14px;border-radius:20px;font-size:.76rem;font-weight:600}
+.status-waiting{background:var(--amber-light);color:var(--amber)}.status-active{background:#dcfce7;color:#16a34a}.status-done{background:var(--gray1);color:var(--gray5)}
+.main-content{flex:1;overflow-y:auto;padding:22px 28px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray2);box-shadow:var(--shadow);overflow:hidden}
+.card-header{padding:13px 20px;border-bottom:1px solid var(--gray1);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.79rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--gray5);display:flex;align-items:center;gap:8px}
+.cdot{width:7px;height:7px;border-radius:50%}.cdot-blue{background:var(--blue)}.cdot-teal{background:var(--teal)}.cdot-navy{background:var(--navy)}
+.card-body{padding:18px 20px}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.info-cell label{display:block;font-size:.7rem;font-weight:500;color:var(--gray4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.info-cell span{font-size:.88rem;font-weight:500}
+.rec-zone{display:flex;flex-direction:column;align-items:center;gap:16px;padding:6px 0}
+.rec-controls{display:flex;gap:12px}
+.rec-btn{display:flex;align-items:center;gap:8px;padding:11px 22px;border-radius:30px;border:none;font-family:"DM Sans",sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .18s}
+.rec-btn.start{background:var(--teal);color:#fff}.rec-btn.start:hover{background:#0b7a70;transform:translateY(-1px)}
+.rec-btn.stop{background:var(--red);color:#fff}.rec-btn.stop:hover{background:#b91c1c}
+.rec-btn:disabled{opacity:.38;cursor:not-allowed;transform:none!important}
+.rec-status{display:flex;align-items:center;gap:7px;font-size:.79rem;color:var(--gray5)}
+.rec-dot{width:9px;height:9px;border-radius:50%;background:var(--gray3)}
+.rec-dot.live{background:var(--red);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.waveform{width:100%;height:42px;display:flex;align-items:center;justify-content:center;gap:3px}
+.wbar{width:3px;border-radius:2px;background:var(--gray2);transition:height .1s ease}
+.wbar.on{background:var(--teal)}
+.transcript-box{width:100%;min-height:68px;padding:13px;border-radius:8px;background:var(--gray0);border:1px solid var(--gray2);font-size:.84rem;line-height:1.65;color:var(--gray5);font-style:italic}
+.rx-meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rx-label{font-size:.72rem;font-weight:500;color:var(--gray4);text-transform:uppercase;letter-spacing:.06em}
+.ai-badge{display:flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;color:#7c3aed;background:#f5f3ff;padding:3px 10px;border-radius:20px;border:1px solid #ddd6fe}
+.rx-textarea{width:100%;min-height:158px;padding:14px 16px;border:1.5px solid var(--gray2);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:.88rem;line-height:1.65;color:var(--gray7);resize:vertical;outline:none;transition:border-color .15s}
+.rx-textarea:focus{border-color:var(--blue)}
+.rx-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}
+.rxbtn{padding:9px 20px;border-radius:8px;border:none;font-family:"DM Sans",sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s}
+.rxbtn.sec{background:var(--gray1);color:var(--gray6);border:1px solid var(--gray2)}.rxbtn.sec:hover{background:var(--gray2)}
+.rxbtn.prim{background:var(--navy);color:#fff}.rxbtn.prim:hover{background:var(--navy2)}
+.rxbtn.app{background:var(--teal);color:#fff}.rxbtn.app:hover{background:#0b7a70}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="logo"><div class="logo-dot"></div>OPD-Vertex</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('"'"'patient'"'"',this)">Patient Portal</button>
+    <button class="nav-tab" onclick="switchView('"'"'doctor'"'"',this)">Doctor Dashboard</button>
+  </div>
+</nav>
+<div id="patient-view" class="view patient-view active">
+  <div class="patient-card">
+    <div class="patient-card-header">
+      <h2>Book an Appointment</h2>
+      <p>OPD-Vertex Patient Portal · Outpatient Department</p>
+    </div>
+    <div class="patient-card-body">
+      <div class="action-row">
+        <button class="action-btn book" onclick="showPanel('"'"'book-panel'"'"',this)"><span class="btn-icon">📅</span>Book Appointment</button>
+        <button class="action-btn check" onclick="showPanel('"'"'check-panel'"'"',this)"><span class="btn-icon">🔍</span>Check Appointment</button>
+        <button class="action-btn cancel" onclick="showPanel('"'"'cancel-panel'"'"',this)"><span class="btn-icon">✕</span>Cancel</button>
+      </div>
+      <div id="book-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>📅 <span class="panel-badge badge-book">New Booking</span></h3>
+          <div class="form-row">
+            <div class="form-group"><label>First Name</label><input type="text" placeholder="Maria"></div>
+            <div class="form-group"><label>Last Name</label><input type="text" placeholder="Andersen"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Phone Number</label><input type="tel" placeholder="+45 12 34 56 78"></div>
+            <div class="form-group"><label>Email</label><input type="email" placeholder="maria@example.com"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Preferred Date</label><input type="date"></div>
+            <div class="form-group"><label>Preferred Time</label><input type="time"></div>
+          </div>
+          <div class="form-group"><label>Reason for Visit</label><input type="text" placeholder="e.g. General checkup, follow-up..."></div>
+          <div class="form-group"><label>Department</label><select><option>General Practice</option><option>Cardiology</option><option>Dermatology</option><option>Neurology</option><option>Orthopedics</option></select></div>
+          <button class="submit-btn book-submit" onclick="alert('"'"'✅ Appointment booked! Confirmation sent to your email.'"'"')">Confirm Booking →</button>
+        </div>
+      </div>
+      <div id="check-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>🔍 <span class="panel-badge badge-check">Check Status</span></h3>
+          <div class="form-group"><label>Phone Number or Email</label><input type="text" placeholder="Enter your phone or email..."></div>
+          <button class="submit-btn check-submit" onclick="document.getElementById('"'"'check-result'"'"').classList.add('"'"'visible'"'"')">Find My Appointments →</button>
+          <div id="check-result" class="lookup-result">
+            <div class="appt-row"><div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div><span class="appt-confirmed">Confirmed</span></div>
+            <div class="appt-row"><div class="appt-info"><strong>Dr. Nielsen – Cardiology</strong><span>Thu 27 Feb 2026 · 14:00</span></div><span class="appt-confirmed">Confirmed</span></div>
+          </div>
+        </div>
+      </div>
+      <div id="cancel-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>✕ <span class="panel-badge badge-cancel">Cancel Appointment</span></h3>
+          <div class="form-group"><label>Phone Number or Email</label><input type="text" placeholder="Enter your phone or email..."></div>
+          <button class="submit-btn cancel-submit" onclick="document.getElementById('"'"'cancel-result'"'"').classList.add('"'"'visible'"'"')">Find My Appointments →</button>
+          <div id="cancel-result" class="lookup-result">
+            <div class="appt-row"><div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div><button class="cancel-row-btn" onclick="this.closest('"'"'.appt-row'"'"').style.opacity='"'"'.4'"'"';this.textContent='"'"'Cancelled'"'"';this.disabled=true">Cancel</button></div>
+            <div class="appt-row"><div class="appt-info"><strong>Dr. Nielsen – Cardiology</strong><span>Thu 27 Feb 2026 · 14:00</span></div><button class="cancel-row-btn" onclick="this.closest('"'"'.appt-row'"'"').style.opacity='"'"'.4'"'"';this.textContent='"'"'Cancelled'"'"';this.disabled=true">Cancel</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="doctor-view" class="view doctor-view">
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Upcoming Appointments</h3>
+        <div class="sidebar-search"><span class="search-icon">⌕</span><input type="text" placeholder="Search patients..."></div>
+      </div>
+      <div class="appt-list">
+        <div class="date-label">Today — Mon 24 Feb</div>
+        <div class="appt-item selected" onclick="selectPatient(this,0)"><div class="appt-item-top"><span class="appt-item-name">Maria Andersen</span><span class="appt-item-time">09:00</span></div><div class="appt-item-type">General Practice</div><span class="tag tag-new">New Patient</span></div>
+        <div class="appt-item" onclick="selectPatient(this,1)"><div class="appt-item-top"><span class="appt-item-name">Lars Christensen</span><span class="appt-item-time">10:30</span></div><div class="appt-item-type">Follow-up · Hypertension</div><span class="tag tag-follow">Follow-up</span></div>
+        <div class="appt-item urgent" onclick="selectPatient(this,2)"><div class="appt-item-top"><span class="appt-item-name">Sofie Møller</span><span class="appt-item-time">11:45</span></div><div class="appt-item-type">Chest pain · Priority</div><span class="tag tag-urgent">⚡ Urgent</span></div>
+        <div class="appt-item" onclick="selectPatient(this,3)"><div class="appt-item-top"><span class="appt-item-name">Henrik Madsen</span><span class="appt-item-time">13:00</span></div><div class="appt-item-type">General Practice</div><span class="tag tag-new">New Patient</span></div>
+        <div class="date-label">Tomorrow — Tue 25 Feb</div>
+        <div class="appt-item" onclick="selectPatient(this,4)"><div class="appt-item-top"><span class="appt-item-name">Anna Holm</span><span class="appt-item-time">08:30</span></div><div class="appt-item-type">Follow-up · Diabetes</div><span class="tag tag-follow">Follow-up</span></div>
+        <div class="appt-item" onclick="selectPatient(this,5)"><div class="appt-item-top"><span class="appt-item-name">Peter Skov</span><span class="appt-item-time">10:00</span></div><div class="appt-item-type">Dermatology</div><span class="tag tag-new">New Patient</span></div>
+      </div>
+    </aside>
+    <main class="main-panel">
+      <div class="main-panel-header">
+        <div class="patient-meta">
+          <h2 id="pt-name">Maria Andersen</h2>
+          <div class="meta-row" id="pt-meta"><span class="meta-pill">📞 +45 28 44 61 02</span><span class="meta-pill">📧 m.andersen@gmail.com</span><span class="meta-pill">🕐 09:00 · General Practice</span></div>
+        </div>
+        <span id="pt-status" class="status-badge status-waiting">Waiting</span>
+      </div>
+      <div class="main-content">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><span class="cdot cdot-blue"></span>Patient Information</span></div>
+          <div class="card-body"><div class="info-grid" id="pt-info"><div class="info-cell"><label>DOB</label><span>14 Mar 1988</span></div><div class="info-cell"><label>Age</label><span>37 years</span></div><div class="info-cell"><label>Gender</label><span>Female</span></div><div class="info-cell"><label>CPR / ID</label><span>1403882941</span></div><div class="info-cell"><label>Blood Type</label><span>A+</span></div><div class="info-cell"><label>Allergies</label><span>Penicillin</span></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title"><span class="cdot cdot-teal"></span>Consultation Recording</span><div class="rec-status"><div class="rec-dot" id="rec-dot"></div><span id="rec-text">Not recording</span></div></div>
+          <div class="card-body">
+            <div class="rec-zone">
+              <div class="rec-controls">
+                <button class="rec-btn start" id="btn-start" onclick="startRec()">● Start Recording</button>
+                <button class="rec-btn stop" id="btn-stop" onclick="stopRec()" disabled>■ Stop Recording</button>
+              </div>
+              <div class="waveform" id="waveform"></div>
+              <div class="transcript-box" id="transcript">Transcript will appear here after recording stops...</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title"><span class="cdot cdot-navy"></span>Prescription</span><span class="ai-badge">✦ AI Generated</span></div>
+          <div class="card-body">
+            <div class="rx-meta-row"><span class="rx-label">Review and edit the AI-generated prescription</span></div>
+            <textarea class="rx-textarea" id="rx-area" placeholder="Prescription will be generated after consultation..."></textarea>
+            <div class="rx-actions">
+              <button class="rxbtn sec" onclick="document.getElementById('"'"'rx-area'"'"').value='"'"''"'"'">Clear</button>
+              <button class="rxbtn prim" onclick="regenRx()">✦ Regenerate with AI</button>
+              <button class="rxbtn app" onclick="approveRx()">✓ Approve &amp; Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+const patients=[{name:"Maria Andersen",phone:"+45 28 44 61 02",email:"m.andersen@gmail.com",time:"09:00 · General Practice",dob:"14 Mar 1988",age:"37",gender:"Female",cpr:"1403882941",blood:"A+",allergy:"Penicillin"},{name:"Lars Christensen",phone:"+45 31 72 09 55",email:"lars.c@outlook.com",time:"10:30 · Hypertension Follow-up",dob:"02 Jun 1965",age:"59",gender:"Male",cpr:"0206651234",blood:"O+",allergy:"None"},{name:"Sofie Møller",phone:"+45 50 12 38 77",email:"sofie.m@gmail.com",time:"11:45 · Chest Pain (Urgent)",dob:"29 Sep 1995",age:"29",gender:"Female",cpr:"2909956789",blood:"B-",allergy:"Aspirin"},{name:"Henrik Madsen",phone:"+45 22 66 18 43",email:"h.madsen@mail.dk",time:"13:00 · General Practice",dob:"11 Jan 1980",age:"45",gender:"Male",cpr:"1101800001",blood:"AB+",allergy:"None"},{name:"Anna Holm",phone:"+45 41 93 72 10",email:"anna.holm@gmail.com",time:"08:30 · Diabetes Follow-up",dob:"07 Apr 1972",age:"52",gender:"Female",cpr:"0704725555",blood:"A-",allergy:"Sulfonamides"},{name:"Peter Skov",phone:"+45 26 88 43 91",email:"p.skov@hotmail.com",time:"10:00 · Dermatology",dob:"18 Dec 1990",age:"34",gender:"Male",cpr:"1812901234",blood:"O-",allergy:"None"}];
+const rxDemos=["PATIENT: Maria Andersen\nDATE: 24 Feb 2026  |  DR. HANSEN\n\nMEDICATIONS:\n1. Amoxicillin 500mg — 3× daily for 7 days\n   Take with food. Complete full course.\n2. Ibuprofen 400mg — as needed (max 3/day)\n   Avoid on empty stomach.\n\nNOTES:\nFollow-up in 1 week if symptoms persist.","PATIENT: Lars Christensen\nDATE: 24 Feb 2026  |  DR. HANSEN\n\nMEDICATIONS:\n1. Amlodipine 5mg — 1× daily. Unchanged.\n2. Lisinopril 10mg — 1× daily. Monitor BP weekly.\n\nNOTES:\nBP well-controlled. Continue low-sodium diet.","PATIENT: Sofie Møller ⚡ URGENT\nDATE: 24 Feb 2026  |  DR. HANSEN\n\nREFERRAL: Cardiology — same day urgent\n\nIMMEDIATE:\n1. GTN Spray — sublingual if pain worsens\n\nNOTES:\nECG: borderline changes V3-V5.","PATIENT: Henrik Madsen\nDATE: 24 Feb 2026  |  DR. HANSEN\n\nMEDICATIONS:\n1. Paracetamol 500mg — 4× daily as needed\n2. Vitamin D3 1000IU — 1× daily\n\nNOTES:\nGeneral checkup — all vitals normal.","PATIENT: Anna Holm\nDATE: 25 Feb 2026  |  DR. HANSEN\n\nMEDICATIONS:\n1. Metformin 850mg — 2× daily\n2. Empagliflozin 10mg — 1× daily\n\nNOTES:\nHbA1c: 7.1% — good control.","PATIENT: Peter Skov\nDATE: 25 Feb 2026  |  DR. PETERSEN\n\nMEDICATIONS:\n1. Betamethasone 0.1% cream — apply twice daily\n2. Cetirizine 10mg — 1× nightly\n\nNOTES:\nMild eczema flare."];
+const transcripts=["Patient reports sore throat and mild fever for 3 days. Tonsils inflamed. Temperature 38.2°C. Recommending antibiotic course.","Patient presents for hypertension follow-up. BP today 128/82 — improved. Continuing current regimen.","Patient presents with acute chest pain radiating to left arm. ECG showing borderline ST changes. Urgent cardiology referral.","Annual health check. BMI 24.2, BP 122/80. No complaints. Full blood work requested.","Diabetes management review. HbA1c 7.1%. Foot examination normal. Continue current plan.","New patient with itchy rash on forearms. Consistent with atopic eczema. Prescribing topical corticosteroid."];
+let currentIdx=0;
+function switchView(n,btn){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.querySelectorAll(".nav-tab").forEach(t=>t.classList.remove("active"));document.getElementById(n+"-view").classList.add("active");btn.classList.add("active")}
+function showPanel(id,btn){const p=document.getElementById(id);const o=p.classList.contains("visible");document.querySelectorAll(".form-panel").forEach(p=>p.classList.remove("visible"));document.querySelectorAll(".action-btn").forEach(b=>b.classList.remove("active-btn"));if(!o){p.classList.add("visible");btn.classList.add("active-btn")}}
+function selectPatient(el,idx){document.querySelectorAll(".appt-item").forEach(i=>i.classList.remove("selected"));el.classList.add("selected");currentIdx=idx;const p=patients[idx];document.getElementById("pt-name").textContent=p.name;document.getElementById("pt-meta").innerHTML=`<span class="meta-pill">📞 ${p.phone}</span><span class="meta-pill">📧 ${p.email}</span><span class="meta-pill">🕐 ${p.time}</span>`;document.getElementById("pt-info").innerHTML=`<div class="info-cell"><label>DOB</label><span>${p.dob}</span></div><div class="info-cell"><label>Age</label><span>${p.age} years</span></div><div class="info-cell"><label>Gender</label><span>${p.gender}</span></div><div class="info-cell"><label>CPR / ID</label><span>${p.cpr}</span></div><div class="info-cell"><label>Blood Type</label><span>${p.blood}</span></div><div class="info-cell"><label>Allergies</label><span>${p.allergy}</span></div>`;stopRec();document.getElementById("transcript").textContent="Transcript will appear here after recording stops...";document.getElementById("rx-area").value=rxDemos[idx]||"";setStatus("waiting")}
+let waveTimer=null;
+const wf=document.getElementById("waveform");
+for(let i=0;i<50;i++){const b=document.createElement("div");b.className="wbar";b.style.height="6px";wf.appendChild(b)}
+function startRec(){document.getElementById("btn-start").disabled=true;document.getElementById("btn-stop").disabled=false;document.getElementById("rec-dot").classList.add("live");document.getElementById("rec-text").textContent="Recording...";document.getElementById("transcript").textContent="Listening...";setStatus("active");waveTimer=setInterval(()=>{document.querySelectorAll(".wbar").forEach(b=>{b.style.height=(4+Math.random()*32)+"px";b.classList.toggle("on",Math.random()>.25)})},85)}
+function stopRec(){document.getElementById("btn-start").disabled=false;document.getElementById("btn-stop").disabled=true;document.getElementById("rec-dot").classList.remove("live");document.getElementById("rec-text").textContent="Not recording";clearInterval(waveTimer);document.querySelectorAll(".wbar").forEach(b=>{b.style.height="6px";b.classList.remove("on")});const t=document.getElementById("transcript");if(t.textContent==="Listening...")t.textContent=transcripts[currentIdx]||transcripts[0]}
+function regenRx(){const a=document.getElementById("rx-area");a.value="✦ Generating via Llama 3...";setTimeout(()=>{a.value=rxDemos[currentIdx]||rxDemos[0]},1100)}
+function approveRx(){setStatus("done");alert("✅ Prescription approved and dispatched to "+patients[currentIdx].email+" via Email Service.")}
+function setStatus(s){const el=document.getElementById("pt-status");el.className="status-badge status-"+s;el.textContent=s==="waiting"?"Waiting":s==="active"?"● Active":"✓ Done"}
+</script>
+</body>
+</html>'></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.npill').forEach(p => p.classList.remove('on'));
+  document.getElementById('sec-' + name).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

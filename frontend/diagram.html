@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPD-Vertex Component Architecture Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f4f6fb;
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 20px 48px;
+    color: #1a2340;
+  }
+  h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: 0.03em; color: #1a2340; margin-bottom: 4px; text-align: center; }
+  .subtitle { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #8a9ab8; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 30px; text-align: center; }
+  .diagram-wrap { width: 100%; max-width: 1100px; }
+  svg { width: 100%; height: auto; display: block; }
+</style>
+</head>
+<body>
+
+<h1>OPD-Vertex · Component Architecture</h1>
+<div class="subtitle">Group 7 &nbsp;·&nbsp; Microservices System Design</div>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 1060 860" xmlns="http://www.w3.org/2000/svg" font-family="Syne, sans-serif">
+  <defs>
+    <marker id="mSync" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b6ef5"/>
+    </marker>
+    <marker id="mAsyncFwd" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a97a"/>
+    </marker>
+    <marker id="mAsyncRev" markerWidth="8" markerHeight="8" refX="1" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#16a97a"/>
+    </marker>
+    <marker id="mInter" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#e07820"/>
+    </marker>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#c0cce8" flood-opacity="0.5"/>
+    </filter>
+    <filter id="sh2" x="-14%" y="-4%" width="128%" height="108%">
+      <feDropShadow dx="0" dy="3" stdDeviation="8" flood-color="#90c8a8" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- bg -->
+  <rect width="1060" height="860" fill="#f4f6fb"/>
+
+  <!--
+    Services: x=436, w=200, h=64, step=82
+    Row centers y: 102,184,266,348,430,512,594
+    Boundary: x=422, y=44, w=290, h=596
+    Gateway right: x=282
+    Broker left: x=870
+  -->
+
+  <!-- MICROSERVICES BOUNDARY -->
+  <rect x="422" y="44" width="290" height="596" rx="10" fill="#edf0f8" stroke="#c4cee6" stroke-width="1.5" stroke-dasharray="9 5"/>
+  <text x="567" y="32" text-anchor="middle" font-size="9.5" fill="#8a9ab8" font-family="JetBrains Mono" letter-spacing="0.16em">MICROSERVICES BOUNDARY</text>
+
+  <!-- ══ UI ══ -->
+  <g filter="url(#sh)">
+    <rect x="20" y="304" width="104" height="68" rx="8" fill="#fffbf0" stroke="#f5a623" stroke-width="1.8"/>
+    <text x="72" y="328" text-anchor="middle" font-size="12.5" font-weight="700" fill="#b87000">UI</text>
+    <text x="72" y="345" text-anchor="middle" font-size="10" fill="#b87000" font-family="JetBrains Mono">Vue 3</text>
+    <text x="72" y="360" text-anchor="middle" font-size="9.5" fill="#c48020" font-family="JetBrains Mono">Web Client</text>
+  </g>
+
+  <!-- ══ API GATEWAY ══ -->
+  <g filter="url(#sh)">
+    <rect x="156" y="270" width="126" height="136" rx="8" fill="#fff5f5" stroke="#e05050" stroke-width="1.8"/>
+    <text x="219" y="320" text-anchor="middle" font-size="13" font-weight="700" fill="#c03030">API</text>
+    <text x="219" y="337" text-anchor="middle" font-size="13" font-weight="700" fill="#c03030">Gateway</text>
+    <text x="219" y="356" text-anchor="middle" font-size="9" fill="#aa5050" font-family="JetBrains Mono">Auth · Routing</text>
+    <text x="219" y="369" text-anchor="middle" font-size="9" fill="#aa5050" font-family="JetBrains Mono">Rate Limiting</text>
+  </g>
+
+  <!-- UI → Gateway -->
+  <line x1="124" y1="338" x2="156" y2="338" stroke="#3b6ef5" stroke-width="2" marker-end="url(#mSync)"/>
+
+  <!-- ══ SERVICE ROWS — all uniform white/blue style ══
+       box x=436, w=200, h=64
+       DB cx=630
+       Row y / center:
+         0 User        70  / 102
+         1 Appointment 152 / 184
+         2 Consultation 234 / 266
+         3 Transcription 316 / 348
+         4 AI Service  398 / 430
+         5 Prescription 480 / 512
+         6 Email       562 / 594
+  -->
+
+  <!-- 0: User Service -->
+  <g filter="url(#sh)">
+    <rect x="436" y="70" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="93" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">User Service</text>
+    <text x="526" y="109" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Auth</text>
+    <text x="526" y="123" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Doctors · Patients</text>
+    <ellipse cx="630" cy="86" rx="9" ry="4" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="621" y="86" width="18" height="12" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="630" cy="98" rx="9" ry="4" fill="#c0d8f0" stroke="#8ab4e8" stroke-width="1"/>
+  </g>
+
+  <!-- 1: Appointment Service -->
+  <g filter="url(#sh)">
+    <rect x="436" y="152" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="175" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">Appointment Service</text>
+    <text x="526" y="191" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Appointments · Doctor Assignment</text>
+    <text x="526" y="205" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Scheduling · Priority</text>
+    <ellipse cx="630" cy="168" rx="9" ry="4" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="621" y="168" width="18" height="12" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="630" cy="180" rx="9" ry="4" fill="#c0d8f0" stroke="#8ab4e8" stroke-width="1"/>
+  </g>
+
+  <!-- 2: Consultation Service -->
+  <g filter="url(#sh)">
+    <rect x="436" y="234" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="257" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">Consultation Service</text>
+    <text x="526" y="273" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Session Lifecycle</text>
+    <ellipse cx="630" cy="250" rx="9" ry="4" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="621" y="250" width="18" height="12" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="630" cy="262" rx="9" ry="4" fill="#c0d8f0" stroke="#8ab4e8" stroke-width="1"/>
+  </g>
+
+  <!-- 3: Transcription Service -->
+  <g filter="url(#sh)">
+    <rect x="436" y="316" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="339" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">Transcription Service</text>
+    <text x="526" y="355" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Faster-Whisper</text>
+    <text x="526" y="369" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Audio → Text</text>
+    <ellipse cx="630" cy="332" rx="9" ry="4" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="621" y="332" width="18" height="12" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="630" cy="344" rx="9" ry="4" fill="#c0d8f0" stroke="#8ab4e8" stroke-width="1"/>
+  </g>
+
+  <!-- 4: AI Service (same white/blue style, No DB badge) -->
+  <g filter="url(#sh)">
+    <rect x="436" y="398" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="421" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">AI Service</text>
+    <text x="526" y="437" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Llama 3</text>
+    <text x="526" y="451" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Clinical Notes</text>
+    <rect x="544" y="455" width="40" height="11" rx="3" fill="#edf0f8" stroke="#8ab4e8" stroke-width="0.8"/>
+    <text x="564" y="464" text-anchor="middle" font-size="8" fill="#1a4890" font-family="JetBrains Mono">No DB</text>
+  </g>
+
+  <!-- 5: Prescription Service -->
+  <g filter="url(#sh)">
+    <rect x="436" y="480" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="503" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">Prescription Service</text>
+    <text x="526" y="519" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Review · Approve</text>
+    <text x="526" y="533" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Store · PDF Generation</text>
+    <ellipse cx="630" cy="496" rx="9" ry="4" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <rect x="621" y="496" width="18" height="12" fill="#d8e8f8" stroke="#8ab4e8" stroke-width="1"/>
+    <ellipse cx="630" cy="508" rx="9" ry="4" fill="#c0d8f0" stroke="#8ab4e8" stroke-width="1"/>
+  </g>
+
+  <!-- 6: Email Service (No DB badge) -->
+  <g filter="url(#sh)">
+    <rect x="436" y="562" width="200" height="64" rx="7" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+    <text x="526" y="585" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a4890">Email Service</text>
+    <text x="526" y="601" text-anchor="middle" font-size="9" fill="#5070a0" font-family="JetBrains Mono">Email Delivery</text>
+    <rect x="544" y="608" width="40" height="11" rx="3" fill="#edf0f8" stroke="#8ab4e8" stroke-width="0.8"/>
+    <text x="564" y="617" text-anchor="middle" font-size="8" fill="#1a4890" font-family="JetBrains Mono">No DB</text>
+  </g>
+
+  <!-- ══ MESSAGE BROKER ══ -->
+  <g filter="url(#sh2)">
+    <rect x="870" y="44" width="80" height="596" rx="9" fill="#eaf6ef" stroke="#40b878" stroke-width="1.8"/>
+    <text x="910" y="346" text-anchor="middle" font-size="12" font-weight="700" fill="#1a7a48"
+          transform="rotate(-90,910,346)">Message Broker (RabbitMQ)</text>
+  </g>
+
+  <!-- ══ GATEWAY → SERVICES (sync + route labels) ══ -->
+  <path d="M282,300 C370,300 400,102 436,102" fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <path d="M282,314 C370,314 400,184 436,184" fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <path d="M282,326 C370,326 400,266 436,266" fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <line x1="282" y1="338" x2="436" y2="348"   stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <path d="M282,350 C370,350 400,430 436,430"  fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <path d="M282,362 C370,362 400,512 436,512"  fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+  <path d="M282,376 C370,376 400,594 436,594"  fill="none" stroke="#3b6ef5" stroke-width="1.6" marker-end="url(#mSync)"/>
+
+  <!-- Route labels -->
+  <rect x="322" y="87"  width="88"  height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="366" y="97"  text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/users</text>
+
+  <rect x="322" y="168" width="108" height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="376" y="178" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/appointments</text>
+
+  <rect x="322" y="250" width="108" height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="376" y="260" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/consultations</text>
+
+  <rect x="346" y="330" width="78"  height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="385" y="340" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/transcribe</text>
+
+  <rect x="322" y="414" width="92"  height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="368" y="424" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/ai/generate</text>
+
+  <rect x="314" y="496" width="108" height="13" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.8"/>
+  <text x="368" y="506" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">/api/prescriptions</text>
+
+  <!-- ══ INTER-SERVICE ARROWS (orange, left spine of boundary) ══ -->
+  <!-- Consultation → Transcription: audio job -->
+  <path d="M442,298 C424,298 424,316 442,316" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mInter)"/>
+  <rect x="378" y="302" width="58" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width="0.7"/>
+  <text x="407" y="311" text-anchor="middle" font-size="7.5" fill="#c05810" font-family="JetBrains Mono">audio job</text>
+
+  <!-- Transcription → AI Service: transcript -->
+  <path d="M442,380 C424,380 424,398 442,398" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mInter)"/>
+  <rect x="372" y="384" width="64" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width="0.7"/>
+  <text x="404" y="393" text-anchor="middle" font-size="7.5" fill="#c05810" font-family="JetBrains Mono">transcript</text>
+
+  <!-- AI Service → Prescription: prescription -->
+  <path d="M442,462 C424,462 424,480 442,480" fill="none" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mInter)"/>
+  <rect x="358" y="466" width="78" height="12" rx="3" fill="#fff7ee" stroke="#e09050" stroke-width="0.7"/>
+  <text x="397" y="475" text-anchor="middle" font-size="7.5" fill="#c05810" font-family="JetBrains Mono">prescription</text>
+
+  <!-- Token verify: Gateway → User Service -->
+  <path d="M219,270 C219,240 526,240 526,234" fill="none" stroke="#3b6ef5" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#mSync)"/>
+  <rect x="308" y="228" width="88" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.7"/>
+  <text x="352" y="237" text-anchor="middle" font-size="7.5" fill="#3b5ab0" font-family="JetBrains Mono">token verify</text>
+
+  <!-- ══ BIDIRECTIONAL ASYNC ↔ BROKER ══
+       Publish: y-3, Consume: y+4
+       Service right ~x=636, Broker left x=870
+  -->
+
+  <!-- User Service ↔ -->
+  <line x1="640" y1="99"  x2="870" y2="124" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="131" x2="640" y2="106" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- Appointment ↔ -->
+  <line x1="640" y1="181" x2="870" y2="204" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="211" x2="640" y2="188" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- Consultation ↔ -->
+  <line x1="640" y1="263" x2="870" y2="288" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="295" x2="640" y2="270" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- Transcription ↔ -->
+  <line x1="640" y1="345" x2="870" y2="368" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="375" x2="640" y2="352" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- AI Service ↔ -->
+  <line x1="636" y1="427" x2="870" y2="448" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="455" x2="636" y2="434" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- Prescription ↔ -->
+  <line x1="640" y1="509" x2="870" y2="528" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncFwd)"/>
+  <line x1="870" y1="535" x2="640" y2="516" stroke="#16a97a" stroke-width="1.4" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+
+  <!-- Email Service ← Broker only (consumer) -->
+  <line x1="870" y1="594" x2="640" y2="587" stroke="#16a97a" stroke-width="1.8" stroke-dasharray="7 4" marker-end="url(#mAsyncRev)"/>
+  <rect x="714" y="578" width="58" height="12" rx="3" fill="#eaf6ef" stroke="#40b878" stroke-width="0.7"/>
+  <text x="743" y="587" text-anchor="middle" font-size="7.5" fill="#1a7a48" font-family="JetBrains Mono">consumes</text>
+
+  <!-- ══ HAPPY PATH NUMBERS ══ -->
+  <circle cx="436" cy="184" r="9" fill="#3b6ef5" opacity="0.85"/>
+  <text x="436" y="188" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">①</text>
+
+  <circle cx="436" cy="266" r="9" fill="#3b6ef5" opacity="0.85"/>
+  <text x="436" y="270" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">②</text>
+
+  <circle cx="436" cy="348" r="9" fill="#3b6ef5" opacity="0.85"/>
+  <text x="436" y="352" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">③</text>
+
+  <circle cx="436" cy="430" r="9" fill="#3b6ef5" opacity="0.85"/>
+  <text x="436" y="434" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">④</text>
+
+  <circle cx="436" cy="512" r="9" fill="#3b6ef5" opacity="0.85"/>
+  <text x="436" y="516" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">⑤</text>
+
+  <circle cx="436" cy="594" r="9" fill="#16a97a" opacity="0.85"/>
+  <text x="436" y="598" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">⑥</text>
+
+  <!-- ══ INFRA FOOTER ══ -->
+  <rect x="60" y="768" width="740" height="50" rx="8" fill="#fff" stroke="#d0d8ee" stroke-width="1.2"/>
+
+  <rect x="74"  y="778" width="138" height="30" rx="5" fill="#edf3ff" stroke="#8ab4e8" stroke-width="1"/>
+  <text x="143" y="794" text-anchor="middle" font-size="11" font-weight="700" fill="#2a56b0" font-family="JetBrains Mono">PostgreSQL</text>
+  <text x="143" y="806" text-anchor="middle" font-size="9"  fill="#5080b0" font-family="JetBrains Mono">Per-Service DB</text>
+
+  <rect x="228" y="778" width="124" height="30" rx="5" fill="#edf8f2" stroke="#40b878" stroke-width="1"/>
+  <text x="290" y="794" text-anchor="middle" font-size="11" font-weight="700" fill="#1a7a48" font-family="JetBrains Mono">RabbitMQ</text>
+  <text x="290" y="806" text-anchor="middle" font-size="9"  fill="#3a9060" font-family="JetBrains Mono">Async Events</text>
+
+  <rect x="368" y="778" width="106" height="30" rx="5" fill="#eaeeff" stroke="#7090d8" stroke-width="1"/>
+  <text x="421" y="794" text-anchor="middle" font-size="11" font-weight="700" fill="#2a3890" font-family="JetBrains Mono">Docker</text>
+  <text x="421" y="806" text-anchor="middle" font-size="9"  fill="#4050a0" font-family="JetBrains Mono">Compose Orch.</text>
+
+  <rect x="490" y="778" width="106" height="30" rx="5" fill="#fff5f5" stroke="#e05050" stroke-width="1"/>
+  <text x="543" y="794" text-anchor="middle" font-size="11" font-weight="700" fill="#c03030" font-family="JetBrains Mono">FastAPI</text>
+  <text x="543" y="806" text-anchor="middle" font-size="9"  fill="#aa5050" font-family="JetBrains Mono">Per Service</text>
+
+  <rect x="612" y="778" width="76" height="30" rx="5" fill="#f5f0ff" stroke="#b070f0" stroke-width="1"/>
+  <text x="650" y="794" text-anchor="middle" font-size="11" font-weight="700" fill="#7020c0" font-family="JetBrains Mono">uv</text>
+  <text x="650" y="806" text-anchor="middle" font-size="9"  fill="#9050c0" font-family="JetBrains Mono">Pkg Manager</text>
+
+  <!-- ══ LEGEND ══ -->
+  <rect x="20" y="490" width="202" height="182" rx="7" fill="#fff" stroke="#d0d8ee" stroke-width="1.2"/>
+  <text x="121" y="508" text-anchor="middle" font-size="10" font-weight="700" fill="#6878a8" font-family="JetBrains Mono" letter-spacing="0.12em">LEGEND</text>
+
+  <rect x="32" y="516" width="16" height="12" rx="2" fill="#fff" stroke="#8ab4e8" stroke-width="1.5"/>
+  <text x="56" y="527" font-size="9" fill="#5a7090" font-family="JetBrains Mono">Microservice</text>
+
+  <rect x="32" y="534" width="16" height="12" rx="2" fill="#fffbf0" stroke="#f5a623" stroke-width="1.5"/>
+  <text x="56" y="545" font-size="9" fill="#5a7090" font-family="JetBrains Mono">Client UI (Vue 3)</text>
+
+  <rect x="32" y="552" width="16" height="12" rx="2" fill="#fff5f5" stroke="#e05050" stroke-width="1.5"/>
+  <text x="56" y="563" font-size="9" fill="#5a7090" font-family="JetBrains Mono">API Gateway</text>
+
+  <line x1="32" y1="580" x2="48" y2="580" stroke="#3b6ef5" stroke-width="2" marker-end="url(#mSync)"/>
+  <text x="56" y="584" font-size="9" fill="#5a7090" font-family="JetBrains Mono">Sync (HTTP/REST)</text>
+
+  <line x1="32" y1="598" x2="48" y2="598" stroke="#16a97a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#mAsyncFwd)"/>
+  <line x1="48" y1="606" x2="32" y2="606" stroke="#16a97a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#mAsyncRev)"/>
+  <text x="56" y="605" font-size="9" fill="#5a7090" font-family="JetBrains Mono">Async ↔ Broker</text>
+
+  <line x1="32" y1="624" x2="48" y2="624" stroke="#e07820" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mInter)"/>
+  <text x="56" y="628" font-size="9" fill="#5a7090" font-family="JetBrains Mono">Inter-service call</text>
+
+  <rect x="32" y="644" width="182" height="12" rx="3" fill="#eef2ff" stroke="#b0c0f0" stroke-width="0.7"/>
+  <text x="123" y="654" text-anchor="middle" font-size="8" fill="#3b5ab0" font-family="JetBrains Mono">①②③④⑤⑥ = happy path</text>
+
+</svg>
+</div>
+</body>
+</html>

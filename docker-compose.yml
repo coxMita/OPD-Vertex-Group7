@@ -27,6 +27,7 @@ services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
+        image: mita28/opdvertex:gateway-1.0.0
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -41,6 +42,7 @@ services:
 
     # ── AI Service ────────────────────────────────────────────────────────────
     ai-service:
+        image: mita28/opdvertex:ai-service-1.0.0
         build: backend/ai-service/.
         container_name: ai-service
         restart: unless-stopped
@@ -55,6 +57,7 @@ services:
 
     # ── Appointment Service ───────────────────────────────────────────────────
     appointment-service:
+        image: mita28/opdvertex:appointment-service-1.0.0
         build: backend/appointment-service/.
         container_name: appointment-service
         restart: unless-stopped
@@ -93,6 +96,7 @@ services:
 
     # ── Consultation Service ──────────────────────────────────────────────────
     consultation-service:
+        image: mita28/opdvertex:consultation-service-1.0.0
         build: backend/consultation-service/.
         container_name: consultation-service
         restart: unless-stopped
@@ -131,6 +135,7 @@ services:
 
     # ── Email Service ─────────────────────────────────────────────────────────
     email-service:
+        image: mita28/opdvertex:email-service-1.0.0
         build: backend/email-service/.
         container_name: email-service
         restart: unless-stopped
@@ -145,6 +150,7 @@ services:
 
     # ── Prescription Service ──────────────────────────────────────────────────
     prescription-service:
+        image: mita28/opdvertex:prescription-service-1.0.0
         build: backend/prescription-service/.
         container_name: prescription-service
         restart: unless-stopped
@@ -183,6 +189,7 @@ services:
 
     # ── Transcription Service ─────────────────────────────────────────────────
     transcription-service:
+        image: mita28/opdvertex:transcription-service-1.0.0
         build: backend/transcription-service/.
         container_name: transcription-service
         restart: unless-stopped
@@ -197,6 +204,7 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
+        image: mita28/opdvertex:user-service-1.0.0
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped

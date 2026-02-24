@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPD-Vertex</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0f1e38;
+  --navy2: #162a4a;
+  --blue: #1a56db;
+  --blue-light: #e8f0fe;
+  --teal: #0d9488;
+  --teal-light: #e0f2f1;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --gray0: #f8fafc;
+  --gray1: #f1f5f9;
+  --gray2: #e2e8f0;
+  --gray3: #cbd5e1;
+  --gray4: #94a3b8;
+  --gray5: #64748b;
+  --gray6: #475569;
+  --gray7: #1e293b;
+  --white: #ffffff;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.05), 0 10px 30px rgba(0,0,0,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--gray1); color: var(--gray7); min-height: 100vh; }
+
+/* ─── NAV ─── */
+.top-nav {
+  background: var(--navy);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-dot { width: 8px; height: 8px; background: var(--teal); border-radius: 50%; }
+.nav-tabs { display: flex; gap: 4px; margin-left: auto; }
+.nav-tab {
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.18s;
+}
+.nav-tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.nav-tab.active { color: #fff; background: rgba(255,255,255,0.15); }
+
+/* ─── VIEWS ─── */
+.view { display: none; }
+.view.active { display: flex; }
+
+/* ═══════════════ PATIENT PORTAL ═══════════════ */
+.patient-view {
+  min-height: calc(100vh - 56px);
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 50%, #f0fdf9 100%);
+}
+.patient-card {
+  background: var(--white);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+}
+.patient-card-header {
+  background: var(--navy);
+  padding: 32px 36px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.patient-card-header::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: rgba(13,148,136,0.15);
+}
+.patient-card-header h2 {
+  font-family: 'DM Serif Display', serif;
+  color: #fff;
+  font-size: 1.5rem;
+  margin-bottom: 6px;
+  position: relative;
+}
+.patient-card-header p { color: rgba(255,255,255,0.5); font-size: 0.82rem; position: relative; }
+.patient-card-body { padding: 32px 36px; }
+
+.action-row { display: flex; gap: 10px; margin-bottom: 28px; }
+.action-btn {
+  flex: 1;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.action-btn .btn-icon { font-size: 1.3rem; }
+.action-btn.book   { background: var(--navy); color: #fff; }
+.action-btn.book:hover { background: var(--navy2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,30,56,0.3); }
+.action-btn.check  { background: var(--white); color: var(--blue); border-color: var(--blue); }
+.action-btn.check:hover  { background: var(--blue-light); }
+.action-btn.cancel { background: var(--white); color: var(--red); border-color: var(--red); }
+.action-btn.cancel:hover { background: var(--red-light); }
+.action-btn.active-btn { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+.form-panel { display: none; }
+.form-panel.visible { display: block; }
+.form-panel-inner {
+  background: var(--gray0);
+  border: 1px solid var(--gray2);
+  border-radius: var(--radius);
+  padding: 24px;
+  animation: slideDown 0.2s ease;
+}
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+.form-panel-inner h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.badge-book   { background: var(--navy); color: #fff; }
+.badge-check  { background: var(--blue-light); color: var(--blue); }
+.badge-cancel { background: var(--red-light); color: var(--red); }
+
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--gray5); margin-bottom: 5px; }
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  color: var(--gray7);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--blue); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.18s;
+}
+.submit-btn.book-submit   { background: var(--navy); color: #fff; }
+.submit-btn.check-submit  { background: var(--blue); color: #fff; }
+.submit-btn.cancel-submit { background: var(--blue); color: #fff; }
+
+.lookup-result {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--white);
+  border: 1px solid var(--gray2);
+  border-radius: 8px;
+  display: none;
+}
+.lookup-result.visible { display: block; animation: slideDown 0.2s ease; }
+.appt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray1);
+}
+.appt-row:last-child { border-bottom: none; }
+.appt-info { font-size: 0.82rem; }
+.appt-info strong { display: block; color: var(--gray7); font-weight: 600; }
+.appt-info span   { color: var(--gray4); font-size: 0.76rem; }
+.appt-confirmed { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--teal-light); color: var(--teal); }
+.cancel-row-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+  background: var(--red-light);
+  color: var(--red);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ═══════════════ DOCTOR DASHBOARD ═══════════════ */
+.doctor-view { height: calc(100vh - 56px); overflow: hidden; }
+.dashboard { display: grid; grid-template-columns: 296px 1fr; height: 100%; }
+
+.sidebar {
+  background: var(--white);
+  border-right: 1px solid var(--gray2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--gray2); }
+.sidebar-header h3 { font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--gray4); margin-bottom: 12px; }
+.sidebar-search { position: relative; }
+.sidebar-search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sidebar-search input:focus { border-color: var(--blue); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray4); font-size: 0.85rem; pointer-events: none; }
+
+.appt-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.appt-list::-webkit-scrollbar { width: 4px; }
+.appt-list::-webkit-scrollbar-thumb { background: var(--gray2); border-radius: 4px; }
+
+.date-label { padding: 10px 18px 4px; font-size: 0.69rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray4); }
+
+.appt-item {
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-left: 3px solid transparent;
+}
+.appt-item:hover { background: var(--gray1); }
+.appt-item.selected { background: var(--blue-light); border-left-color: var(--blue); }
+.appt-item.urgent { border-left-color: var(--amber); }
+.appt-item-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.appt-item-name { font-size: 0.87rem; font-weight: 600; color: var(--gray7); }
+.appt-item-time { font-size: 0.72rem; color: var(--gray4); }
+.appt-item-type { font-size: 0.76rem; color: var(--gray5); margin-bottom: 4px; }
+.tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.tag-new    { background: var(--blue-light); color: var(--blue); }
+.tag-follow { background: var(--teal-light); color: var(--teal); }
+.tag-urgent { background: var(--amber-light); color: var(--amber); }
+
+/* main panel */
+.main-panel { display: flex; flex-direction: column; background: var(--gray0); overflow: hidden; }
+.main-panel-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray2);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.patient-meta h2 { font-family: 'DM Serif Display', serif; font-size: 1.25rem; margin-bottom: 4px; }
+.meta-row { display: flex; gap: 16px; font-size: 0.78rem; color: var(--gray5); }
+.meta-pill { display: flex; align-items: center; gap: 4px; }
+
+.status-badge { padding: 5px 14px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+.status-waiting { background: var(--amber-light); color: var(--amber); }
+.status-active  { background: #dcfce7; color: #16a34a; }
+.status-done    { background: var(--gray1); color: var(--gray5); }
+
+.main-content { flex: 1; overflow-y: auto; padding: 22px 28px; display: flex; flex-direction: column; gap: 18px; }
+.main-content::-webkit-scrollbar { width: 4px; }
+.main-content::-webkit-scrollbar-thumb { background: var(--gray2); border-radius: 4px; }
+
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray2);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--gray1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title {
+  font-size: 0.79rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cdot { width: 7px; height: 7px; border-radius: 50%; }
+.cdot-blue  { background: var(--blue); }
+.cdot-teal  { background: var(--teal); }
+.cdot-navy  { background: var(--navy); }
+.card-body { padding: 18px 20px; }
+
+.info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.info-cell label { display: block; font-size: 0.7rem; font-weight: 500; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+.info-cell span { font-size: 0.88rem; font-weight: 500; }
+
+/* recording */
+.rec-zone { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0; }
+.rec-controls { display: flex; gap: 12px; }
+.rec-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 22px;
+  border-radius: 30px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.rec-btn.start { background: var(--teal); color: #fff; }
+.rec-btn.start:hover { background: #0b7a70; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
+.rec-btn.stop  { background: var(--red); color: #fff; }
+.rec-btn.stop:hover  { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
+.rec-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+.rec-status { display: flex; align-items: center; gap: 7px; font-size: 0.79rem; color: var(--gray5); }
+.rec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray3); }
+.rec-dot.live { background: var(--red); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+.waveform { width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.wbar { width: 3px; border-radius: 2px; background: var(--gray2); transition: height 0.1s ease; }
+.wbar.on { background: var(--teal); }
+
+.transcript-box {
+  width: 100%;
+  min-height: 68px;
+  padding: 13px;
+  border-radius: 8px;
+  background: var(--gray0);
+  border: 1px solid var(--gray2);
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: var(--gray5);
+  font-style: italic;
+}
+
+/* prescription */
+.rx-meta-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.rx-label { font-size: 0.72rem; font-weight: 500; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.06em; }
+.ai-badge { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 600; color: #7c3aed; background: #f5f3ff; padding: 3px 10px; border-radius: 20px; border: 1px solid #ddd6fe; }
+
+.rx-textarea {
+  width: 100%;
+  min-height: 158px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--gray2);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--gray7);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.rx-textarea:focus { border-color: var(--blue); }
+
+.rx-actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+.rxbtn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rxbtn.sec  { background: var(--gray1); color: var(--gray6); border: 1px solid var(--gray2); }
+.rxbtn.sec:hover  { background: var(--gray2); }
+.rxbtn.prim { background: var(--navy); color: #fff; }
+.rxbtn.prim:hover { background: var(--navy2); }
+.rxbtn.app  { background: var(--teal); color: #fff; }
+.rxbtn.app:hover  { background: #0b7a70; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="logo"><div class="logo-dot"></div>OPD-Vertex</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('patient',this)">Patient Portal</button>
+    <button class="nav-tab" onclick="switchView('doctor',this)">Doctor Dashboard</button>
+  </div>
+</nav>
+
+<!-- ══════════ PATIENT PORTAL ══════════ -->
+<div id="patient-view" class="view patient-view active">
+  <div class="patient-card">
+    <div class="patient-card-header">
+      <h2>Book an Appointment</h2>
+      <p>OPD-Vertex Patient Portal · Outpatient Department</p>
+    </div>
+    <div class="patient-card-body">
+      <div class="action-row">
+        <button class="action-btn book" onclick="showPanel('book-panel',this)">
+          <span class="btn-icon">📅</span>Book Appointment
+        </button>
+        <button class="action-btn check" onclick="showPanel('check-panel',this)">
+          <span class="btn-icon">🔍</span>Check Appointment
+        </button>
+        <button class="action-btn cancel" onclick="showPanel('cancel-panel',this)">
+          <span class="btn-icon">✕</span>Cancel
+        </button>
+      </div>
+
+      <!-- BOOK -->
+      <div id="book-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>📅 <span class="panel-badge badge-book">New Booking</span></h3>
+          <div class="form-row">
+            <div class="form-group"><label>First Name</label><input type="text" placeholder="Maria"></div>
+            <div class="form-group"><label>Last Name</label><input type="text" placeholder="Andersen"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Phone Number</label><input type="tel" placeholder="+45 12 34 56 78"></div>
+            <div class="form-group"><label>Email</label><input type="email" placeholder="maria@example.com"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Preferred Date</label><input type="date"></div>
+            <div class="form-group"><label>Preferred Time</label><input type="time"></div>
+          </div>
+          <div class="form-group"><label>Reason for Visit</label><input type="text" placeholder="e.g. General checkup, follow-up..."></div>
+          <div class="form-group">
+            <label>Department</label>
+            <select>
+              <option>General Practice</option>
+              <option>Cardiology</option>
+              <option>Dermatology</option>
+              <option>Neurology</option>
+              <option>Orthopedics</option>
+            </select>
+          </div>
+          <button class="submit-btn book-submit" onclick="alert('✅ Appointment booked! Confirmation sent to your email.')">Confirm Booking →</button>
+        </div>
+      </div>
+
+      <!-- CHECK -->
+      <div id="check-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>🔍 <span class="panel-badge badge-check">Check Status</span></h3>
+          <div class="form-group">
+            <label>Phone Number or Email</label>
+            <input type="text" id="check-input" placeholder="Enter your phone or email...">
+          </div>
+          <button class="submit-btn check-submit" onclick="doLookup('check-result')">Find My Appointments →</button>
+          <div id="check-result" class="lookup-result">
+            <div class="appt-row">
+              <div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div>
+              <span class="appt-confirmed">Confirmed</span>
+            </div>
+            <div class="appt-row">
+              <div class="appt-info"><strong>Dr. Nielsen – Cardiology</strong><span>Thu 27 Feb 2026 · 14:00</span></div>
+              <span class="appt-confirmed">Confirmed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CANCEL -->
+      <div id="cancel-panel" class="form-panel">
+        <div class="form-panel-inner">
+          <h3>✕ <span class="panel-badge badge-cancel">Cancel Appointment</span></h3>
+          <div class="form-group">
+            <label>Phone Number or Email</label>
+            <input type="text" placeholder="Enter your phone or email...">
+          </div>
+          <button class="submit-btn cancel-submit" onclick="doLookup('cancel-result')">Find My Appointments →</button>
+          <div id="cancel-result" class="lookup-result">
+            <div class="appt-row">
+              <div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div>
+              <button class="cancel-row-btn" onclick="doCancelRow(this)">Cancel</button>
+            </div>
+            <div class="appt-row">
+              <div class="appt-info"><strong>Dr. Nielsen – Cardiology</strong><span>Thu 27 Feb 2026 · 14:00</span></div>
+              <button class="cancel-row-btn" onclick="doCancelRow(this)">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ DOCTOR DASHBOARD ══════════ -->
+<div id="doctor-view" class="view doctor-view">
+  <div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Upcoming Appointments</h3>
+        <div class="sidebar-search">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Search patients...">
+        </div>
+      </div>
+      <div class="appt-list">
+        <div class="date-label">Today — Mon 24 Feb</div>
+        <div class="appt-item selected" onclick="selectPatient(this,0)">
+          <div class="appt-item-top"><span class="appt-item-name">Maria Andersen</span><span class="appt-item-time">09:00</span></div>
+          <div class="appt-item-type">General Practice</div>
+          <span class="tag tag-new">New Patient</span>
+        </div>
+        <div class="appt-item" onclick="selectPatient(this,1)">
+          <div class="appt-item-top"><span class="appt-item-name">Lars Christensen</span><span class="appt-item-time">10:30</span></div>
+          <div class="appt-item-type">Follow-up · Hypertension</div>
+          <span class="tag tag-follow">Follow-up</span>
+        </div>
+        <div class="appt-item urgent" onclick="selectPatient(this,2)">
+          <div class="appt-item-top"><span class="appt-item-name">Sofie Møller</span><span class="appt-item-time">11:45</span></div>
+          <div class="appt-item-type">Chest pain · Priority</div>
+          <span class="tag tag-urgent">⚡ Urgent</span>
+        </div>
+        <div class="appt-item" onclick="selectPatient(this,3)">
+          <div class="appt-item-top"><span class="appt-item-name">Henrik Madsen</span><span class="appt-item-time">13:00</span></div>
+          <div class="appt-item-type">General Practice</div>
+          <span class="tag tag-new">New Patient</span>
+        </div>
+        <div class="date-label">Tomorrow — Tue 25 Feb</div>
+        <div class="appt-item" onclick="selectPatient(this,4)">
+          <div class="appt-item-top"><span class="appt-item-name">Anna Holm</span><span class="appt-item-time">08:30</span></div>
+          <div class="appt-item-type">Follow-up · Diabetes</div>
+          <span class="tag tag-follow">Follow-up</span>
+        </div>
+        <div class="appt-item" onclick="selectPatient(this,5)">
+          <div class="appt-item-top"><span class="appt-item-name">Peter Skov</span><span class="appt-item-time">10:00</span></div>
+          <div class="appt-item-type">Dermatology</div>
+          <span class="tag tag-new">New Patient</span>
+        </div>
+        <div class="date-label">Wed 26 Feb</div>
+        <div class="appt-item" onclick="selectPatient(this,6)">
+          <div class="appt-item-top"><span class="appt-item-name">Mette Lund</span><span class="appt-item-time">09:15</span></div>
+          <div class="appt-item-type">Cardiology checkup</div>
+          <span class="tag tag-follow">Follow-up</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="main-panel">
+      <div class="main-panel-header">
+        <div class="patient-meta">
+          <h2 id="pt-name">Maria Andersen</h2>
+          <div class="meta-row" id="pt-meta">
+            <span class="meta-pill">📞 +45 28 44 61 02</span>
+            <span class="meta-pill">📧 m.andersen@gmail.com</span>
+            <span class="meta-pill">🕐 09:00 · General Practice</span>
+          </div>
+        </div>
+        <span id="pt-status" class="status-badge status-waiting">Waiting</span>
+      </div>
+
+      <div class="main-content">
+
+        <!-- Patient Info -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="cdot cdot-blue"></span>Patient Information</span>
+          </div>
+          <div class="card-body">
+            <div class="info-grid" id="pt-info">
+              <div class="info-cell"><label>DOB</label><span>14 Mar 1988</span></div>
+              <div class="info-cell"><label>Age</label><span>37 years</span></div>
+              <div class="info-cell"><label>Gender</label><span>Female</span></div>
+              <div class="info-cell"><label>CPR / ID</label><span>1403882941</span></div>
+              <div class="info-cell"><label>Blood Type</label><span>A+</span></div>
+              <div class="info-cell"><label>Allergies</label><span>Penicillin</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recording -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="cdot cdot-teal"></span>Consultation Recording</span>
+            <div class="rec-status">
+              <div class="rec-dot" id="rec-dot"></div>
+              <span id="rec-text">Not recording</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="rec-zone">
+              <div class="rec-controls">
+                <button class="rec-btn start" id="btn-start" onclick="startRec()">● Start Recording</button>
+                <button class="rec-btn stop"  id="btn-stop"  onclick="stopRec()" disabled>■ Stop Recording</button>
+              </div>
+              <div class="waveform" id="waveform"></div>
+              <div class="transcript-box" id="transcript">Transcript will appear here after recording stops...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prescription -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="cdot cdot-navy"></span>Prescription</span>
+            <span class="ai-badge">✦ AI Generated</span>
+          </div>
+          <div class="card-body">
+            <div class="rx-meta-row">
+              <span class="rx-label">Review and edit the AI-generated prescription</span>
+            </div>
+            <textarea class="rx-textarea" id="rx-area" placeholder="Prescription will be generated automatically once the consultation recording is processed by the AI Service (Llama 3).
+
+After generation, review, edit and approve before sending to the patient."></textarea>
+            <div class="rx-actions">
+              <button class="rxbtn sec" onclick="document.getElementById('rx-area').value=''">Clear</button>
+              <button class="rxbtn prim" onclick="regenRx()">✦ Regenerate with AI</button>
+              <button class="rxbtn app" onclick="approveRx()">✓ Approve &amp; Send</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+const patients = [
+  { name:'Maria Andersen',  phone:'+45 28 44 61 02', email:'m.andersen@gmail.com',  time:'09:00 · General Practice',    dob:'14 Mar 1988', age:'37', gender:'Female', cpr:'1403882941', blood:'A+',  allergy:'Penicillin'   },
+  { name:'Lars Christensen',phone:'+45 31 72 09 55', email:'lars.c@outlook.com',    time:'10:30 · Hypertension Follow-up',dob:'02 Jun 1965', age:'59', gender:'Male',   cpr:'0206651234', blood:'O+',  allergy:'None'         },
+  { name:'Sofie Møller',    phone:'+45 50 12 38 77', email:'sofie.m@gmail.com',     time:'11:45 · Chest Pain (Urgent)',  dob:'29 Sep 1995', age:'29', gender:'Female', cpr:'2909956789', blood:'B-',  allergy:'Aspirin'      },
+  { name:'Henrik Madsen',   phone:'+45 22 66 18 43', email:'h.madsen@mail.dk',      time:'13:00 · General Practice',    dob:'11 Jan 1980', age:'45', gender:'Male',   cpr:'1101800001', blood:'AB+', allergy:'None'         },
+  { name:'Anna Holm',       phone:'+45 41 93 72 10', email:'anna.holm@gmail.com',   time:'08:30 · Diabetes Follow-up',  dob:'07 Apr 1972', age:'52', gender:'Female', cpr:'0704725555', blood:'A-',  allergy:'Sulfonamides' },
+  { name:'Peter Skov',      phone:'+45 26 88 43 91', email:'p.skov@hotmail.com',    time:'10:00 · Dermatology',         dob:'18 Dec 1990', age:'34', gender:'Male',   cpr:'1812901234', blood:'O-',  allergy:'None'         },
+  { name:'Mette Lund',      phone:'+45 33 54 20 78', email:'mette.lund@gmail.com',  time:'09:15 · Cardiology',          dob:'25 Aug 1958', age:'66', gender:'Female', cpr:'2508583210', blood:'A+',  allergy:'Beta-blockers'}
+];
+
+const rxDemos = [
+`PATIENT: Maria Andersen
+DATE: 24 Feb 2026  |  DR. HANSEN
+
+MEDICATIONS:
+1. Amoxicillin 500mg — 3× daily for 7 days
+   Take with food. Complete full course.
+2. Ibuprofen 400mg — as needed (max 3/day)
+   Avoid on empty stomach.
+
+NOTES:
+Follow-up in 1 week if symptoms persist.
+Avoid dairy 2h before/after Amoxicillin.`,
+`PATIENT: Lars Christensen
+DATE: 24 Feb 2026  |  DR. HANSEN
+
+MEDICATIONS:
+1. Amlodipine 5mg — 1× daily (morning). Unchanged.
+2. Lisinopril 10mg — 1× daily. Monitor BP weekly.
+   Target: <130/80 mmHg.
+
+NOTES:
+BP well-controlled. Continue low-sodium diet.
+Next checkup in 3 months. Request lipid panel.`,
+`PATIENT: Sofie Møller  ⚡ URGENT
+DATE: 24 Feb 2026  |  DR. HANSEN
+
+REFERRAL: Cardiology — same day urgent
+
+IMMEDIATE:
+1. Aspirin 300mg — 1× stat dose (monitor allergy)
+2. GTN Spray — sublingual if pain worsens
+
+NOTES:
+ECG: borderline changes V3-V5.
+Patient to remain in department pending echo + troponin.`,
+`PATIENT: Henrik Madsen
+DATE: 24 Feb 2026  |  DR. HANSEN
+
+MEDICATIONS:
+1. Paracetamol 500mg — 4× daily as needed
+2. Vitamin D3 1000IU — 1× daily with meal
+
+NOTES:
+General checkup — all vitals normal.
+Advise yearly checkup. Smoking cessation discussed.`,
+`PATIENT: Anna Holm
+DATE: 25 Feb 2026  |  DR. HANSEN
+
+MEDICATIONS:
+1. Metformin 850mg — 2× daily (breakfast/dinner)
+2. Empagliflozin 10mg — 1× daily (morning)
+
+NOTES:
+HbA1c: 7.1% — good control. Continue current regimen.
+Foot check normal. Next review in 6 months.`,
+`PATIENT: Peter Skov
+DATE: 25 Feb 2026  |  DR. PETERSEN
+
+MEDICATIONS:
+1. Betamethasone 0.1% cream — apply twice daily
+   Affected area only. Max 2 weeks.
+2. Cetirizine 10mg — 1× nightly for itch relief
+
+NOTES:
+Mild eczema flare. Avoid known irritants.
+Return if no improvement in 2 weeks.`,
+`PATIENT: Mette Lund
+DATE: 26 Feb 2026  |  DR. NIELSEN
+
+MEDICATIONS:
+1. Bisoprolol 5mg — 1× daily. Unchanged.
+2. Atorvastatin 40mg — 1× nightly. Unchanged.
+
+NOTES:
+Echo: EF 58% — stable. Rhythm normal.
+Annual stress test recommended. Next review 6 months.`
+];
+
+const transcripts = [
+  'Patient reports sore throat and mild fever for 3 days. Tonsils inflamed. Temperature 38.2°C. BP 118/76. No allergies to penicillin confirmed. Recommending antibiotic course and analgesics.',
+  'Patient presents for hypertension follow-up. BP today 128/82 — improved. Currently on Amlodipine and Lisinopril. No side effects reported. Continuing current regimen. Lifestyle advice reinforced.',
+  'Patient presents with acute chest pain radiating to left arm, onset 1 hour ago. Diaphoretic. BP 155/95. ECG performed showing borderline ST changes in V3-V5. Urgent cardiology referral initiated.',
+  'Annual health check. BMI 24.2, BP 122/80, HR 70 bpm. No complaints. Full blood work requested. Lifestyle discussion: reduce alcohol, consider exercise programme.',
+  'Diabetes management review. Patient reports good adherence to medication. HbA1c 7.1% — satisfactory control. Foot examination normal. Retinal screening up to date. Continue current plan.',
+  'New patient presenting with itchy rash on forearms, worsening over 2 weeks. Consistent with atopic eczema. No systemic symptoms. Prescribing topical corticosteroid and antihistamine.',
+  'Cardiology follow-up. Echo report reviewed — EF stable at 58%. Patient well-compensated. No dyspnea or oedema. Current medications tolerated well. Annual stress test scheduled.'
+];
+
+// ── View switch ──
+function switchView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(name+'-view').classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Patient portal ──
+function showPanel(id, btn) {
+  const panel = document.getElementById(id);
+  const open = panel.classList.contains('visible');
+  document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active-btn'));
+  if (!open) { panel.classList.add('visible'); btn.classList.add('active-btn'); }
+}
+function doLookup(resultId) {
+  document.getElementById(resultId).classList.add('visible');
+}
+function doCancelRow(btn) {
+  const row = btn.closest('.appt-row');
+  if (confirm('Cancel this appointment: ' + row.querySelector('strong').textContent + '?')) {
+    row.style.opacity = '0.45';
+    row.style.textDecoration = 'line-through';
+    btn.textContent = 'Cancelled';
+    btn.disabled = true;
+  }
+}
+
+// ── Doctor dashboard ──
+let currentIdx = 0;
+function selectPatient(el, idx) {
+  document.querySelectorAll('.appt-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  currentIdx = idx;
+  const p = patients[idx];
+  document.getElementById('pt-name').textContent = p.name;
+  document.getElementById('pt-meta').innerHTML = `
+    <span class="meta-pill">📞 ${p.phone}</span>
+    <span class="meta-pill">📧 ${p.email}</span>
+    <span class="meta-pill">🕐 ${p.time}</span>
+  `;
+  document.getElementById('pt-info').innerHTML = `
+    <div class="info-cell"><label>DOB</label><span>${p.dob}</span></div>
+    <div class="info-cell"><label>Age</label><span>${p.age} years</span></div>
+    <div class="info-cell"><label>Gender</label><span>${p.gender}</span></div>
+    <div class="info-cell"><label>CPR / ID</label><span>${p.cpr}</span></div>
+    <div class="info-cell"><label>Blood Type</label><span>${p.blood}</span></div>
+    <div class="info-cell"><label>Allergies</label><span>${p.allergy}</span></div>
+  `;
+  stopRec();
+  document.getElementById('transcript').textContent = 'Transcript will appear here after recording stops...';
+  document.getElementById('rx-area').value = rxDemos[idx] || '';
+  setStatus('waiting');
+}
+
+// ── Recording ──
+let waveTimer = null;
+
+// build waveform
+const wf = document.getElementById('waveform');
+for (let i = 0; i < 50; i++) {
+  const b = document.createElement('div');
+  b.className = 'wbar';
+  b.style.height = '6px';
+  wf.appendChild(b);
+}
+
+function startRec() {
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-stop').disabled  = false;
+  document.getElementById('rec-dot').classList.add('live');
+  document.getElementById('rec-text').textContent = 'Recording...';
+  document.getElementById('transcript').textContent = 'Listening...';
+  setStatus('active');
+  waveTimer = setInterval(() => {
+    document.querySelectorAll('.wbar').forEach(b => {
+      b.style.height = (4 + Math.random() * 32) + 'px';
+      b.classList.toggle('on', Math.random() > 0.25);
+    });
+  }, 85);
+}
+
+function stopRec() {
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-stop').disabled  = true;
+  document.getElementById('rec-dot').classList.remove('live');
+  document.getElementById('rec-text').textContent = 'Not recording';
+  clearInterval(waveTimer);
+  document.querySelectorAll('.wbar').forEach(b => { b.style.height='6px'; b.classList.remove('on'); });
+  const t = document.getElementById('transcript');
+  if (t.textContent === 'Listening...') {
+    t.textContent = transcripts[currentIdx] || transcripts[0];
+  }
+}
+
+function regenRx() {
+  const area = document.getElementById('rx-area');
+  area.value = '✦ Generating via Llama 3...';
+  setTimeout(() => { area.value = rxDemos[currentIdx] || rxDemos[0]; }, 1100);
+}
+
+function approveRx() {
+  setStatus('done');
+  alert('✅ Prescription approved and dispatched to ' + patients[currentIdx].email + ' via Email Service.');
+}
+
+function setStatus(s) {
+  const el = document.getElementById('pt-status');
+  el.className = 'status-badge status-' + s;
+  el.textContent = s === 'waiting' ? 'Waiting' : s === 'active' ? '● Active' : '✓ Done';
+}
+</script>
+</body>
+</html>
