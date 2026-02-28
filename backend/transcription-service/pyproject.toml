@@ -5,14 +5,16 @@ description = "OPD-Vertex – transcription-service"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi[standard]>=0.120",
-    "faster-whisper>=1.0",
-    "aio-pika>=9.5",
-    "python-dotenv>=1.1",
-    "websockets>=13.0",]
+    "faster-whisper>=1.0.3",
+    "fastapi[standard]>=0.115.0",
+    "numpy>=1.24.0",
+    "python-multipart>=0.0.9",
+]
 
 [dependency-groups]
 dev = [
+    "sounddevice>=0.4.6",   # ← moved here, local testing only
+    "soundfile>=0.12.1",    # ← moved here, local testing only
     "pre-commit>=4.3",
     "pytest>=8.4",
     "pytest-asyncio>=1.2",
