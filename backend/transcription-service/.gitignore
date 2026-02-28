@@ -15,3 +15,7 @@ wheels/
 
 # Env
 .env
+
+# Local testing artifacts
+test_audio.wav
+transcript.txt
