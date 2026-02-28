@@ -1,10 +1,16 @@
+import os
 from datetime import datetime
 
 from faster_whisper import WhisperModel
 
+MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "medium")
+LANGUAGE = os.getenv("WHISPER_LANGUAGE", "en")
+
 
 def transcribe_audio(
-    audio_file: str, model_size: str = "medium", language: str = "en"
+    audio_file: str,
+    model_size: str = MODEL_SIZE,
+    language: str = LANGUAGE,
 ) -> str:
     """Transcribe an audio file using Faster-Whisper."""
     print(f"Loading Whisper model ({model_size})...")
