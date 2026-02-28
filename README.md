@@ -24,5 +24,6 @@ It includes steps for building the application, running tests, and checking code
 This project uses Codecov to track code coverage. After running tests, coverage reports are generated and
 uploaded to Codecov for analysis. The code coverage only includes all microservices and not the frontend. The overall code coverage can be seen below:
 
-[![codecov](https://codecov.io/github/coxMita/OPD-Vertex-Group7/graph/badge.svg?token=d9fd92d0-c422-4ab4-a544-4b44010ad00f)](https://codecov.io/github/coxMita/OPD-Vertex-Group7)
+[![codecov](https://codecov.io/github/coxMita/OPD-Vertex-Group7/graph/badge.svg)](https://codecov.io/github/coxMita/OPD-Vertex-Group7)
+
 
