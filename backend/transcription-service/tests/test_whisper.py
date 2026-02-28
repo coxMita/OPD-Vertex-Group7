@@ -1,13 +1,13 @@
 """Unit tests for src/transcription/whisper.py."""
 
-from datetime import datetime
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from src.transcription.whisper import save_transcript, transcribe_audio
 
-
 # ── transcribe_audio ──────────────────────────────────────────────────────────
+
 
 class TestTranscribeAudio:
     """Tests for transcribe_audio()."""
@@ -15,8 +15,8 @@ class TestTranscribeAudio:
     @patch("src.transcription.whisper.WhisperModel")
     def test_returns_joined_segments(self, mock_model_cls: MagicMock) -> None:
         """Segments are concatenated into a single transcript string."""
-        seg1 = MagicMock(text="Hello", start=0.0, end=1.0)   # no leading space
-        seg2 = MagicMock(text="world", start=1.0, end=2.0)   # no leading space
+        seg1 = MagicMock(text="Hello", start=0.0, end=1.0)  # no leading space
+        seg2 = MagicMock(text="world", start=1.0, end=2.0)  # no leading space
 
         mock_info = MagicMock(language="en", language_probability=0.99)
         mock_model_cls.return_value.transcribe.return_value = ([seg1, seg2], mock_info)
@@ -26,7 +26,9 @@ class TestTranscribeAudio:
         assert result == "Hello world"
 
     @patch("src.transcription.whisper.WhisperModel")
-    def test_empty_segments_returns_empty_string(self, mock_model_cls: MagicMock) -> None:
+    def test_empty_segments_returns_empty_string(
+        self, mock_model_cls: MagicMock
+    ) -> None:
         """No segments produces an empty string."""
         mock_info = MagicMock(language="en", language_probability=0.99)
         mock_model_cls.return_value.transcribe.return_value = ([], mock_info)
@@ -43,7 +45,9 @@ class TestTranscribeAudio:
 
         transcribe_audio("fake.wav", model_size="small")
 
-        mock_model_cls.assert_called_once_with("small", device="cpu", compute_type="int8")
+        mock_model_cls.assert_called_once_with(
+            "small", device="cpu", compute_type="int8"
+        )
 
     @patch("src.transcription.whisper.WhisperModel")
     def test_passes_language_to_model(self, mock_model_cls: MagicMock) -> None:
@@ -70,6 +74,7 @@ class TestTranscribeAudio:
 
 
 # ── save_transcript ───────────────────────────────────────────────────────────
+
 
 class TestSaveTranscript:
     """Tests for save_transcript()."""

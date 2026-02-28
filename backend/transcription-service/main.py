@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from src.transcription.router import router
 
 app = FastAPI(title="transcription-service")
@@ -20,8 +21,12 @@ def health() -> dict[str, str]:
 if __name__ == "__main__":
     # Local testing only — requires: uv run --group dev python main.py
     import sounddevice as sd  # noqa: PLC0415
-    import soundfile as sf    # noqa: PLC0415
-    from src.transcription.whisper import transcribe_audio, save_transcript  # noqa: PLC0415
+    import soundfile as sf  # noqa: PLC0415
+
+    from src.transcription.whisper import (  # noqa: PLC0415
+        save_transcript,
+        transcribe_audio,
+    )
 
     RATE = 16000
     DURATION = 30

@@ -1,5 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-import tempfile, os
+import os
+import tempfile
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+
 from src.transcription.whisper import transcribe_audio
 
 router = APIRouter(prefix="/transcription", tags=["transcription"])

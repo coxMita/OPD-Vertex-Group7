@@ -1,15 +1,20 @@
 from datetime import datetime
+
 from faster_whisper import WhisperModel
 
 
-def transcribe_audio(audio_file: str, model_size: str = "medium", language: str = "en") -> str:
+def transcribe_audio(
+    audio_file: str, model_size: str = "medium", language: str = "en"
+) -> str:
     """Transcribe an audio file using Faster-Whisper."""
     print(f"Loading Whisper model ({model_size})...")
     model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
     segments, info = model.transcribe(audio_file, beam_size=5, language=language)
 
-    print(f"Detected language: {info.language} (probability: {info.language_probability:.2f})")
+    lang = info.language
+    prob = info.language_probability
+    print(f"Detected language: {lang} (probability: {prob:.2f})")
 
     full_transcript = ""
     for segment in segments:

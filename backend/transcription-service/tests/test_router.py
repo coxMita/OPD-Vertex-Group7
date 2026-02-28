@@ -1,7 +1,9 @@
 """Integration tests for src/transcription/router.py."""
 
+import os
+from http import HTTPStatus
 from unittest.mock import patch
-import pytest
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -11,13 +13,14 @@ client = TestClient(app)
 
 # ── GET / ─────────────────────────────────────────────────────────────────────
 
+
 class TestRoot:
     """Tests for GET /."""
 
     def test_returns_200(self) -> None:
         """Root endpoint returns HTTP 200."""
         response = client.get("/")
-        assert response.status_code == 200
+        assert response.status_code == HTTPStatus.OK
 
     def test_returns_service_name(self) -> None:
         """Root endpoint identifies the service."""
@@ -27,13 +30,14 @@ class TestRoot:
 
 # ── GET /health ───────────────────────────────────────────────────────────────
 
+
 class TestHealth:
     """Tests for GET /health."""
 
     def test_returns_200(self) -> None:
         """Health endpoint returns HTTP 200."""
         response = client.get("/health")
-        assert response.status_code == 200
+        assert response.status_code == HTTPStatus.OK
 
     def test_returns_ok(self) -> None:
         """Health endpoint reports status ok."""
@@ -42,6 +46,7 @@ class TestHealth:
 
 
 # ── POST /transcription/ ──────────────────────────────────────────────────────
+
 
 class TestTranscribeEndpoint:
     """Tests for POST /transcription/."""
@@ -53,7 +58,7 @@ class TestTranscribeEndpoint:
             "/transcription/",
             files={"file": ("audio.wav", b"fake-audio-bytes", "audio/wav")},
         )
-        assert response.status_code == 200
+        assert response.status_code == HTTPStatus.OK
         assert response.json() == {"transcript": "Hello world"}
 
     @patch("src.transcription.router.transcribe_audio", return_value="")
@@ -63,28 +68,30 @@ class TestTranscribeEndpoint:
             "/transcription/",
             files={"file": ("audio.wav", b"fake-audio-bytes", "audio/wav")},
         )
-        assert response.status_code == 200
+        assert response.status_code == HTTPStatus.OK
         assert response.json() == {"transcript": ""}
 
-    @patch("src.transcription.router.transcribe_audio", side_effect=RuntimeError("model error"))
+    @patch(
+        "src.transcription.router.transcribe_audio",
+        side_effect=RuntimeError("model error"),
+    )
     def test_returns_500_on_transcription_failure(self, _mock: object) -> None:
         """Endpoint returns HTTP 500 when transcription raises an exception."""
         response = client.post(
             "/transcription/",
             files={"file": ("audio.wav", b"fake-audio-bytes", "audio/wav")},
         )
-        assert response.status_code == 500
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
         assert "model error" in response.json()["detail"]
 
     def test_returns_422_without_file(self) -> None:
         """Endpoint returns HTTP 422 when no file is provided."""
         response = client.post("/transcription/")
-        assert response.status_code == 422
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     @patch("src.transcription.router.transcribe_audio", return_value="Hello")
     def test_temp_file_is_cleaned_up(self, _mock: object) -> None:
         """Temporary file is deleted after transcription."""
-        import os
         created_paths: list[str] = []
         original_unlink = os.unlink
 
