@@ -20,6 +20,7 @@ def health() -> dict[str, str]:
 
 if __name__ == "__main__":
     # Local testing only — requires: uv run --group dev python main.py
+    # swagger ui uv run fastapi dev main.py
     import sounddevice as sd  # noqa: PLC0415
     import soundfile as sf  # noqa: PLC0415
 
