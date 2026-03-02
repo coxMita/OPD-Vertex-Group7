@@ -11,8 +11,19 @@ def transcribe_audio(
     audio_file: str,
     model_size: str = MODEL_SIZE,
     language: str = LANGUAGE,
-) -> str:
-    """Transcribe an audio file using Faster-Whisper."""
+) -> tuple[str, str, float]:
+    """Transcribe an audio file using Faster-Whisper.
+
+    Args:
+        audio_file (str): Path to the audio file to transcribe.
+        model_size (str): Whisper model size to use.
+        language (str): Language code hint for transcription.
+
+    Returns:
+        tuple[str, str, float]: Full transcript text, detected language code,
+            and language detection probability.
+
+    """
     print(f"Loading Whisper model ({model_size})...")
     model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
@@ -27,7 +38,7 @@ def transcribe_audio(
         print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
         full_transcript += segment.text + " "
 
-    return full_transcript.strip()
+    return full_transcript.strip(), lang, prob
 
 
 def save_transcript(transcript: str, filename: str = "transcript.txt") -> None:
