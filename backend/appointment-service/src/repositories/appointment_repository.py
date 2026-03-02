@@ -1,10 +1,11 @@
-"""Repository for appointment data access"""
+"""Repository for appointment data access."""
 
 from datetime import date
 
 from sqlmodel import Session, select
 
 from src.models.db.appointment import Appointment, AppointmentStatus, TimePreference
+
 
 class AppointmentRepository:
     """Repository for managing Appointment entities in the database."""
@@ -14,9 +15,10 @@ class AppointmentRepository:
 
         Args:
             session (Session): The database session.
+
         """
-        self.session = session
-    
+        self._session = session
+
     def create(self, appointment: Appointment) -> Appointment:
         """Create a new appointment in the database.
 
@@ -25,32 +27,35 @@ class AppointmentRepository:
 
         Returns:
             Appointment: The created appointment with updated fields.
+
         """
         self._save_and_refresh(appointment)
         return appointment
-    
+
     def get_by_id(self, appointment_id: int) -> Appointment | None:
-        """Retrive and appointment by its ID
-        
-        Args:
-            appointment_id (int): The unique identifier of the appointment.
-            
-        Returns:
-            Appointment | None: The appointment entity if found, otherwise None.
-        """
-        return self._session.get(Appointment, appointment_id)
-    
-    def get_by_doctor_and_date(
-            self, doctor_id: int, appointment_date: date
-    ) -> list[Appointment]:
-        """Retrieve appointments for a specific doctor on a given date.
+        """Retrieve an appointment by its ID.
 
         Args:
-            doctor_id (int): The unique identifier of the doctor.
-            appointment_date (date): The date to filter appointments by.
-        
+            appointment_id (int): The ID of the appointment.
+
         Returns:
-            list[Appointment]: A list of appointment entities matching the criteria.
+            Appointment | None: The appointment if found, else None.
+
+        """
+        return self._session.get(Appointment, appointment_id)
+
+    def get_by_doctor_and_date(
+        self, doctor_id: int, appointment_date: date
+    ) -> list[Appointment]:
+        """Retrieve all appointments for a doctor on a specific date.
+
+        Args:
+            doctor_id (int): The ID of the doctor.
+            appointment_date (date): The date to query.
+
+        Returns:
+            list[Appointment]: List of appointments ordered by assigned_time.
+
         """
         return list(
             self._session.exec(
@@ -63,22 +68,23 @@ class AppointmentRepository:
                 .order_by(Appointment.assigned_time)
             )
         )
-    
+
     def get_by_doctor_date_and_preference(
-            self,
-            doctor_id: int,
-            appointment_date: date,
-            time_preference: TimePreference,
+        self,
+        doctor_id: int,
+        appointment_date: date,
+        time_preference: TimePreference,
     ) -> list[Appointment]:
-        """Retrive appointments for a specific doctor on a given date with a specific time preference.
-        
+        """Retrieve appointments for a doctor on a date filtered by AM/PM preference.
+
         Args:
-            doctor_id (int): The unique identifier of the doctor.
-            appointment_date (date): The date to filter appointments by.
-            time_preference (TimePreference): The time preference to filter appointments by.
-            
+            doctor_id (int): The ID of the doctor.
+            appointment_date (date): The date to query.
+            time_preference (TimePreference): AM or PM preference.
+
         Returns:
-            list[Appointment]: A list of appointment entities matching the criteria.
+            list[Appointment]: List of matching appointments ordered by assigned_time.
+
         """
         return list(
             self._session.exec(
@@ -92,47 +98,49 @@ class AppointmentRepository:
                 .order_by(Appointment.assigned_time)
             )
         )
-    
+
     def get_by_patient_id(self, patient_id: int) -> list[Appointment]:
-        """Retrieve appointments for a specific patient.
+        """Retrieve all appointments for a specific patient.
 
         Args:
-            patient_id (int): The unique identifier of the patient.
-        
+            patient_id (int): The ID of the patient.
+
         Returns:
-            list[Appointment]: A list of appointment entities for the patient.
+            list[Appointment]: List of the patient's appointments.
+
         """
         return list(
             self._session.exec(
-                select(Appointment)
-                .where(Appointment.patient_id == patient_id) 
+                select(Appointment).where(Appointment.patient_id == patient_id)
             )
         )
-    
+
     def update_status(
-            self, appointment: Appointment, status: AppointmentStatus
+        self, appointment: Appointment, status: AppointmentStatus
     ) -> Appointment:
         """Update the status of an appointment.
 
         Args:
             appointment (Appointment): The appointment entity to update.
-            status (AppointmentStatus): The new status to set.
+            status (AppointmentStatus): The new status.
 
         Returns:
-            Appointment: The updated appointment entity.
+            Appointment: The updated appointment.
+
         """
         appointment.status = status
         self._save_and_refresh(appointment)
         return appointment
-    
+
     def reorder(self, appointments: list[Appointment]) -> list[Appointment]:
-        """Reorder a list of appointments based on their assigned time.
+        """Persist a reordered list of appointments with updated assigned times.
 
         Args:
-            appointment (list[Appointment]): The list of appointments to reorder.
+            appointments (list[Appointment]): Appointments with updated assigned_time.
 
         Returns:
-            list[Appointment]: The reordered list of appointments.
+            list[Appointment]: The updated appointments.
+
         """
         for appointment in appointments:
             self._session.add(appointment)
@@ -140,17 +148,14 @@ class AppointmentRepository:
         for appointment in appointments:
             self._session.refresh(appointment)
         return appointments
-    
+
     def _save_and_refresh(self, instance: Appointment) -> None:
-        """Save and refresh an istance in the database
-        
+        """Save and refresh an instance in the database.
+
         Args:
-            instance (Appointment): The instance to save and refresh.
-            
+            instance (Appointment): The appointment instance to save and refresh.
+
         """
         self._session.add(instance)
         self._session.commit()
         self._session.refresh(instance)
-
-
-    

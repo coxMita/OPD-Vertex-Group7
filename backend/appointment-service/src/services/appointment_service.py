@@ -1,4 +1,4 @@
-"""Appointment service - business logic and slot assignment."""
+"""Appointment service — business logic and slot assignment."""
 
 import asyncio
 import logging
@@ -22,7 +22,7 @@ from src.repositories.appointment_repository import AppointmentRepository
 
 logger = logging.getLogger(__name__)
 
-# Slot windows - configurable via environment variables
+# Slot windows — configurable via environment variables
 AM_SLOTS: list[time] = [
     time(h, 0)
     for h in range(
@@ -55,8 +55,8 @@ class AppointmentService:
         """Initialize the AppointmentService.
 
         Args:
-            repo (AppointmentRepository): The appointment repository for database.
-            messaging (MessagingManager): The messaging manager for event publishing.
+            repo (AppointmentRepository): The appointment repository.
+            messaging (MessagingManager): The messaging manager.
 
         """
         self._repo = repo
@@ -68,16 +68,16 @@ class AppointmentService:
         """Book a new appointment and assign the next available time slot.
 
         Args:
-            request (AppointmentCreateRequest): the booking request.
+            request (AppointmentCreateRequest): The booking request.
 
         Returns:
-            AppointmentResponse: the created appointment details.
+            AppointmentResponse: The created appointment.
 
         Raises:
-            ValueError: If no time slots are available for the given doctor and date.
+            ValueError: If no slots are available for the requested preference.
 
         """
-        assigned_time = self._assign_time_slot(
+        assigned_time = self._assign_next_slot(
             request.doctor_id, request.appointment_date, request.time_preference
         )
         appointment = Appointment(
@@ -89,17 +89,17 @@ class AppointmentService:
             notes=request.notes,
         )
         created = self._repo.create(appointment)
-        self._publish_event(created, APPOINTMENT_CREATED)
+        self._publish(created, APPOINTMENT_CREATED)
         return AppointmentResponse.from_entity(created)
 
     def get_appointment(self, appointment_id: int) -> AppointmentResponse | None:
-        """Retrieve an appointment by its ID.
+        """Get an appointment by ID.
 
         Args:
-            appointment_id (int): The unique identifier of the appointment.
+            appointment_id (int): The appointment ID.
 
         Returns:
-            AppointmentResponse | None: The appointment details if found else None.
+            AppointmentResponse | None: The appointment if found, else None.
 
         """
         appointment = self._repo.get_by_id(appointment_id)
@@ -108,11 +108,11 @@ class AppointmentService:
     def get_queue(
         self, doctor_id: int, appointment_date: date
     ) -> list[AppointmentResponse]:
-        """Get the queue of appointments for a specific doctor and date.
+        """Get the ordered queue for a doctor on a specific date.
 
         Args:
-            doctor_id (int): The unique identifier of the doctor.
-            appointment_date (date): The date to filter appointments by.
+            doctor_id (int): The doctor's ID.
+            appointment_date (date): The date of the session.
 
         Returns:
             list[AppointmentResponse]: Appointments ordered by assigned_time.
@@ -122,13 +122,13 @@ class AppointmentService:
         return [AppointmentResponse.from_entity(a) for a in appointments]
 
     def get_patient_appointments(self, patient_id: int) -> list[AppointmentResponse]:
-        """Get all appointments for a specific patient.
+        """Get all appointments for a patient.
 
         Args:
-            patient_id (int): The unique identifier of the patient.
+            patient_id (int): The patient's ID.
 
         Returns:
-            list[AppointmentResponse]: A list of the patient's appointments.
+            list[AppointmentResponse]: The patient's appointments.
 
         """
         appointments = self._repo.get_by_patient_id(patient_id)
@@ -137,14 +137,14 @@ class AppointmentService:
     def update_status(
         self, appointment_id: int, request: AppointmentStatusUpdateRequest
     ) -> AppointmentResponse | None:
-        """Update the status of the appointment.
+        """Update the status of an appointment.
 
         Args:
-            appointment_id (int): The unique identifier of the appointment.
-            request (AppointmentStatusUpdateRequest): The status update request.
+            appointment_id (int): The appointment ID.
+            request (AppointmentStatusUpdateRequest): The new status.
 
         Returns:
-            AppointmentResponse | None: The updated appointment if found else None.
+            AppointmentResponse | None: The updated appointment, or None if not found.
 
         """
         appointment = self._repo.get_by_id(appointment_id)
