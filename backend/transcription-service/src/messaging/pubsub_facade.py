@@ -18,30 +18,24 @@ class PubSubFacade:
     """Facade for publishing and subscribing to messages via a fanout exchange."""
 
     def __init__(self, amqp_url: str, exchange_name: str) -> None:
-        """Initialize the PubSubFacade with connection parameters.
-
-        Args:
-            amqp_url (str): The AMQP broker URL.
-            exchange_name (str): The name of the fanout exchange.
-
-        """
         self._amqp_url = amqp_url
         self._exchange_name = exchange_name
         self._connection: aio_pika.RobustConnection | None = None
         self._channel: aio_pika.RobustChannel | None = None
         self._exchange: aio_pika.Exchange | None = None
-        self._loop: AbstractEventLoop | None = None
+        try:
+            self._loop: AbstractEventLoop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop: AbstractEventLoop = asyncio.new_event_loop()
         self._consumer_task: asyncio.Task | None = None
 
     async def connect(self) -> None:
-        """Establish connection to the AMQP broker and declare a fanout exchange.
-
-        Raises:
-            aio_pika.exceptions.AMQPConnectionError: Connection to the broker failed.
-
-        """
-        self._loop = asyncio.get_running_loop()
-        self._connection = await aio_pika.connect_robust(self._amqp_url)
+        """Establish connection to the AMQP broker and declare a fanout exchange."""
+        self._loop = asyncio.get_running_loop()  # refresh inside async context
+        self._connection = await aio_pika.connect_robust(
+            self._amqp_url,
+            loop=self._loop,  # ← THIS is what's missing
+        )
         self._channel = await self._connection.channel()
         self._exchange = await self._channel.declare_exchange(
             self._exchange_name, aio_pika.ExchangeType.FANOUT, durable=True

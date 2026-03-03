@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -10,6 +11,7 @@ from src.messaging.messaging_manager import messaging_manager
 from src.messaging.pubsub_exchanges import TRANSCRIPTION_COMPLETED
 from src.messaging.pubsub_facade import PubSubFacade
 from src.transcription.router import router
+from src.transcription.whisper import get_model
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +24,16 @@ if not AMQP_URL:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
-    """Manage application startup and shutdown events."""
+    """Manage application startup and shutdown lifecycle."""
     messaging_manager.add_pubsub(PubSubFacade(AMQP_URL, TRANSCRIPTION_COMPLETED))
 
     logger.info("Starting up messaging manager...")
     await messaging_manager.start_all()
     logger.info("Messaging manager started.")
+
+    logger.info("Pre-loading Whisper model...")
+    await asyncio.to_thread(get_model)  # runs blocking load off the event loop
+    logger.info("Whisper model ready.")
 
     yield
 

@@ -189,7 +189,7 @@ services:
 
     # ── Transcription Service ─────────────────────────────────────────────────
     transcription-service:
-        image: mita28/opdvertex:transcription-service-1.0.5
+        image: mita28/opdvertex:transcription-service-1.0.8
         build: backend/transcription-service/.
         container_name: transcription-service
         restart: unless-stopped
