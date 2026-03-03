@@ -9,6 +9,8 @@ dependencies = [
     "fastapi[standard]>=0.115.0",
     "numpy>=1.24.0",
     "python-multipart>=0.0.9",
+    "aio-pika>=9.6.1",
+    "python-dotenv>=1.2.1",
 ]
 
 [dependency-groups]

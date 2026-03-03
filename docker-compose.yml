@@ -189,12 +189,16 @@ services:
 
     # ── Transcription Service ─────────────────────────────────────────────────
     transcription-service:
-        image: mita28/opdvertex:transcription-service-1.0.0
+        image: mita28/opdvertex:transcription-service-1.0.8
         build: backend/transcription-service/.
         container_name: transcription-service
         restart: unless-stopped
         ports:
             - "8086:8000"
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE}
+            HF_TOKEN: ${HF_TOKEN}
         networks:
             - internal-api
             - bus

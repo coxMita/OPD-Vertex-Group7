@@ -1,33 +1,44 @@
+import logging
 import os
 from datetime import datetime
 
 from faster_whisper import WhisperModel
 
+logger = logging.getLogger(__name__)
+
 MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "medium")
 LANGUAGE = os.getenv("WHISPER_LANGUAGE", "en")
+
+_model_cache: list[WhisperModel | None] = [None]
+
+
+def get_model() -> WhisperModel:
+    """Return the cached WhisperModel, loading it if necessary."""
+    if _model_cache[0] is None:
+        logger.info("Loading Whisper model (%s)...", MODEL_SIZE)
+        _model_cache[0] = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
+        logger.info("Whisper model loaded.")
+    return _model_cache[0]  # type: ignore[return-value]
 
 
 def transcribe_audio(
     audio_file: str,
-    model_size: str = MODEL_SIZE,
     language: str = LANGUAGE,
-) -> str:
+) -> tuple[str, str, float]:
     """Transcribe an audio file using Faster-Whisper."""
-    print(f"Loading Whisper model ({model_size})...")
-    model = WhisperModel(model_size, device="cpu", compute_type="int8")
-
+    model = get_model()
     segments, info = model.transcribe(audio_file, beam_size=5, language=language)
 
     lang = info.language
     prob = info.language_probability
-    print(f"Detected language: {lang} (probability: {prob:.2f})")
+    logger.info("Detected language: %s (probability: %.2f)", lang, prob)
 
     full_transcript = ""
     for segment in segments:
-        print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
+        logger.debug("[%.2fs -> %.2fs] %s", segment.start, segment.end, segment.text)
         full_transcript += segment.text + " "
 
-    return full_transcript.strip()
+    return full_transcript.strip(), lang, prob
 
 
 def save_transcript(transcript: str, filename: str = "transcript.txt") -> None:
@@ -38,4 +49,4 @@ def save_transcript(transcript: str, filename: str = "transcript.txt") -> None:
         f.write("=" * 50 + "\n\n")
         f.write(transcript)
         f.write("\n")
-    print(f"Transcript saved to: {filename}")
+    logger.info("Transcript saved to: %s", filename)
