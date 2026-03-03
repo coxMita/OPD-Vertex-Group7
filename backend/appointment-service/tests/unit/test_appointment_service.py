@@ -33,6 +33,13 @@ def _make_appointment(
     return a
 
 
+class DummyPubSub:
+    """Stub for PubSubFacade."""
+
+    def publish(self, message: object) -> None:
+        """Do nothing."""
+
+
 class DummyMessaging:
     """Stub for MessagingManager."""
 
@@ -40,13 +47,6 @@ class DummyMessaging:
     def get_pubsub(exchange_name: str) -> "DummyPubSub":
         """Return a dummy pubsub."""
         return DummyPubSub()
-
-
-class DummyPubSub:
-    """Stub for PubSubFacade."""
-
-    async def publish(self, message: object) -> None:
-        """Do nothing."""
 
 
 @pytest.fixture

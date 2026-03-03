@@ -253,12 +253,16 @@ class AppointmentService:
             exchange (str): The exchange name to publish to.
 
         """
-        task = asyncio.create_task(
-            self._messaging.get_pubsub(exchange).publish(
-                AppointmentMessage.from_entity(appointment)
+        try:
+            loop = asyncio.get_running_loop()
+            task = loop.create_task(
+                self._messaging.get_pubsub(exchange).publish(
+                    AppointmentMessage.from_entity(appointment)
+                )
             )
-        )
-        task.add_done_callback(AppointmentService._log_task_exception)
+            task.add_done_callback(AppointmentService._log_task_exception)
+        except RuntimeError:
+            logger.debug("No running event loop, skipping publish for %s", exchange)
 
     @staticmethod
     def _log_task_exception(task: asyncio.Task) -> None:

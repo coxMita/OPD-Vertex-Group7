@@ -1,6 +1,7 @@
 """Integration tests for appointment API flow."""
 
 from typing import Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +10,7 @@ from testcontainers.postgres import PostgresContainer
 
 from main import app
 from src.api.dependencies import get_appointment_repository
+from src.messaging.messaging_manager import MessagingManager
 from src.repositories.appointment_repository import AppointmentRepository
 
 HTTP_200 = 200
@@ -64,9 +66,20 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
     def override_repo() -> AppointmentRepository:
         return AppointmentRepository(db_session)
 
+    # Mock messaging so lifespan doesn't try to connect to RabbitMQ
+    mock_messaging = MagicMock(spec=MessagingManager)
+    mock_messaging.start_all = AsyncMock()
+    mock_messaging.stop_all = AsyncMock()
+    mock_messaging.get_pubsub = MagicMock(return_value=MagicMock(publish=AsyncMock()))
+
     app.dependency_overrides[get_appointment_repository] = override_repo
-    with TestClient(app, raise_server_exceptions=False) as c:
+
+    with (
+        patch("main.messaging_manager", mock_messaging),
+        TestClient(app, raise_server_exceptions=False) as c,
+    ):
         yield c
+
     app.dependency_overrides.clear()
 
 
@@ -87,7 +100,7 @@ def test_create_appointment_returns_201(client: TestClient) -> None:
     assert response.status_code == HTTP_201
     data = response.json()
     assert data["assigned_time"] == "08:00:00"
-    assert data["status"] == "SCHEDULED"
+    assert data["status"] == "scheduled"
 
 
 def test_create_appointment_assigns_sequential_slots(client: TestClient) -> None:
@@ -180,17 +193,17 @@ def test_update_status_returns_updated_appointment(client: TestClient) -> None:
     appointment_id = create.json()["id"]
     response = client.patch(
         f"/api/v1/appointments/{appointment_id}/status",
-        json={"status": "IN_PROGRESS"},
+        json={"status": "in_progress"},
     )
     assert response.status_code == HTTP_200
-    assert response.json()["status"] == "IN_PROGRESS"
+    assert response.json()["status"] == "in_progress"
 
 
 def test_update_status_returns_404_when_not_found(client: TestClient) -> None:
     """Should return 404 for non-existent appointment."""
     response = client.patch(
         "/api/v1/appointments/99999/status",
-        json={"status": "DONE"},
+        json={"status": "done"},
     )
     assert response.status_code == HTTP_404
 
