@@ -246,23 +246,15 @@ class AppointmentService:
         )
 
     def _publish(self, appointment: Appointment, exchange: str) -> None:
-        """Publish an appointment event to RabbitMQ.
-
-        Args:
-            appointment (Appointment): The appointment entity.
-            exchange (str): The exchange name to publish to.
-
-        """
         try:
-            loop = asyncio.get_running_loop()
-            task = loop.create_task(
+            task = asyncio.create_task(
                 self._messaging.get_pubsub(exchange).publish(
                     AppointmentMessage.from_entity(appointment)
                 )
             )
             task.add_done_callback(AppointmentService._log_task_exception)
         except RuntimeError:
-            logger.debug("No running event loop, skipping publish for %s", exchange)
+            logger.exception("Failed to publish event to exchange '%s'", exchange)
 
     @staticmethod
     def _log_task_exception(task: asyncio.Task) -> None:

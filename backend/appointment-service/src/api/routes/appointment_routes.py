@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_appointment(
+async def create_appointment(
     request: AppointmentCreateRequest,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
     response: Response,
@@ -45,7 +45,7 @@ def create_appointment(
 
 
 @router.get("/{appointment_id}", status_code=status.HTTP_200_OK)
-def get_appointment(
+async def get_appointment(
     appointment_id: int,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
     response: Response,
@@ -69,7 +69,7 @@ def get_appointment(
 
 
 @router.get("/queue/day", status_code=status.HTTP_200_OK)
-def get_queue(
+async def get_queue(
     doctor_id: int,
     appointment_date: date,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
@@ -89,7 +89,7 @@ def get_queue(
 
 
 @router.get("/patient/{patient_id}", status_code=status.HTTP_200_OK)
-def get_patient_appointments(
+async def get_patient_appointments(
     patient_id: int,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
 ) -> list[AppointmentResponse]:
@@ -107,7 +107,7 @@ def get_patient_appointments(
 
 
 @router.patch("/{appointment_id}/status", status_code=status.HTTP_200_OK)
-def update_status(
+async def update_status(
     appointment_id: int,
     request: AppointmentStatusUpdateRequest,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
@@ -133,7 +133,7 @@ def update_status(
 
 
 @router.patch("/queue/reorder", status_code=status.HTTP_200_OK)
-def reorder_queue(
+async def reorder_queue(
     doctor_id: int,
     appointment_date: date,
     request: QueueReorderRequest,
