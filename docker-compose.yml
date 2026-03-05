@@ -17,12 +17,15 @@ networks:
         driver: bridge
     ollama-net:
         driver: bridge
+    ai-net:
+        driver: bridge
 
 volumes:
     appointment_db_data:
     consultation_db_data:
     prescription_db_data:
     user_db_data:
+    ai_db_data:
     pgadmin_data:
     ollama_data:
 
@@ -58,6 +61,7 @@ services:
             sh -c "ollama serve &
                    sleep 5 &&
                    ollama pull llama3.2:3b &&
+                   ollama pull nomic-embed-text &&
                    wait"
         healthcheck:
             test: ["CMD-SHELL", "ollama list | grep -q 'llama3.2:3b'"]
@@ -66,9 +70,31 @@ services:
             retries: 30
             start_period: 30s
 
+    # ── AI Database (pgvector) ────────────────────────────────────────────────
+    ai-db:
+        image: pgvector/pgvector:pg17
+        container_name: ai-db
+        restart: always
+        environment:
+            POSTGRES_USER: ${AI_DB_USER}
+            POSTGRES_PASSWORD: ${AI_DB_PASS}
+            POSTGRES_DB: ${AI_DB_NAME}
+        ports:
+            - "5436:5432"
+        volumes:
+            - ai_db_data:/var/lib/postgresql/data
+        networks:
+            - ai-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${AI_DB_USER} -d ${AI_DB_NAME}"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
     # ── AI Service ────────────────────────────────────────────────────────────
     ai-service:
-        image: mita28/opdvertex:ai-service-1.0.1
+        image: mita28/opdvertex:ai-service-1.2.1
         build: backend/ai-service/.
         container_name: ai-service
         restart: unless-stopped
@@ -78,15 +104,20 @@ services:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
             OLLAMA_BASE_URL: http://ollama:11434
             OLLAMA_MODEL: llama3.2:3b
+            OLLAMA_EMBED_MODEL: nomic-embed-text
             OLLAMA_TIMEOUT: "120"
+            AI_DB_URL: postgresql://${AI_DB_USER}:${AI_DB_PASS}@ai-db:5432/${AI_DB_NAME}
         networks:
             - internal-api
             - bus
             - ollama-net
+            - ai-net
         depends_on:
             rabbitmq:
                 condition: service_healthy
             ollama:
+                condition: service_healthy
+            ai-db:
                 condition: service_healthy
 
     # ── Appointment Service ───────────────────────────────────────────────────
@@ -313,3 +344,4 @@ services:
             - consultation-net
             - prescription-net
             - user-net
+            - ai-net

@@ -15,7 +15,11 @@ class PromptRequest(BaseModel):
         ...,
         min_length=1,
         description="Consultation transcript text to process.",
-        examples=["Patient presents with a 3-day history of fever and sore throat."],
+        examples=[
+            "Patient presents with a 3-day fever and sore throat. "
+            "Doctor diagnoses bacterial tonsillitis and prescribes "
+            "Amoxicillin 500mg three times daily for 7 days."
+        ],
     )
 
 
@@ -28,12 +32,19 @@ class AIResponse(BaseModel):
     )
 
 
-@router.post("/prompt", response_model=AIResponse)
+@router.post(
+    "/prompt",
+    response_model=AIResponse,
+    summary="Process a transcript through the RAG-augmented AI pipeline",
+    description=(
+        "Embeds the transcript, retrieves similar past consultations from pgvector, "
+        "injects them as context, then runs clinical summary and prescription "
+        "extraction via llama3.2:3b. Each call also stores the transcript embedding "
+        "for future RAG lookups."
+    ),
+)
 async def run_prompt(body: PromptRequest) -> AIResponse:
-    """Manually trigger the AI pipeline with a transcript string.
-
-    Useful for local testing without RabbitMQ. Runs both the summary
-    and prescription extraction passes and returns the results.
+    """Manually trigger the RAG AI pipeline with a transcript string.
 
     Args:
         body: Request body containing the transcript.
@@ -42,7 +53,7 @@ async def run_prompt(body: PromptRequest) -> AIResponse:
         AIResponse with summary and prescription fields.
 
     Raises:
-        HTTPException: If the Ollama inference call fails.
+        HTTPException: If Ollama inference or pgvector operations fail.
 
     """
     try:
