@@ -15,6 +15,8 @@ networks:
         driver: bridge
     user-net:
         driver: bridge
+    ollama-net:
+        driver: bridge
 
 volumes:
     appointment_db_data:
@@ -22,6 +24,7 @@ volumes:
     prescription_db_data:
     user_db_data:
     pgadmin_data:
+    ollama_data:
 
 services:
 
@@ -40,19 +43,50 @@ services:
             rabbitmq:
                 condition: service_healthy
 
+    # ── Ollama (local LLM runtime) ────────────────────────────────────────────
+    ollama:
+        image: ollama/ollama:latest
+        container_name: ollama
+        restart: unless-stopped
+        ports:
+            - "11434:11434"
+        volumes:
+            - ollama_data:/root/.ollama
+        networks:
+            - ollama-net
+        entrypoint: >
+            sh -c "ollama serve &
+                   sleep 5 &&
+                   ollama pull llama3.2:3b &&
+                   wait"
+        healthcheck:
+            test: ["CMD-SHELL", "ollama list | grep -q 'llama3.2:3b'"]
+            interval: 10s
+            timeout: 30s
+            retries: 30
+            start_period: 30s
+
     # ── AI Service ────────────────────────────────────────────────────────────
     ai-service:
-        image: mita28/opdvertex:ai-service-1.0.0
+        image: mita28/opdvertex:ai-service-1.0.1
         build: backend/ai-service/.
         container_name: ai-service
         restart: unless-stopped
         ports:
             - "8081:8000"
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            OLLAMA_BASE_URL: http://ollama:11434
+            OLLAMA_MODEL: llama3.2:3b
+            OLLAMA_TIMEOUT: "120"
         networks:
             - internal-api
             - bus
+            - ollama-net
         depends_on:
             rabbitmq:
+                condition: service_healthy
+            ollama:
                 condition: service_healthy
 
     # ── Appointment Service ───────────────────────────────────────────────────
