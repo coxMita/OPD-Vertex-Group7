@@ -69,7 +69,7 @@ async def process_transcript(transcript: str) -> dict[str, object]:
         # ── Step 4b: Retrieve chunks relevant to prescription ──────────────
         prescription_query_vec = await embed(PRESCRIPTION_QUERY)
         prescription_chunks = await retrieve_relevant_chunks(
-            session_id, prescription_query_vec, top_k=5
+            session_id, prescription_query_vec, top_k=10
         )
         prescription_context = "\n\n".join(prescription_chunks)
 
