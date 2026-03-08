@@ -15,3 +15,5 @@ wheels/
 
 # Env
 .env
+.idea/
+.idea/
