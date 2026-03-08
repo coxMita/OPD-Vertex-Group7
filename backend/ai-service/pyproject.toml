@@ -55,11 +55,10 @@ ignore = [
     "COM812",                 # trailing comma (conflicts with formatter)
     "B008",                   # function calls in defaults (FastAPI Depends)
     "S101",                   # assert in tests
-    "ANN101", "ANN102",       # self/cls annotations
 ]
 fixable = ["ALL"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "src/ai/prompts.py" = ["E501"]  # long lines in prompt templates
 
 [tool.ruff.format]
