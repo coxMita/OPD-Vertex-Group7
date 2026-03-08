@@ -11,7 +11,7 @@ from fastapi import FastAPI
 
 from src.ai.router import router
 from src.messaging.messaging_manager import messaging_manager
-from src.messaging.pubsub_exchanges import TRANSCRIPTION_COMPLETED
+from src.messaging.pubsub_exchanges import AI_COMPLETED, TRANSCRIPTION_COMPLETED
 from src.messaging.pubsub_facade import PubSubFacade
 from src.messaging.subscriber import on_transcript_message
 from src.rag.vector_store import init_db
@@ -63,15 +63,19 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
     # 2. Ensure nomic-embed-text is available
     await _ensure_embed_model_pulled()
 
-    # 3. Start RabbitMQ messaging
-    pubsub = PubSubFacade(AMQP_URL, TRANSCRIPTION_COMPLETED)
-    messaging_manager.add_pubsub(pubsub)
+    # 3. Start RabbitMQ messaging — subscribe side (transcription.completed)
+    transcription_pubsub = PubSubFacade(AMQP_URL, TRANSCRIPTION_COMPLETED)
+    messaging_manager.add_pubsub(transcription_pubsub)
+
+    # 4. Publish side (ai.completed) — downstream services subscribe to this
+    ai_pubsub = PubSubFacade(AMQP_URL, AI_COMPLETED)
+    messaging_manager.add_pubsub(ai_pubsub)
 
     logger.info("Starting up messaging manager...")
     await messaging_manager.start_all()
     logger.info("Messaging manager started.")
 
-    pubsub.subscribe(
+    transcription_pubsub.subscribe(
         queue_name="ai-service.transcription.completed",
         on_message=on_transcript_message,
         message_class=None,
