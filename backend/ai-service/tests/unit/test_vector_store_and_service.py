@@ -1,6 +1,6 @@
 """Unit tests for src.rag.vector_store (pure functions) and src.ai.service helpers."""
 
-from src.ai.service import _parse_json_safe
+from src.ai.service import _filter_prescription_chunks, _parse_json_safe
 from src.rag.vector_store import chunk_text
 
 _CHUNK_SIZE = 200
@@ -46,6 +46,57 @@ class TestChunkText:
         result = chunk_text(text, chunk_size=_CHUNK_SIZE, overlap=30)
         for chunk in result:
             assert len(chunk.split()) <= _CHUNK_SIZE
+
+
+class TestFilterPrescriptionChunks:
+    """Unit tests for _filter_prescription_chunks() — pure function."""
+
+    def test_returns_chunks_containing_keywords(self) -> None:
+        """Should return only chunks that contain prescription keywords."""
+        chunks = [
+            "Patient has a sore throat and mild fever since yesterday.",
+            "Doctor will prescribe Amoxicillin 500mg three times daily.",
+            "Patient advised to rest and drink plenty of water.",
+            "Take the tablet after breakfast for seven days.",
+        ]
+        result = _filter_prescription_chunks(chunks)
+        assert len(result) == 2  # noqa: PLR2004
+        assert any("prescribe" in c for c in result)
+        assert any("tablet" in c for c in result)
+
+    def test_fallback_to_all_chunks_when_no_match(self) -> None:
+        """Should return all chunks when no prescription keywords match."""
+        chunks = [
+            "The weather is lovely today.",
+            "Patient discussed general wellbeing.",
+            "Follow-up scheduled for next month.",
+        ]
+        result = _filter_prescription_chunks(chunks)
+        assert result == chunks
+
+    def test_case_insensitive_matching(self) -> None:
+        """Keyword matching should be case-insensitive."""
+        chunks = [
+            "Doctor said PRESCRIBE Ibuprofen immediately.",
+            "No relevant medical info here.",
+        ]
+        result = _filter_prescription_chunks(chunks)
+        assert len(result) == 1
+        assert "PRESCRIBE" in result[0]
+
+    def test_empty_chunks_returns_empty(self) -> None:
+        """Empty input should return empty output."""
+        result = _filter_prescription_chunks([])
+        assert result == []
+
+    def test_all_chunks_match_returns_all(self) -> None:
+        """If every chunk matches, all should be returned."""
+        chunks = [
+            "Take vitamin C once daily.",
+            "Prescribed ibuprofen 400mg twice a day.",
+        ]
+        result = _filter_prescription_chunks(chunks)
+        assert result == chunks
 
 
 class TestParseJsonSafe:
