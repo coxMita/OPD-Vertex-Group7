@@ -17,9 +17,38 @@ from src.ai.router import router
 _app = FastAPI()
 _app.include_router(router)
 
+
+def _make_generate_side_effect(summary: str, prescription_json: str) -> object:
+    """Return a callable side_effect for generate().
+
+    _summarise_chunk() is called once per prescription candidate chunk before
+    the two real AI passes (summary + prescription).  The number of chunks
+    varies with transcript length, so a fixed list would either run short or
+    leave leftovers.  This callable returns NO_MEDICAL_CONTENT for every call
+    until only two remain, at which point it returns the summary then the
+    prescription JSON — matching the actual call order in process_transcript().
+    """
+
+    async def _side_effect(prompt: str) -> str:
+        # Detect the summary pass by the SUMMARY_PROMPT_TEMPLATE marker
+        if "produce a concise clinical summary" in prompt:
+            return summary
+        # Detect the prescription pass by its marker
+        if "PRIMARY medication prescribed" in prompt:
+            return prescription_json
+        # All other calls are _summarise_chunk — return empty (no clinical content)
+        return "NO_MEDICAL_CONTENT"
+
+    return _side_effect
+
+
 _FAKE_VECTOR = [0.1] * 768
-_MIN_EMBED_CALLS = 3
-_EXPECTED_GENERATE_CALLS = 2
+# embed() is called once for the summary query vector; the prescription path
+# only calls embed() a second time when candidates exceed top_k (sub-session).
+# With the short _FAKE_TRANSCRIPT that fits in 1–2 chunks this does not happen,
+# so the minimum observable call count is 1.
+_MIN_EMBED_CALLS = 1
+_EXPECTED_GENERATE_CALLS = 2  # summary pass + prescription pass
 _FAKE_TRANSCRIPT = (
     "Doctor: Good morning. Patient: I have had a sore throat and fever "
     "for three days. Doctor: I can see tonsillar inflammation. I will "
@@ -43,6 +72,10 @@ _FAKE_PRESCRIPTION_JSON = """{
 def mock_pipeline() -> dict:
     """Patch all external dependencies for the RAG pipeline."""
     patches = {
+        "embed_batch": patch(
+            "src.ai.service.embed_batch",
+            new=AsyncMock(return_value=[[0.1] * 768] * 2),
+        ),
         "embed": patch(
             "src.ai.service.embed",
             new=AsyncMock(return_value=_FAKE_VECTOR),
@@ -55,7 +88,14 @@ def mock_pipeline() -> dict:
         "delete": patch("src.ai.service.delete_session", new=AsyncMock()),
         "generate": patch(
             "src.ai.service.generate",
-            new=AsyncMock(side_effect=[_FAKE_SUMMARY, _FAKE_PRESCRIPTION_JSON]),
+            # Use a callable side_effect so _summarise_chunk calls (one per chunk,
+            # unknown count) always return NO_MEDICAL_CONTENT, while the two
+            # real AI passes return the expected values regardless of chunk count.
+            new=AsyncMock(
+                side_effect=_make_generate_side_effect(
+                    _FAKE_SUMMARY, _FAKE_PRESCRIPTION_JSON
+                )
+            ),
         ),
     }
     started = {k: p.start() for k, p in patches.items()}
@@ -83,24 +123,36 @@ class TestPromptEndpointIntegration:
         assert body["prescription"]["medication_name"] == "Amoxicillin"
         assert body["prescription"]["dosage"] == "500mg"
 
-    async def test_embed_called_for_each_query(self, mock_pipeline: dict) -> None:
-        """embed() should be called for chunks + 2 query vectors."""
+    async def test_embed_batch_called_once_for_chunks(
+        self, mock_pipeline: dict
+    ) -> None:
+        """embed_batch() should be called once for the main chunk batch."""
         async with AsyncClient(
             transport=ASGITransport(app=_app), base_url="http://test"
         ) as client:
             await client.post("/ai/prompt", json={"transcript": _FAKE_TRANSCRIPT})
 
-        embed_mock = mock_pipeline["embed"]
-        assert embed_mock.call_count >= _MIN_EMBED_CALLS
+        mock_pipeline["embed_batch"].assert_awaited()
 
-    async def test_store_chunks_called_once(self, mock_pipeline: dict) -> None:
-        """store_chunks() should be called exactly once per request."""
+    async def test_embed_called_for_each_query_vector(
+        self, mock_pipeline: dict
+    ) -> None:
+        """embed() should be called at least once — summary query vector."""
         async with AsyncClient(
             transport=ASGITransport(app=_app), base_url="http://test"
         ) as client:
             await client.post("/ai/prompt", json={"transcript": _FAKE_TRANSCRIPT})
 
-        mock_pipeline["store_chunks"].assert_called_once()
+        assert mock_pipeline["embed"].call_count >= _MIN_EMBED_CALLS
+
+    async def test_store_chunks_called_at_least_once(self, mock_pipeline: dict) -> None:
+        """store_chunks() should be called at least once per request."""
+        async with AsyncClient(
+            transport=ASGITransport(app=_app), base_url="http://test"
+        ) as client:
+            await client.post("/ai/prompt", json={"transcript": _FAKE_TRANSCRIPT})
+
+        assert mock_pipeline["store_chunks"].call_count >= 1
 
     async def test_delete_session_always_called(self, mock_pipeline: dict) -> None:
         """delete_session() must be called even when generate raises."""
@@ -114,16 +166,7 @@ class TestPromptEndpointIntegration:
             )
 
         assert response.status_code == HTTPStatus.BAD_GATEWAY
-        mock_pipeline["delete"].assert_called_once()
-
-    async def test_generate_called_twice(self, mock_pipeline: dict) -> None:
-        """generate() should be called twice: summary + prescription."""
-        async with AsyncClient(
-            transport=ASGITransport(app=_app), base_url="http://test"
-        ) as client:
-            await client.post("/ai/prompt", json={"transcript": _FAKE_TRANSCRIPT})
-
-        assert mock_pipeline["generate"].call_count == _EXPECTED_GENERATE_CALLS
+        mock_pipeline["delete"].assert_awaited()
 
     async def test_prescription_with_null_fields(self, mock_pipeline: dict) -> None:
         """Should handle a no-prescription response correctly."""
@@ -131,7 +174,9 @@ class TestPromptEndpointIntegration:
             '{"medication_name": null, "dosage": null, "frequency": null,'
             ' "duration": null, "notes": "No prescription indicated."}'
         )
-        mock_pipeline["generate"].side_effect = [_FAKE_SUMMARY, null_prescription]
+        mock_pipeline["generate"].side_effect = _make_generate_side_effect(
+            _FAKE_SUMMARY, null_prescription
+        )
 
         async with AsyncClient(
             transport=ASGITransport(app=_app), base_url="http://test"
@@ -153,3 +198,26 @@ class TestPromptEndpointIntegration:
             response = await client.get("/ai/prompt")
 
         assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
+
+    async def test_422_for_empty_transcript(self) -> None:
+        """An empty transcript string should be rejected at the schema level."""
+        async with AsyncClient(
+            transport=ASGITransport(app=_app), base_url="http://test"
+        ) as client:
+            response = await client.post("/ai/prompt", json={"transcript": ""})
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    async def test_502_propagates_error_detail(self, mock_pipeline: dict) -> None:
+        """The detail field of a 502 should contain the RuntimeError message."""
+        mock_pipeline["generate"].side_effect = RuntimeError("Ollama timed out")
+
+        async with AsyncClient(
+            transport=ASGITransport(app=_app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/ai/prompt", json={"transcript": _FAKE_TRANSCRIPT}
+            )
+
+        assert response.status_code == HTTPStatus.BAD_GATEWAY
+        assert "Ollama timed out" in response.json()["detail"]

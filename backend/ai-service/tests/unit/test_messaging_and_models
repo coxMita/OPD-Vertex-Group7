@@ -1,0 +1,383 @@
+"""Unit tests for messaging layer and message models.
+
+Covers:
+- src.messaging.messaging_manager (MessagingManager)
+- src.messaging.pubsub_facade (PubSubFacade)
+- src.messaging.subscriber (on_transcript_message)
+- src.models.msg.abstract_message (AbstractMessage)
+- src.models.msg.ai_completed_message (AICompletedMessage)
+"""
+
+import json
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from src.messaging.messaging_manager import MessagingManager
+from src.messaging.pubsub_facade import PubSubFacade
+from src.messaging.subscriber import on_transcript_message
+from src.models.msg.abstract_message import AbstractMessage
+from src.models.msg.ai_completed_message import AICompletedMessage
+
+
+# ===========================================================================
+# AbstractMessage
+# ===========================================================================
+
+class _ConcreteMessage(AbstractMessage):
+    """Minimal concrete subclass for testing AbstractMessage."""
+    text: str
+
+
+class TestAbstractMessage:
+    """Unit tests for AbstractMessage serialisation helpers."""
+
+    def test_to_bytes_produces_valid_json_bytes(self) -> None:
+        """to_bytes() should return UTF-8-encoded JSON."""
+        msg = _ConcreteMessage(text="hello")
+        data = msg.to_bytes()
+        assert isinstance(data, bytes)
+        parsed = json.loads(data)
+        assert parsed["text"] == "hello"
+
+    def test_from_bytes_reconstructs_message(self) -> None:
+        """from_bytes() should deserialise back to the original message."""
+        msg = _ConcreteMessage(text="world")
+        reconstructed = _ConcreteMessage.from_bytes(msg.to_bytes())
+        assert reconstructed.text == "world"
+
+    def test_roundtrip_preserves_all_fields(self) -> None:
+        """A full serialise→deserialise cycle should preserve every field."""
+        msg = _ConcreteMessage(text="roundtrip check")
+        assert _ConcreteMessage.from_bytes(msg.to_bytes()) == msg
+
+    def test_str_includes_class_name(self) -> None:
+        """__str__ should contain the class name."""
+        msg = _ConcreteMessage(text="test")
+        assert "_ConcreteMessage" in str(msg)
+
+    def test_str_includes_field_values(self) -> None:
+        """__str__ should include the field value."""
+        msg = _ConcreteMessage(text="visible value")
+        assert "visible value" in str(msg)
+
+
+# ===========================================================================
+# AICompletedMessage
+# ===========================================================================
+
+class TestAICompletedMessage:
+    """Unit tests for AICompletedMessage."""
+
+    def test_processed_at_auto_set_to_utc_when_none(self) -> None:
+        """processed_at should default to the current UTC time."""
+        msg = AICompletedMessage(
+            filename="audio.wav",
+            summary="Summary text.",
+            prescription={"medication_name": "Aspirin"},
+        )
+        assert msg.processed_at is not None
+        assert msg.processed_at.tzinfo == timezone.utc
+
+    def test_explicit_processed_at_is_preserved(self) -> None:
+        """A provided processed_at should not be overwritten."""
+        fixed_time = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        msg = AICompletedMessage(
+            filename="file.mp3",
+            summary="Clinical notes.",
+            prescription={},
+            processed_at=fixed_time,
+        )
+        assert msg.processed_at == fixed_time
+
+    def test_serialises_and_deserialises(self) -> None:
+        """to_bytes / from_bytes roundtrip should preserve all fields."""
+        msg = AICompletedMessage(
+            filename="test.wav",
+            summary="Patient is fine.",
+            prescription={"medication_name": "Ibuprofen", "dosage": "400mg"},
+        )
+        restored = AICompletedMessage.from_bytes(msg.to_bytes())
+        assert restored.filename == msg.filename
+        assert restored.summary == msg.summary
+        assert restored.prescription == msg.prescription
+
+    def test_prescription_dict_can_contain_nulls(self) -> None:
+        """Prescription field should accept a dict with None values."""
+        msg = AICompletedMessage(
+            filename="x.wav",
+            summary="No meds.",
+            prescription={"medication_name": None, "notes": "No prescription indicated."},
+        )
+        assert msg.prescription["medication_name"] is None
+
+
+# ===========================================================================
+# MessagingManager
+# ===========================================================================
+
+def _make_facade(exchange: str) -> MagicMock:
+    facade = MagicMock(spec=PubSubFacade)
+    facade.exchange_name = exchange
+    facade.connect = AsyncMock()
+    facade.close = AsyncMock()
+    return facade
+
+
+class TestMessagingManager:
+    """Unit tests for MessagingManager."""
+
+    def test_add_pubsub_stores_facade(self) -> None:
+        """add_pubsub() should allow the facade to be retrieved afterwards."""
+        mgr = MessagingManager()
+        facade = _make_facade("test.exchange")
+        mgr.add_pubsub(facade)
+        assert mgr.get_pubsub("test.exchange") is facade
+
+    def test_add_duplicate_exchange_raises_value_error(self) -> None:
+        """Adding a second facade with the same exchange should raise ValueError."""
+        mgr = MessagingManager()
+        mgr.add_pubsub(_make_facade("dupe.exchange"))
+        with pytest.raises(ValueError, match="already exists"):
+            mgr.add_pubsub(_make_facade("dupe.exchange"))
+
+    def test_get_pubsub_raises_for_unknown_exchange(self) -> None:
+        """get_pubsub() should raise ValueError for an unregistered exchange."""
+        mgr = MessagingManager()
+        with pytest.raises(ValueError, match="No PubSubFacade found"):
+            mgr.get_pubsub("not.registered")
+
+    @pytest.mark.asyncio
+    async def test_start_all_calls_connect_on_each_facade(self) -> None:
+        """start_all() should call connect() on every registered facade."""
+        mgr = MessagingManager()
+        f1 = _make_facade("exchange.one")
+        f2 = _make_facade("exchange.two")
+        mgr.add_pubsub(f1)
+        mgr.add_pubsub(f2)
+        await mgr.start_all()
+        f1.connect.assert_awaited_once()
+        f2.connect.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_stop_all_calls_close_on_each_facade(self) -> None:
+        """stop_all() should call close() on every registered facade."""
+        mgr = MessagingManager()
+        f1 = _make_facade("exchange.one")
+        f2 = _make_facade("exchange.two")
+        mgr.add_pubsub(f1)
+        mgr.add_pubsub(f2)
+        await mgr.stop_all()
+        f1.close.assert_awaited_once()
+        f2.close.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_start_all_with_no_facades_does_not_raise(self) -> None:
+        """start_all() on an empty manager should complete without error."""
+        await MessagingManager().start_all()
+
+    @pytest.mark.asyncio
+    async def test_stop_all_with_no_facades_does_not_raise(self) -> None:
+        """stop_all() on an empty manager should complete without error."""
+        await MessagingManager().stop_all()
+
+
+# ===========================================================================
+# PubSubFacade
+# ===========================================================================
+
+class TestPubSubFacade:
+    """Unit tests for PubSubFacade."""
+
+    def test_exchange_name_property(self) -> None:
+        """exchange_name should return the value passed to __init__."""
+        facade = PubSubFacade("amqp://localhost", "my.exchange")
+        assert facade.exchange_name == "my.exchange"
+
+    def test_is_connected_false_before_connect(self) -> None:
+        """is_connected should be False before connect() is called."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+        assert facade.is_connected is False
+
+    @pytest.mark.asyncio
+    async def test_connect_sets_exchange(self) -> None:
+        """After connect(), the internal exchange object should be set."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+
+        mock_exchange = MagicMock()
+        mock_channel = AsyncMock()
+        mock_channel.declare_exchange = AsyncMock(return_value=mock_exchange)
+        mock_connection = AsyncMock()
+        mock_connection.channel = AsyncMock(return_value=mock_channel)
+
+        with patch("src.messaging.pubsub_facade.aio_pika.connect_robust", new=AsyncMock(return_value=mock_connection)):
+            await facade.connect()
+
+        assert facade._exchange is mock_exchange
+
+    @pytest.mark.asyncio
+    async def test_publish_raises_if_not_connected(self) -> None:
+        """publish() should raise RuntimeError when called before connect()."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+        msg = AICompletedMessage(
+            filename="f.wav", summary="s", prescription={}
+        )
+        with pytest.raises(RuntimeError, match="connect"):
+            await facade.publish(msg)
+
+    @pytest.mark.asyncio
+    async def test_publish_sends_message_bytes(self) -> None:
+        """publish() should call exchange.publish with the serialised message."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+
+        mock_exchange = AsyncMock()
+        facade._exchange = mock_exchange
+
+        msg = AICompletedMessage(
+            filename="audio.wav",
+            summary="Patient is fine.",
+            prescription={"medication_name": "Aspirin"},
+        )
+
+        with patch("src.messaging.pubsub_facade.aio_pika.Message") as mock_msg_cls:
+            mock_amqp_msg = MagicMock()
+            mock_msg_cls.return_value = mock_amqp_msg
+            await facade.publish(msg)
+
+        mock_exchange.publish.assert_awaited_once_with(mock_amqp_msg, routing_key="")
+        # Verify the bytes passed to aio_pika.Message match the serialised payload
+        body_arg = mock_msg_cls.call_args.kwargs["body"]
+        assert json.loads(body_arg)["filename"] == "audio.wav"
+
+    def test_subscribe_raises_if_not_connected(self) -> None:
+        """subscribe() should raise RuntimeError when called before connect()."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+        with pytest.raises(RuntimeError, match="connect"):
+            facade.subscribe("queue", AsyncMock(), None)
+
+    @pytest.mark.asyncio
+    async def test_close_cancels_consumer_task(self) -> None:
+        """close() should cancel any running consumer task."""
+        facade = PubSubFacade("amqp://localhost", "test.exchange")
+
+        mock_task = MagicMock()
+        mock_task.cancel = MagicMock()
+        mock_task.done = MagicMock(return_value=False)
+
+        import asyncio
+        real_task = asyncio.get_event_loop().create_task(asyncio.sleep(100))
+        facade._consumer_task = real_task
+
+        # Set up a closed channel/connection so close() doesn't actually reconnect
+        mock_channel = MagicMock()
+        mock_channel.is_closed = True
+        mock_connection = MagicMock()
+        mock_connection.is_closed = True
+        facade._channel = mock_channel
+        facade._connection = mock_connection
+
+        await facade.close()
+        assert real_task.cancelled()
+
+
+# ===========================================================================
+# on_transcript_message (subscriber)
+# ===========================================================================
+
+class TestOnTranscriptMessage:
+    """Unit tests for on_transcript_message() subscriber callback."""
+
+    @pytest.mark.asyncio
+    async def test_happy_path_runs_pipeline_and_publishes(self) -> None:
+        """Valid transcript should be processed and AICompletedMessage published."""
+        payload = json.dumps({"transcript": "Patient has fever.", "filename": "rec.wav"}).encode()
+        fake_result = {
+            "summary": "Patient has fever.",
+            "prescription": {"medication_name": "Paracetamol"},
+        }
+        mock_pubsub = AsyncMock()
+
+        with (
+            patch("src.messaging.subscriber.process_transcript", new=AsyncMock(return_value=fake_result)),
+            patch("src.messaging.subscriber.messaging_manager") as mock_mgr,
+        ):
+            mock_mgr.get_pubsub.return_value = mock_pubsub
+            await on_transcript_message(payload)
+
+        mock_pubsub.publish.assert_awaited_once()
+        published: AICompletedMessage = mock_pubsub.publish.call_args.args[0]
+        assert published.filename == "rec.wav"
+        assert published.summary == fake_result["summary"]
+
+    @pytest.mark.asyncio
+    async def test_non_json_body_does_not_raise(self) -> None:
+        """Non-JSON bytes should be silently skipped without raising."""
+        with patch("src.messaging.subscriber.process_transcript") as mock_pt:
+            await on_transcript_message(b"this is not json at all")
+        mock_pt.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_empty_transcript_skips_processing(self) -> None:
+        """A message with an empty transcript field should not call process_transcript."""
+        payload = json.dumps({"transcript": "", "filename": "empty.wav"}).encode()
+        with patch("src.messaging.subscriber.process_transcript") as mock_pt:
+            await on_transcript_message(payload)
+        mock_pt.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_missing_transcript_key_skips_processing(self) -> None:
+        """A message with no 'transcript' key should not call process_transcript."""
+        payload = json.dumps({"filename": "no_transcript.wav"}).encode()
+        with patch("src.messaging.subscriber.process_transcript") as mock_pt:
+            await on_transcript_message(payload)
+        mock_pt.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_process_transcript_failure_does_not_publish(self) -> None:
+        """If process_transcript raises, no message should be published."""
+        payload = json.dumps({"transcript": "Some text.", "filename": "f.wav"}).encode()
+
+        with (
+            patch(
+                "src.messaging.subscriber.process_transcript",
+                new=AsyncMock(side_effect=RuntimeError("Ollama down")),
+            ),
+            patch("src.messaging.subscriber.messaging_manager") as mock_mgr,
+        ):
+            await on_transcript_message(payload)
+
+        mock_mgr.get_pubsub.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_publish_failure_does_not_propagate(self) -> None:
+        """If publishing raises RuntimeError, the subscriber should not re-raise it."""
+        payload = json.dumps({"transcript": "Patient has cough.", "filename": "g.wav"}).encode()
+        fake_result = {"summary": "Cough noted.", "prescription": {}}
+        mock_pubsub = AsyncMock()
+        mock_pubsub.publish.side_effect = RuntimeError("broker unreachable")
+
+        with (
+            patch("src.messaging.subscriber.process_transcript", new=AsyncMock(return_value=fake_result)),
+            patch("src.messaging.subscriber.messaging_manager") as mock_mgr,
+        ):
+            mock_mgr.get_pubsub.return_value = mock_pubsub
+            # Should not raise
+            await on_transcript_message(payload)
+
+    @pytest.mark.asyncio
+    async def test_default_filename_when_missing(self) -> None:
+        """Missing 'filename' key should fall back to 'unknown'."""
+        payload = json.dumps({"transcript": "Doctor prescribed rest."}).encode()
+        fake_result = {"summary": "Rest prescribed.", "prescription": {}}
+        mock_pubsub = AsyncMock()
+
+        with (
+            patch("src.messaging.subscriber.process_transcript", new=AsyncMock(return_value=fake_result)),
+            patch("src.messaging.subscriber.messaging_manager") as mock_mgr,
+        ):
+            mock_mgr.get_pubsub.return_value = mock_pubsub
+            await on_transcript_message(payload)
+
+        published: AICompletedMessage = mock_pubsub.publish.call_args.args[0]
+        assert published.filename == "unknown"

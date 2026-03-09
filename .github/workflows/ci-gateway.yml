@@ -19,6 +19,7 @@ jobs:
       DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy_db
       AMQP_URL: amqp://dummy:dummy@localhost:5672/
       JWT_SECRET: ci_testing_secret
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,12 +40,12 @@ jobs:
         run: uv run ruff check
 
       - name: Run pytest
-        run: uv run pytest --cov=src --cov-report=xml --cov-branch
+        run: uv run pytest --cov=src --cov-report=xml:coverage.xml --cov-branch
 
       - name: Upload coverage
-        if: hashFiles('coverage.xml') != ''
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/gateway/coverage.xml
           flags: gateway
           fail_ci_if_error: false
