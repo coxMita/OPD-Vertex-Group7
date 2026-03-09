@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 COPY pyproject.toml uv.lock .python-version ./
 COPY main.py .
 COPY src ./src
-RUN uv venv && uv sync
+RUN UV_HTTP_TIMEOUT=120 uv venv && uv sync
 RUN mkdir -p /app/data
 ENV PYTHONPATH=/app
 EXPOSE 8000
