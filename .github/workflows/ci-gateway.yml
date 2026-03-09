@@ -16,9 +16,10 @@ jobs:
       run:
         working-directory: backend/gateway
     env:
-      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy_db
-      AMQP_URL: amqp://dummy:dummy@localhost:5672/
-      JWT_SECRET: ci_testing_secret
+      APPOINTMENT_SERVICE_URL: http://appointment-service:8000
+      CONSULTATION_SERVICE_URL: http://consultation-service:8000
+      USER_SERVICE_URL: http://user-service:8000
+      PRESCRIPTION_SERVICE_URL: http://prescription-service:8000
 
     steps:
       - uses: actions/checkout@v4
