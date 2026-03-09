@@ -52,7 +52,7 @@ nothing was prescribed
 ALL others in notes with their individual frequency
 - dosage and frequency must come ONLY from words explicitly spoken in the transcript \
 — never infer, assume, or guess
-- if the transcript says "once after lunch", frequency must be "once daily after lunch"
+- if the transcript says "once after lunch", frequency must be "once after lunch"
 - duration refers ONLY to how long to take the medication, never to physical \
 restrictions or recovery time
 - if duration is not explicitly spoken in the transcript, it must be null — never \
@@ -69,6 +69,7 @@ Transcript excerpts:
 {transcript}
 
 Before writing the JSON, identify the exact sentence(s) where the doctor \
-prescribes medication. Extract only from those sentences.
+prescribes medication AND states how often to take it. Extract only from \
+those sentences.
 
 JSON:"""

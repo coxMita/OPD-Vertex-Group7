@@ -43,7 +43,7 @@ async def generate(prompt: str) -> str:
 
 
 async def embed(text: str) -> list[float]:
-    """Generate an embedding vector for the given text using nomic-embed-text.
+    """Generate an embedding vector for a single text string.
 
     Args:
         text: The text to embed.
@@ -55,17 +55,46 @@ async def embed(text: str) -> list[float]:
         RuntimeError: If the Ollama embed request fails.
 
     """
+    vectors = await embed_batch([text])
+    return vectors[0]
+
+
+async def embed_batch(texts: list[str]) -> list[list[float]]:
+    """Generate embedding vectors for a list of texts in a single HTTP request.
+
+    Sending all texts at once is significantly faster than calling embed()
+    in a loop or with asyncio.gather — Ollama processes them sequentially
+    internally but the round-trip overhead occurs only once.
+
+    Args:
+        texts: List of strings to embed.
+
+    Returns:
+        List of embedding vectors in the same order as the input texts.
+
+    Raises:
+        RuntimeError: If the Ollama embed request fails.
+
+    """
     url = f"{OLLAMA_BASE_URL}/api/embed"
-    payload = {"model": OLLAMA_EMBED_MODEL, "input": text}
-    logger.info("Generating embedding with model '%s'...", OLLAMA_EMBED_MODEL)
+    payload = {"model": OLLAMA_EMBED_MODEL, "input": texts}
+    logger.info(
+        "Generating embeddings for %d texts with model '%s'...",
+        len(texts),
+        OLLAMA_EMBED_MODEL,
+    )
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
-            vector: list[float] = data["embeddings"][0]
-            logger.info("Embedding generated (%d dims).", len(vector))
-            return vector
+            vectors: list[list[float]] = data["embeddings"]
+            logger.info(
+                "Embeddings generated: %d vectors (%d dims each).",
+                len(vectors),
+                len(vectors[0]) if vectors else 0,
+            )
+            return vectors
     except httpx.HTTPError as exc:
         logger.exception("Ollama embed error: %s", exc)
         raise RuntimeError(f"Ollama embed request failed: {exc}") from exc

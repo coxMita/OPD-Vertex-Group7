@@ -16,11 +16,28 @@ AI_DB_URL = os.getenv(
 # nomic-embed-text produces 768-dimensional vectors
 EMBEDDING_DIM = 768
 
+# Module-level connection pool — created once at startup, reused for every operation
+_pool: asyncpg.Pool | None = None
+
+
+async def get_pool() -> asyncpg.Pool:
+    """Return the shared connection pool, creating it on first call.
+
+    Returns:
+        The active asyncpg connection pool.
+
+    """
+    global _pool  # noqa: PLW0603
+    if _pool is None:
+        _pool = await asyncpg.create_pool(AI_DB_URL, min_size=2, max_size=10)
+        logger.info("pgvector connection pool created.")
+    return _pool
+
 
 async def init_db() -> None:
     """Create the pgvector extension and transcript_chunks table."""
-    conn = await asyncpg.connect(AI_DB_URL)
-    try:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
         await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
         await conn.execute(f"""
             CREATE TABLE IF NOT EXISTS transcript_chunks (
@@ -36,8 +53,6 @@ async def init_db() -> None:
             ON transcript_chunks (session_id);
         """)
         logger.info("pgvector table initialised.")
-    finally:
-        await conn.close()
 
 
 def chunk_text(text: str, chunk_size: int = 200, overlap: int = 30) -> list[str]:
@@ -82,17 +97,17 @@ async def store_chunks(
         vectors: List of embedding vectors, one per chunk.
 
     """
-    conn = await asyncpg.connect(AI_DB_URL)
-    try:
-        rows = [
-            (
-                str(uuid.uuid4()),
-                session_id,
-                chunk,
-                "[" + ",".join(str(v) for v in vector) + "]",
-            )
-            for chunk, vector in zip(chunks, vectors, strict=True)
-        ]
+    pool = await get_pool()
+    rows = [
+        (
+            str(uuid.uuid4()),
+            session_id,
+            chunk,
+            "[" + ",".join(str(v) for v in vector) + "]",
+        )
+        for chunk, vector in zip(chunks, vectors, strict=True)
+    ]
+    async with pool.acquire() as conn:
         await conn.executemany(
             """
             INSERT INTO transcript_chunks (id, session_id, chunk, embedding)
@@ -100,9 +115,7 @@ async def store_chunks(
             """,
             rows,
         )
-        logger.info("Stored %d chunks for session %s.", len(rows), session_id)
-    finally:
-        await conn.close()
+    logger.info("Stored %d chunks for session %s.", len(rows), session_id)
 
 
 async def retrieve_relevant_chunks(
@@ -121,9 +134,9 @@ async def retrieve_relevant_chunks(
         List of chunk strings ordered by relevance (closest first).
 
     """
-    conn = await asyncpg.connect(AI_DB_URL)
-    try:
-        vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
+    pool = await get_pool()
+    vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
+    async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT chunk
@@ -136,13 +149,11 @@ async def retrieve_relevant_chunks(
             vector_str,
             top_k,
         )
-        results = [row["chunk"] for row in rows]
-        logger.info(
-            "Retrieved %d relevant chunks for session %s.", len(results), session_id
-        )
-        return results
-    finally:
-        await conn.close()
+    results = [row["chunk"] for row in rows]
+    logger.info(
+        "Retrieved %d relevant chunks for session %s.", len(results), session_id
+    )
+    return results
 
 
 async def delete_session(session_id: str) -> None:
@@ -152,12 +163,10 @@ async def delete_session(session_id: str) -> None:
         session_id: UUID string of the session to clean up.
 
     """
-    conn = await asyncpg.connect(AI_DB_URL)
-    try:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
         result = await conn.execute(
             "DELETE FROM transcript_chunks WHERE session_id = $1",
             session_id,
         )
-        logger.info("Deleted session %s — %s.", session_id, result)
-    finally:
-        await conn.close()
+    logger.info("Deleted session %s — %s.", session_id, result)

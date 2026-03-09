@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 
-from src.ai.ollama_client import embed, generate
+from src.ai.ollama_client import embed, embed_batch, generate
 from src.ai.prompts import (
     CHUNK_SUMMARY_PROMPT_TEMPLATE,
     PRESCRIPTION_PROMPT_TEMPLATE,
@@ -202,9 +202,11 @@ async def process_transcript(transcript: str) -> dict[str, object]:
     if not chunks:
         chunks = [transcript]
 
-    # ── Step 2: Embed all chunks concurrently ──────────────────────────────
-    logger.info("Embedding %d chunks...", len(chunks))
-    vectors = await asyncio.gather(*[embed(chunk) for chunk in chunks])
+    # ── Step 2: Embed all chunks in a single batch request ────────────────
+    # embed_batch sends one HTTP request to Ollama regardless of chunk count,
+    # avoiding the overhead of 35+ individual round trips.
+    logger.info("Embedding %d chunks in a single batch request...", len(chunks))
+    vectors = await embed_batch(chunks)
 
     # ── Step 3: Store in pgvector ──────────────────────────────────────────
     await store_chunks(session_id, chunks, list(vectors))
@@ -241,9 +243,7 @@ async def process_transcript(transcript: str) -> dict[str, object]:
             )
         else:
             sub_session_id = str(uuid.uuid4())
-            candidate_vectors = await asyncio.gather(
-                *[embed(c) for c in prescription_candidates]
-            )
+            candidate_vectors = await embed_batch(prescription_candidates)
             await store_chunks(
                 sub_session_id, prescription_candidates, list(candidate_vectors)
             )
