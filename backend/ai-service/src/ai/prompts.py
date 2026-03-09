@@ -20,7 +20,9 @@ medical consultation transcript, produce a concise clinical summary (3-5 sentenc
 Focus on the patient's chief complaint, key findings including any vitals, \
 the diagnosis, and all decisions made including medications and follow-up. \
 Do not repeat the same word or phrase twice in the same sentence. \
-Use only information present in the excerpts — do not invent or assume anything.
+Use only information present in the excerpts — do not invent or assume anything. \
+Do not begin with "Here is", "Based on", or any preamble — start directly \
+with the patient's name or chief complaint.
 
 Transcript excerpts:
 {transcript}
@@ -34,7 +36,7 @@ patient's condition and return it ONLY as a valid JSON object with this exact \
 structure — no extra text, no markdown, no explanation:
 
 {{
-  "medication_name": "<single drug name only, e.g. Paracetamol — never combine two drugs here — never write 'none'>",
+  "medication_name": "<ONE drug only — e.g. if doctor prescribed Vitamin C and Amoxicillin, write 'Vitamin C' here and 'Amoxicillin' in notes — never combine — never write 'none'>",
   "dosage": "<dose amount ONLY if explicitly stated in the transcript, e.g. 500mg — null if not mentioned>",
   "frequency": "<exact frequency as stated in the transcript, e.g. once daily after lunch — never infer or guess>",
   "duration": "<ONLY if the doctor explicitly stated a time period for taking the medication — null if not stated, never guess>",
@@ -43,13 +45,20 @@ structure — no extra text, no markdown, no explanation:
 
 Rules:
 - medication_name must be ONE drug only — the primary one the doctor prescribed
-- medication_name must NEVER be the string "none" or empty — always pick the most clinically significant drug; only use the JSON null fallback at the bottom if truly nothing was prescribed
-- if multiple drugs are prescribed, put the primary one in medication_name and list ALL others in notes with their individual frequency
-- dosage and frequency must come ONLY from words explicitly spoken in the transcript — never infer, assume, or guess
+- medication_name must NEVER be the string "none" or empty — always pick the most \
+clinically significant drug; only use the JSON null fallback at the bottom if truly \
+nothing was prescribed
+- if multiple drugs are prescribed, put the primary one in medication_name and list \
+ALL others in notes with their individual frequency
+- dosage and frequency must come ONLY from words explicitly spoken in the transcript \
+— never infer, assume, or guess
 - if the transcript says "once after lunch", frequency must be "once daily after lunch"
-- duration refers ONLY to how long to take the medication, never to physical restrictions or recovery time
-- if duration is not explicitly spoken in the transcript, it must be null — never write a typical or assumed duration
-- if the doctor explicitly said NOT to prescribe antibiotics or any drug, notes must mention this
+- duration refers ONLY to how long to take the medication, never to physical \
+restrictions or recovery time
+- if duration is not explicitly spoken in the transcript, it must be null — never \
+write a typical or assumed duration
+- if the doctor explicitly said NOT to prescribe antibiotics or any drug, notes must \
+mention this
 - notes should be null only if there is truly nothing extra to mention
 
 If no medication at all was prescribed, return:
@@ -58,5 +67,8 @@ If no medication at all was prescribed, return:
 
 Transcript excerpts:
 {transcript}
+
+Before writing the JSON, identify the exact sentence(s) where the doctor \
+prescribes medication. Extract only from those sentences.
 
 JSON:"""

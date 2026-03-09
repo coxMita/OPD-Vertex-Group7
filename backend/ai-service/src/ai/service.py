@@ -71,6 +71,31 @@ _PRESCRIPTION_KEYWORDS: frozenset[str] = frozenset(
 )
 
 
+def _dynamic_top_k(candidates: list[str]) -> int:
+    """Calculate top_k for prescription retrieval based on candidate count.
+
+    Scales based on how many keyword-matched chunks exist, ensuring enough
+    context without exceeding the 3b model's quality sweet spot (~2000 tokens).
+    Each chunk is ~200 words / ~270 tokens; quality degrades past ~8 chunks
+    for 3b. Bump the caps when switching to llama3.1:8b (safe up to ~12-15).
+
+    Args:
+        candidates: Keyword-filtered prescription candidate chunks.
+
+    Returns:
+        top_k value scaled to candidate count, capped for model quality.
+
+    """
+    n = len(candidates)
+    if n <= 5:  # noqa: PLR2004
+        return n  # use all — fits well within quality zone
+    if n <= 8:  # noqa: PLR2004
+        return n  # still within 3b sweet spot
+    if n <= 20:  # noqa: PLR2004
+        return 8  # hard quality cap for llama3.2:3b  # noqa: PLR2004
+    return 8  # noqa: PLR2004  # cap for very long transcripts
+
+
 def _filter_prescription_chunks(chunks: list[str]) -> list[str]:
     """Return chunks that contain at least one prescription-related keyword.
 
@@ -156,7 +181,7 @@ async def process_transcript(transcript: str) -> dict[str, object]:
     3.  Store chunks in pgvector under a unique session_id.
     4.  Retrieve top-8 relevant chunks for the summary via vector search.
     5.  Feed raw summary chunks directly to the summary LLM pass (no compression).
-    6.  Pre-filter ALL chunks by prescription keywords, then vector-rank top-10.
+    6.  Pre-filter ALL chunks by prescription keywords, then vector-rank top-k.
     7.  Hierarchically summarise prescription candidates into mini-summaries.
     8.  Generate clinical summary from raw summary chunks.
     9.  Generate prescription JSON from condensed prescription mini-summaries.
@@ -190,7 +215,7 @@ async def process_transcript(transcript: str) -> dict[str, object]:
         summary_chunks = await retrieve_relevant_chunks(
             session_id,
             summary_query_vec,
-            top_k=8,  # bumped from 5
+            top_k=8,
         )
 
         # ── Step 5: Use raw chunks directly — no double compression ────────
@@ -199,9 +224,14 @@ async def process_transcript(transcript: str) -> dict[str, object]:
         # mini-summaries which lose specificity (vitals, exact diagnoses, etc).
         summary_context = "\n\n".join(summary_chunks)
 
-        # ── Step 6: Prescription — keyword filter → vector rank ────────────
+        # ── Step 6: Prescription — keyword filter → dynamic vector rank ────
         prescription_candidates = _filter_prescription_chunks(chunks)
-        top_k_prescription = min(10, len(prescription_candidates))
+        top_k_prescription = _dynamic_top_k(prescription_candidates)
+        logger.info(
+            "Dynamic top_k for prescription: %d (from %d candidates).",
+            top_k_prescription,
+            len(prescription_candidates),
+        )
 
         if len(prescription_candidates) <= top_k_prescription:
             top_prescription_chunks = prescription_candidates
@@ -220,7 +250,9 @@ async def process_transcript(transcript: str) -> dict[str, object]:
             try:
                 prescription_query_vec = await embed(PRESCRIPTION_QUERY)
                 top_prescription_chunks = await retrieve_relevant_chunks(
-                    sub_session_id, prescription_query_vec, top_k=top_k_prescription
+                    sub_session_id,
+                    prescription_query_vec,
+                    top_k=top_k_prescription,
                 )
             finally:
                 await delete_session(sub_session_id)
@@ -256,8 +288,8 @@ async def process_transcript(transcript: str) -> dict[str, object]:
 def _parse_json_safe(raw: str) -> dict[str, object]:
     """Attempt to parse JSON from model output; return error dict on failure.
 
-    Handles markdown fences and fixes the common model mistake of writing
-    the string "null" instead of JSON null.
+    Handles markdown fences and fixes common model mistakes of writing
+    null-equivalent strings instead of proper JSON null.
 
     Args:
         raw: Raw string output from the model.
@@ -273,8 +305,12 @@ def _parse_json_safe(raw: str) -> dict[str, object]:
             line for line in lines if not line.startswith("```")
         ).strip()
 
-    # Fix model writing "null" as a quoted string instead of JSON null
-    cleaned = re.sub(r':\s*"null"', ": null", cleaned)
+    # Normalise all null-equivalent string variants to proper JSON null
+    cleaned = re.sub(r':\s*"[Nn]ull"', ": null", cleaned)
+    cleaned = re.sub(r':\s*"[Nn]one\s*[Ss]pecified"', ": null", cleaned)
+    cleaned = re.sub(r':\s*"[Nn]/[Aa]"', ": null", cleaned)
+    cleaned = re.sub(r':\s*"[Nn]ot\s*[Ss]tated"', ": null", cleaned)
+    cleaned = re.sub(r':\s*"[Nn]ot\s*[Mm]entioned"', ": null", cleaned)
 
     try:
         result: dict[str, object] = json.loads(cleaned)
