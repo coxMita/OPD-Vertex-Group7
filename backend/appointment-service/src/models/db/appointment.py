@@ -1,6 +1,5 @@
 """Appointment database model."""
 
-import uuid
 from datetime import date, time
 from enum import Enum
 
@@ -15,20 +14,20 @@ class TimePreference(str, Enum):
 
 
 class AppointmentStatus(str, Enum):
-    """Status of the appointment."""
+    """Status of an appointment."""
 
     SCHEDULED = "scheduled"
-    HANDED_OFF = "handed_off"
-    COMPLETED = "completed"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
     CANCELLED = "cancelled"
 
 
 class Appointment(SQLModel, table=True):
     """Represents a patient appointment."""
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    patient_id: uuid.UUID
-    doctor_id: uuid.UUID
+    id: int | None = Field(default=None, primary_key=True)
+    patient_id: int
+    doctor_id: int
     appointment_date: date
     time_preference: TimePreference
     assigned_time: time | None = Field(default=None)
