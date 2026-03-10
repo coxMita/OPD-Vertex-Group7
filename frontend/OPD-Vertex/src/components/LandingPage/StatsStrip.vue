@@ -32,7 +32,7 @@ const statColor = computed(() =>
   background: linear-gradient(135deg, #fcf9ea 0%, #badfdb 50%, #ffa4a4 100%);
 }
 .v-theme--dark .stats {
-  background: linear-gradient(135deg, #004d40 0%, #1a237e 100%);
+  background: linear-gradient(135deg, #292b75 20%, #543076 50%, #4a7da1 100%);
 }
 .stat-label {
   font-size: 1.1rem;
