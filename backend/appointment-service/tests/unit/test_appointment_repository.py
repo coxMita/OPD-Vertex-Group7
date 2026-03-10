@@ -1,5 +1,6 @@
 """Unit tests for AppointmentRepository."""
 
+import uuid
 from datetime import date, time
 from unittest.mock import MagicMock
 
@@ -10,23 +11,25 @@ from src.repositories.appointment_repository import AppointmentRepository
 
 EXPECTED_TWO_APPOINTMENTS = 2
 
+DOCTOR_ID = uuid.UUID("00000000-0000-0000-0001-000000000001")
+
 
 def _make_appointment(
-    appointment_id: int,
+    appointment_id: uuid.UUID | None = None,
     time_preference: TimePreference = TimePreference.AM,
     assigned_time: time = time(8, 0),
     status: AppointmentStatus = AppointmentStatus.SCHEDULED,
 ) -> Appointment:
     """Create a test appointment entity."""
     a = Appointment(
-        patient_id=1,
-        doctor_id=1,
+        patient_id=uuid.uuid4(),
+        doctor_id=DOCTOR_ID,
         appointment_date=date(2026, 3, 10),
         time_preference=time_preference,
         assigned_time=assigned_time,
         status=status,
     )
-    a.id = appointment_id
+    a.id = appointment_id or uuid.uuid4()
     return a
 
 
@@ -49,7 +52,7 @@ def test_create_saves_and_returns_appointment(
     repo: AppointmentRepository, session: MagicMock
 ) -> None:
     """Create should add, commit and refresh the appointment."""
-    appointment = _make_appointment(1)
+    appointment = _make_appointment()
     result = repo.create(appointment)
     session.add.assert_called_once_with(appointment)
     session.commit.assert_called_once()
@@ -64,10 +67,11 @@ def test_get_by_id_returns_appointment(
     repo: AppointmentRepository, session: MagicMock
 ) -> None:
     """Should return appointment when found."""
-    appointment = _make_appointment(1)
+    appointment_id = uuid.uuid4()
+    appointment = _make_appointment(appointment_id)
     session.get.return_value = appointment
-    result = repo.get_by_id(1)
-    session.get.assert_called_once_with(Appointment, 1)
+    result = repo.get_by_id(appointment_id)
+    session.get.assert_called_once_with(Appointment, appointment_id)
     assert result == appointment
 
 
@@ -76,7 +80,7 @@ def test_get_by_id_returns_none_when_not_found(
 ) -> None:
     """Should return None when appointment does not exist."""
     session.get.return_value = None
-    result = repo.get_by_id(99)
+    result = repo.get_by_id(uuid.uuid4())
     assert result is None
 
 
@@ -87,9 +91,9 @@ def test_update_status_saves_new_status(
     repo: AppointmentRepository, session: MagicMock
 ) -> None:
     """Should update status and persist the change."""
-    appointment = _make_appointment(1)
-    result = repo.update_status(appointment, AppointmentStatus.IN_PROGRESS)
-    assert result.status == AppointmentStatus.IN_PROGRESS
+    appointment = _make_appointment()
+    result = repo.update_status(appointment, AppointmentStatus.HANDED_OFF)
+    assert result.status == AppointmentStatus.HANDED_OFF
     session.add.assert_called_once_with(appointment)
     session.commit.assert_called_once()
     session.refresh.assert_called_once_with(appointment)
@@ -103,8 +107,8 @@ def test_reorder_persists_all_appointments(
 ) -> None:
     """Reorder should add and commit all appointments."""
     appointments = [
-        _make_appointment(1, assigned_time=time(8, 0)),
-        _make_appointment(2, assigned_time=time(9, 0)),
+        _make_appointment(assigned_time=time(8, 0)),
+        _make_appointment(assigned_time=time(9, 0)),
     ]
     repo.reorder(appointments)
     assert session.add.call_count == EXPECTED_TWO_APPOINTMENTS
@@ -122,9 +126,8 @@ def test_get_by_doctor_and_date_excludes_cancelled(
     mock_result.__iter__ = MagicMock(return_value=iter([]))
     session.exec.return_value = mock_result
 
-    repo.get_by_doctor_and_date(1, date(2026, 3, 10))
+    repo.get_by_doctor_and_date(DOCTOR_ID, date(2026, 3, 10))
     session.exec.assert_called_once()
-    # Verify the query was executed
     call_args = session.exec.call_args[0][0]
     assert call_args is not None
 
@@ -136,10 +139,10 @@ def test_get_by_patient_id_returns_list(
     repo: AppointmentRepository, session: MagicMock
 ) -> None:
     """Should return list of appointments for a patient."""
-    appointments = [_make_appointment(1), _make_appointment(2)]
+    appointments = [_make_appointment(), _make_appointment()]
     mock_result = MagicMock()
     mock_result.__iter__ = MagicMock(return_value=iter(appointments))
     session.exec.return_value = mock_result
 
-    result = repo.get_by_patient_id(1)
+    result = repo.get_by_patient_id(uuid.uuid4())
     assert len(result) == EXPECTED_TWO_APPOINTMENTS

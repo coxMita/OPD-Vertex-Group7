@@ -1,5 +1,6 @@
 """Appointment event message."""
 
+import uuid
 from datetime import date, time
 
 from src.models.db.appointment import AppointmentStatus, TimePreference
@@ -20,9 +21,9 @@ class AppointmentMessage(AbstractMessage):
 
     """
 
-    appointment_id: int
-    patient_id: int
-    doctor_id: int
+    appointment_id: uuid.UUID
+    patient_id: uuid.UUID
+    doctor_id: uuid.UUID
     appointment_date: date
     time_preference: TimePreference
     assigned_time: time | None
