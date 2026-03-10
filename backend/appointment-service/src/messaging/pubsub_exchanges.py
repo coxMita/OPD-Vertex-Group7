@@ -2,3 +2,4 @@
 
 APPOINTMENT_CREATED = "appointment.created"
 APPOINTMENT_STATUS_CHANGED = "appointment.status_changed"
+APPOINTMENT_SESSION_STARTED = "appointment.session_started"
