@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
+import { useTheme } from 'vuetify'
 import type { Appointment } from '@/models/appointment/appointment.interface'
 import { getMockAppointmentsForDay } from '@/models/appointment/appointment.mock'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082'
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
-// TODO: replace with authenticated doctor ID from auth store
+const vuetifyTheme = useTheme()
+const isDark = computed(() => vuetifyTheme.current.value.dark)
+
 const doctorId = ref(1)
 
 const currentView = ref<'day' | 'week' | 'month'>('week')
@@ -14,15 +17,73 @@ const currentDate = ref(new Date())
 const appointments = ref<Appointment[]>([])
 const loading = ref(false)
 
-const statusColors: Record<string, string> = {
-  scheduled: '#1a56db',
-  in_progress: '#d97706',
-  done: '#0d9488',
-  cancelled: '#94a3b8',
+type StatusKey = 'scheduled' | 'in_progress' | 'done' | 'cancelled'
+
+interface StatusCfg {
+  lightBg: string
+  darkBg: string
+  lightText: string
+  darkText: string
+  border: string
+  icon: string
+  label: string
+}
+
+const statusConfig: Record<StatusKey, StatusCfg> = {
+  scheduled: {
+    lightBg: '#dbeafe', darkBg: '#1e3558',
+    lightText: '#1d4ed8', darkText: '#93c5fd',
+    border: '#3b82f6', icon: 'mdi-clock-outline', label: 'Scheduled',
+  },
+  in_progress: {
+    lightBg: '#fef3c7', darkBg: '#3d1f00',
+    lightText: '#b45309', darkText: '#fcd34d',
+    border: '#f59e0b', icon: 'mdi-progress-clock', label: 'In Progress',
+  },
+  done: {
+    lightBg: '#ccfbf1', darkBg: '#032b28',
+    lightText: '#0d7a70', darkText: '#2dd4bf',
+    border: '#14b8a6', icon: 'mdi-check-circle-outline', label: 'Done',
+  },
+  cancelled: {
+    lightBg: '#f1f5f9', darkBg: '#1a2133',
+    lightText: '#64748b', darkText: '#94a3b8',
+    border: '#94a3b8', icon: 'mdi-close-circle-outline', label: 'Cancelled',
+  },
+}
+
+function getApptStyle(status: string) {
+  const cfg = statusConfig[status as StatusKey] ?? statusConfig.scheduled
+  return {
+    background: isDark.value ? cfg.darkBg : cfg.lightBg,
+    color: isDark.value ? cfg.darkText : cfg.lightText,
+    borderLeftColor: cfg.border,
+  }
+}
+
+function getStatusIcon(status: string): string {
+  return statusConfig[status as StatusKey]?.icon ?? 'mdi-calendar'
 }
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const timeSlots = Array.from({ length: 11 }, (_, i) => i + 8)
+const timeSlots = Array.from({ length: 24 }, (_, i) => i)
+
+const weekBodyRef = ref<HTMLElement | null>(null)
+const dayViewRef = ref<HTMLElement | null>(null)
+
+const SLOT_HEIGHT_WEEK = 50
+const SLOT_HEIGHT_DAY = 56
+const SCROLL_START_HOUR = 6
+
+function scrollTo6am() {
+  nextTick(() => {
+    if (currentView.value === 'week' && weekBodyRef.value) {
+      weekBodyRef.value.scrollTop = SCROLL_START_HOUR * SLOT_HEIGHT_WEEK
+    } else if (currentView.value === 'day' && dayViewRef.value) {
+      dayViewRef.value.scrollTop = SCROLL_START_HOUR * SLOT_HEIGHT_DAY
+    }
+  })
+}
 
 // --- Date helpers ---
 
@@ -163,11 +224,23 @@ async function fetchAppointments() {
 }
 
 watch(visibleDates, fetchAppointments)
-onMounted(fetchAppointments)
+watch(currentView, scrollTo6am)
+onMounted(() => {
+  fetchAppointments()
+  scrollTo6am()
+})
 </script>
 
 <template>
   <div class="calendar-container">
+    <v-progress-linear
+      v-if="loading"
+      indeterminate
+      color="primary"
+      height="2"
+      class="progress-bar"
+    />
+
     <div class="calendar-toolbar">
       <div class="toolbar-left">
         <div class="date-nav">
@@ -179,9 +252,7 @@ onMounted(fetchAppointments)
           </v-btn>
           <span class="current-date">{{ currentDateDisplay }}</span>
         </div>
-        <v-btn variant="tonal" color="primary" size="small" @click="goToToday">
-          Today
-        </v-btn>
+        <v-btn variant="tonal" color="primary" size="small" @click="goToToday">Today</v-btn>
       </div>
 
       <div class="toolbar-right">
@@ -193,7 +264,7 @@ onMounted(fetchAppointments)
       </div>
     </div>
 
-    <div class="calendar-view day-view" v-if="currentView === 'day'">
+    <div class="calendar-view day-view" ref="dayViewRef" v-if="currentView === 'day'">
       <div class="time-grid">
         <template v-for="hour in timeSlots" :key="hour">
           <div class="time-label">{{ hour.toString().padStart(2, '0') }}:00</div>
@@ -202,11 +273,14 @@ onMounted(fetchAppointments)
               v-for="appt in getAppointmentsForTimeSlot(currentDate, hour)"
               :key="appt.id"
               class="appt-card"
-              :style="{ borderLeftColor: statusColors[appt.status] }"
+              :style="getApptStyle(appt.status)"
             >
-              <div class="appt-time">{{ appt.assigned_time }}</div>
+              <div class="appt-header-row">
+                <v-icon size="12" style="color: currentColor">{{ getStatusIcon(appt.status) }}</v-icon>
+                <span class="appt-time">{{ appt.assigned_time }}</span>
+              </div>
               <div class="appt-name">Patient #{{ appt.patient_id }}</div>
-              <div class="appt-type">{{ appt.time_preference }} · {{ appt.status }}</div>
+              <div class="appt-type">{{ appt.time_preference }} · {{ appt.status.replace('_', ' ') }}</div>
             </div>
           </div>
         </template>
@@ -221,21 +295,29 @@ onMounted(fetchAppointments)
           <div class="week-day-date" :class="{ today: isToday(day) }">{{ day.getDate() }}</div>
         </div>
       </div>
+
+      <div class="week-body" ref="weekBodyRef">
       <div class="week-grid">
         <template v-for="hour in timeSlots" :key="hour">
           <div class="week-time-label">{{ hour.toString().padStart(2, '0') }}:00</div>
-          <div v-for="(day, dayIdx) in weekDaysInView" :key="`${hour}-${dayIdx}`" class="week-time-slot">
+          <div
+            v-for="(day, dayIdx) in weekDaysInView"
+            :key="`${hour}-${dayIdx}`"
+            class="week-time-slot"
+          >
             <div
               v-for="appt in getAppointmentsForTimeSlot(day, hour)"
               :key="appt.id"
-              class="appt-card"
-              :style="{ borderLeftColor: statusColors[appt.status] }"
+              class="appt-card appt-card--compact"
+              :style="getApptStyle(appt.status)"
             >
-              <div class="appt-time">{{ appt.assigned_time }}</div>
-              <div class="appt-name">Patient #{{ appt.patient_id }}</div>
+              <v-icon size="10" style="color: currentColor; flex-shrink: 0">{{ getStatusIcon(appt.status) }}</v-icon>
+              <span class="appt-time ml-1">{{ appt.assigned_time }}</span>
+              <div class="appt-name">P#{{ appt.patient_id }}</div>
             </div>
           </div>
         </template>
+      </div>
       </div>
     </div>
 
@@ -254,10 +336,11 @@ onMounted(fetchAppointments)
               v-for="appt in getAppointmentsForDate(day.date)"
               :key="appt.id"
               class="month-appt-card"
-              :style="{ borderLeftColor: statusColors[appt.status] }"
+              :style="getApptStyle(appt.status)"
             >
-              <div class="month-appt-time">{{ appt.assigned_time ?? '' }}</div>
-              <div class="month-appt-name">Patient #{{ appt.patient_id }}</div>
+              <v-icon size="9" style="color: currentColor; flex-shrink: 0">{{ getStatusIcon(appt.status) }}</v-icon>
+              <span class="month-appt-time">{{ appt.assigned_time ?? '' }}</span>
+              <span class="month-appt-name">P#{{ appt.patient_id }}</span>
             </div>
           </div>
         </div>
@@ -267,87 +350,124 @@ onMounted(fetchAppointments)
 </template>
 
 <style scoped>
+/* ── Container ───────────────────────────────────────────── */
 .calendar-container {
   height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  background: #f8fafc;
+  background: rgb(var(--v-theme-background));
+  position: relative;
 }
 
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
 .calendar-toolbar {
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 16px 28px;
+  background: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .date-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .current-date {
   font-family: 'DM Serif Display', serif;
-  font-size: 1.25rem;
-  color: #1e293b;
-  min-width: 280px;
+  font-size: 1.15rem;
+  color: rgb(var(--v-theme-on-surface));
+  min-width: 240px;
 }
 
 .toolbar-right {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
+/* ── Shared scrollable view ───────────────────────────────── */
 .calendar-view {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 28px;
+  padding: 0;
+}
+
+/* ── Day View ────────────────────────────────────────────── */
+.day-view {
+  padding: 16px 20px;
 }
 
 .time-grid {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 0;
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  grid-template-columns: 72px 1fr;
+  background: rgb(var(--v-theme-surface));
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
 }
 
 .time-label {
-  padding: 20px 16px;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #94a3b8;
+  padding: 14px 12px;
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.07);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.45);
   text-align: right;
-  background: #f8fafc;
+  background: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 .time-slot {
-  padding: 8px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  min-height: 60px;
-  position: relative;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  min-height: 56px;
+}
+
+/* ── Week View ───────────────────────────────────────────── */
+.week-view {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 .week-header {
   display: grid;
-  grid-template-columns: 80px repeat(7, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  grid-template-columns: 72px repeat(7, 1fr);
+  gap: 6px;
+  padding: 12px 20px 8px;
+  flex-shrink: 0;
+  background: rgb(var(--v-theme-background));
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.07);
+}
+
+.week-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 16px;
 }
 
 .week-corner {
@@ -356,32 +476,32 @@ onMounted(fetchAppointments)
 
 .week-day-header {
   text-align: center;
-  padding: 12px 8px;
-  background: #fff;
+  padding: 10px 6px;
+  background: rgb(var(--v-theme-surface));
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .week-day-name {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
+  letter-spacing: 0.07em;
+  color: rgba(var(--v-theme-on-surface), 0.45);
   margin-bottom: 4px;
 }
 
 .week-day-date {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: #1e293b;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .week-day-date.today {
   color: #fff;
   background: #0d9488;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -391,132 +511,164 @@ onMounted(fetchAppointments)
 
 .week-grid {
   display: grid;
-  grid-template-columns: 80px repeat(7, 1fr);
-  gap: 0 8px;
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  grid-template-columns: 72px repeat(7, 1fr);
+  gap: 0 6px;
+  margin: 8px 20px 0;
+  background: rgb(var(--v-theme-surface));
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
 }
 
 .week-time-label {
-  padding: 8px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #94a3b8;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.4);
   text-align: right;
-  background: #f8fafc;
+  background: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 .week-time-slot {
-  padding: 4px;
-  border-bottom: 1px solid #f1f5f9;
-  border-left: 1px solid #f1f5f9;
+  padding: 3px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.04);
   min-height: 50px;
-  position: relative;
+  box-sizing: border-box;
+}
+
+/* ── Month View ──────────────────────────────────────────── */
+.month-view {
+  padding: 16px 20px;
 }
 
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .month-day-header {
   text-align: center;
-  padding: 10px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-  background: #fff;
+  letter-spacing: 0.07em;
+  color: rgba(var(--v-theme-on-surface), 0.45);
+  background: rgb(var(--v-theme-surface));
   border-radius: 8px 8px 0 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   border-bottom: none;
 }
 
 .month-day {
-  background: #fff;
+  background: rgb(var(--v-theme-surface));
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  padding: 8px;
-  min-height: 120px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  padding: 6px;
+  min-height: 110px;
   display: flex;
   flex-direction: column;
 }
 
 .month-day.other-month {
-  background: #f8fafc;
-  opacity: 0.5;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+  opacity: 0.4;
 }
 
 .month-day.today {
   border: 2px solid #0d9488;
-  box-shadow: 0 0 0 3px #e0f2f1;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
 }
 
 .month-day-number {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  margin-bottom: 4px;
 }
 
 .month-appointments {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   flex: 1;
+  max-height: 80px;
   overflow-y: auto;
 }
 
+/* ── Appointment Cards (shared) ──────────────────────────── */
 .appt-card {
-  background: linear-gradient(135deg, #1e3a5f 0%, #0f1e38 100%);
   border-radius: 6px;
-  padding: 8px 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border-left: 4px solid;
-  margin-bottom: 4px;
+  padding: 7px 10px;
+  border-left: 3px solid transparent;
+  margin-bottom: 3px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.appt-card:hover {
+  filter: brightness(0.93);
+  transform: translateX(1px);
+}
+
+.appt-card--compact {
+  padding: 4px 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.appt-header-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
 }
 
 .appt-time {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.85;
 }
 
 .appt-name {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #fff;
+  width: 100%;
 }
 
 .appt-type {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.67rem;
+  opacity: 0.68;
+  margin-top: 1px;
 }
 
+/* Month compact pill */
 .month-appt-card {
-  background: #1e293b;
   border-radius: 4px;
-  padding: 3px 6px;
-  border-left: 3px solid;
-  margin-bottom: 2px;
+  padding: 2px 5px;
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
 }
 
 .month-appt-time {
   font-size: 0.65rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  opacity: 0.8;
+  flex-shrink: 0;
 }
 
 .month-appt-name {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
