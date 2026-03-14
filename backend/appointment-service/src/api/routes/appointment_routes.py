@@ -5,8 +5,9 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import text
 
-from src.api.dependencies import get_appointment_service
+from src.api.dependencies import get_appointment_service, get_db_session
 from src.models.dto.appointment_create_request import AppointmentCreateRequest
 from src.models.dto.appointment_response import AppointmentResponse
 from src.models.dto.appointment_status_update_request import (
@@ -159,3 +160,12 @@ async def reorder_queue(
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {MESSAGE: str(e)}
+
+
+@router.delete("/dev/")
+def clear_db() -> dict[str, str]:
+    """Clear Database."""
+    with next(get_db_session()) as session:
+        session.exec(text("DELETE FROM appointment"))
+        session.commit()
+        return {"message": "Database cleared"}
