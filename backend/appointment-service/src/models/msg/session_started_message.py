@@ -1,10 +1,29 @@
 """Message published when an AM or PM session window opens for a doctor."""
 
 import uuid
-from datetime import date
+from datetime import date, time
+
+from pydantic import BaseModel
 
 from src.models.db.appointment import TimePreference
 from src.models.msg.abstract_message import AbstractMessage
+
+
+class AppointmentSlot(BaseModel):
+    """Details of a single appointment within a session.
+
+    Attributes:
+        appointment_id (uuid.UUID): Unique identifier of the appointment.
+        patient_id (uuid.UUID): Identifier of the patient.
+        assigned_time (time): The assigned time slot.
+        notes (str | None): Optional notes for the appointment.
+
+    """
+
+    appointment_id: uuid.UUID
+    patient_id: uuid.UUID
+    assigned_time: time
+    notes: str | None = None
 
 
 class SessionStartedMessage(AbstractMessage):
@@ -14,12 +33,12 @@ class SessionStartedMessage(AbstractMessage):
         doctor_id (uuid.UUID): The doctor whose session is starting.
         appointment_date (date): The date of the session.
         time_preference (TimePreference): AM or PM.
-        appointment_ids (list[uuid.UUID]): IDs of all active appointments
-            in this session window, ordered by assigned_time.
+        appointments (list[AppointmentSlot]): Ordered list of appointments
+            with full details, sorted by assigned_time.
 
     """
 
     doctor_id: uuid.UUID
     appointment_date: date
     time_preference: TimePreference
-    appointment_ids: list[uuid.UUID]
+    appointments: list[AppointmentSlot]

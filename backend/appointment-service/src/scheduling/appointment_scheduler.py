@@ -10,8 +10,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from src.messaging.messaging_manager import MessagingManager
 from src.messaging.pubsub_exchanges import APPOINTMENT_SESSION_STARTED
-from src.models.db.appointment import TimePreference
-from src.models.msg.session_started_message import SessionStartedMessage
+from src.models.db.appointment import AppointmentStatus, TimePreference
+from src.models.msg.session_started_message import (
+    AppointmentSlot,
+    SessionStartedMessage,
+)
 from src.repositories.appointment_repository import AppointmentRepository
 
 logger = logging.getLogger(__name__)
@@ -25,17 +28,6 @@ async def _notify_session(
     messaging: MessagingManager,
     time_preference: TimePreference,
 ) -> None:
-    """Find all doctors with appointments today in this window and notify each.
-
-    Groups appointments by doctor_id and publishes one SessionStartedMessage
-    per doctor containing the ordered list of their appointment IDs.
-
-    Args:
-        repo (AppointmentRepository): A fresh repository instance for this call.
-        messaging (MessagingManager): The messaging manager.
-        time_preference (TimePreference): AM or PM.
-
-    """
     today = date.today()
     appointments = repo.get_by_date_and_preference(today, time_preference)
 
@@ -45,27 +37,40 @@ async def _notify_session(
         )
         return
 
-    # Group appointment IDs by doctor, preserving assigned_time order
-    by_doctor: dict[str, list] = defaultdict(list)
+    by_doctor: dict = defaultdict(list)
     for appt in appointments:
-        by_doctor[appt.doctor_id].append(appt.id)
+        by_doctor[appt.doctor_id].append(appt)  # stochează entitatea, nu doar id-ul
 
     pubsub = messaging.get_pubsub(APPOINTMENT_SESSION_STARTED)
-    for doctor_id, appointment_ids in by_doctor.items():
+    for doctor_id, doctor_appointments in by_doctor.items():
+        slots = [
+            AppointmentSlot(
+                appointment_id=appt.id,
+                patient_id=appt.patient_id,
+                assigned_time=appt.assigned_time,
+                notes=appt.notes,
+            )
+            for appt in doctor_appointments
+        ]
+
         msg = SessionStartedMessage(
             doctor_id=doctor_id,
             appointment_date=today,
             time_preference=time_preference,
-            appointment_ids=appointment_ids,
+            appointments=slots,
         )
         await pubsub.publish(msg)
         logger.info(
-            "Published session_started | doctor=%s | %s | %s | appointments=%s",
+            "Published session_started | doctor=%s | %s | %s | %d appointments",
             doctor_id,
             time_preference.value,
             today,
-            appointment_ids,
+            len(slots),
         )
+
+        for appt in doctor_appointments:
+            repo.update_status(appt, AppointmentStatus.HANDED_OFF)
+            logger.info("Marked appointment %s as HANDED_OFF", appt.id)
 
 
 def build_scheduler(
