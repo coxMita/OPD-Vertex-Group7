@@ -1,5 +1,6 @@
 """DTO for appointment responses."""
 
+import uuid
 from datetime import date, time
 
 from pydantic import BaseModel
@@ -10,9 +11,9 @@ from src.models.db.appointment import Appointment, AppointmentStatus, TimePrefer
 class AppointmentResponse(BaseModel):
     """Response DTO for an appointment."""
 
-    id: int
-    patient_id: int
-    doctor_id: int
+    id: uuid.UUID
+    patient_id: uuid.UUID
+    doctor_id: uuid.UUID
     appointment_date: date
     time_preference: TimePreference
     assigned_time: time | None

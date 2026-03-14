@@ -351,7 +351,7 @@ const switchMode = (m: Mode) => {
 <style scoped>
 .page-bg {
   min-height: 100vh;
-  background: v-bind('isDark ? "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" : "linear-gradient(135deg, #fcf9ea 0%, #badfdb 50%, #ffa4a4 100%)"');
+  background: v-bind('isDark ? "linear-gradient(135deg, #1a1c52 20%, #2d1940 50%, #326071 100%)" : "linear-gradient(135deg, #fcf9ea 0%, #badfdb 50%, #ffa4a4 100%)"');
 }
 .field-label {
   display: block;

@@ -75,7 +75,7 @@ class AppointmentRepository:
         appointment_date: date,
         time_preference: TimePreference,
     ) -> list[Appointment]:
-        """Retrieve appointments for a doctor on a date filtered by AM/PM preference.
+        """Retrieve appointmentson a date filtered by AM/PM preference.
 
         Args:
             doctor_id (int): The ID of the doctor.
@@ -91,6 +91,35 @@ class AppointmentRepository:
                 select(Appointment)
                 .where(
                     Appointment.doctor_id == doctor_id,
+                    Appointment.appointment_date == appointment_date,
+                    Appointment.time_preference == time_preference,
+                    Appointment.status != AppointmentStatus.CANCELLED,
+                )
+                .order_by(Appointment.assigned_time)
+            )
+        )
+
+    def get_by_date_and_preference(
+        self,
+        appointment_date: date,
+        time_preference: TimePreference,
+    ) -> list[Appointment]:
+        """Retrieve active appointments for ALL doctors on a date.
+
+        Used by the scheduler to find which doctors have sessions today.
+
+        Args:
+            appointment_date (date): The date to query.
+            time_preference (TimePreference): AM or PM preference.
+
+        Returns:
+            list[Appointment]: Matching active appointments ordered by assigned_time.
+
+        """
+        return list(
+            self._session.exec(
+                select(Appointment)
+                .where(
                     Appointment.appointment_date == appointment_date,
                     Appointment.time_preference == time_preference,
                     Appointment.status != AppointmentStatus.CANCELLED,
