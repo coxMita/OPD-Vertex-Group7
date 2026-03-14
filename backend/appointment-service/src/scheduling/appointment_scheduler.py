@@ -16,8 +16,8 @@ from src.repositories.appointment_repository import AppointmentRepository
 
 logger = logging.getLogger(__name__)
 
-AM_START = time(int(os.getenv("AM_START_HOUR", "8")), 0)
-PM_START = time(int(os.getenv("PM_START_HOUR", "13")), 0)
+_am_notify = time(int(os.getenv("AM_NOTIFY_HOUR", "7")), 0)
+_pm_notify = time(int(os.getenv("PM_NOTIFY_HOUR", "12")), 0)
 
 
 async def _notify_session(
@@ -90,8 +90,8 @@ def build_scheduler(
     scheduler.add_job(
         func=lambda: _notify_session(get_repo(), messaging, TimePreference.AM),
         trigger="cron",
-        hour=AM_START.hour,
-        minute=AM_START.minute,
+        hour=_am_notify.hour,
+        minute=_am_notify.minute,
         id="notify_am_session",
         replace_existing=True,
     )
@@ -99,11 +99,13 @@ def build_scheduler(
     scheduler.add_job(
         func=lambda: _notify_session(get_repo(), messaging, TimePreference.PM),
         trigger="cron",
-        hour=PM_START.hour,
-        minute=PM_START.minute,
+        hour=_pm_notify.hour,
+        minute=_pm_notify.minute,
         id="notify_pm_session",
         replace_existing=True,
     )
 
-    logger.info("Scheduler configured: AM job at %s, PM job at %s", AM_START, PM_START)
+    logger.info(
+        "Scheduler configured: AM job at %s, PM job at %s", _am_notify, _pm_notify
+    )
     return scheduler

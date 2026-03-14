@@ -18,8 +18,9 @@ from src.messaging.pubsub_exchanges import (
     APPOINTMENT_STATUS_CHANGED,
 )
 from src.messaging.pubsub_facade import PubSubFacade
+from src.models.db.appointment import TimePreference
 from src.repositories.appointment_repository import AppointmentRepository
-from src.scheduling.appointment_scheduler import build_scheduler
+from src.scheduling.appointment_scheduler import _notify_session, build_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +98,11 @@ def root() -> dict[str, str]:
 def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@app.post("/debug/trigger-session/{preference}")
+async def trigger_session(preference: str) -> dict:
+    """Manually trigger session notification."""
+    pref = TimePreference.AM if preference.upper() == "AM" else TimePreference.PM
+    await _notify_session(_get_repo(), messaging_manager, pref)
+    return {"triggered": preference}
