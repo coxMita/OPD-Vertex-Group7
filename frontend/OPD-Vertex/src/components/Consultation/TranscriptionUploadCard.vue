@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import axios, { type AxiosError } from 'axios'
 
 const emit = defineEmits<{
   (e: 'transcriptReady', text: string): void
@@ -8,57 +9,82 @@ const emit = defineEmits<{
 const selectedFile = ref<File | null>(null)
 const isDragging = ref(false)
 const isProcessing = ref(false)
+const uploadProgress = ref(0)
 const result = ref('')
 const error = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// Simulated gateway endpoint
-const TRANSCRIPTION_ENDPOINT = 'http://localhost:8000/api/transcription/transcribe'
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8000'
+const TRANSCRIPTION_ENDPOINT = `${GATEWAY_URL}/api/v1/transcription/`
 
-function handleFileChange(files: File[]) {
-  if (files.length > 0) {
-    selectedFile.value = files[0]
+function pickFile(file: File) {
+  if (file.name.endsWith('.wav') || file.type === 'audio/wav') {
+    selectedFile.value = file
     result.value = ''
     error.value = ''
+    uploadProgress.value = 0
+  } else {
+    error.value = 'Only .wav files are supported.'
   }
+}
+
+function onNativeInput(e: Event) {
+  const files = (e.target as HTMLInputElement).files
+  if (files?.[0]) pickFile(files[0])
 }
 
 function handleDrop(e: DragEvent) {
   isDragging.value = false
   const files = Array.from(e.dataTransfer?.files ?? [])
-  const wav = files.find(f => f.name.endsWith('.wav') || f.type === 'audio/wav')
-  if (wav) {
-    selectedFile.value = wav
-    result.value = ''
-    error.value = ''
-  }
+  if (files[0]) pickFile(files[0])
+}
+
+function openFilePicker() {
+  fileInputRef.value?.click()
 }
 
 async function runTranscription() {
   if (!selectedFile.value) return
   isProcessing.value = true
+  uploadProgress.value = 0
   result.value = ''
   error.value = ''
 
+  const formData = new FormData()
+  formData.append('file', selectedFile.value)
+
   try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-
-    const response = await fetch(TRANSCRIPTION_ENDPOINT, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    // Transcription service returns { text: string } or { transcript: string }
-    const text = data.text ?? data.transcript ?? JSON.stringify(data)
+    const response = await axios.post<{ transcript?: string; text?: string }>(
+      TRANSCRIPTION_ENDPOINT,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120_000,
+        onUploadProgress(progressEvent) {
+          if (progressEvent.total) {
+            uploadProgress.value = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            )
+          }
+        },
+      },
+    )
+    const text =
+      response.data.transcript ?? response.data.text ?? JSON.stringify(response.data)
     result.value = text
     emit('transcriptReady', text)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to reach transcription service'
+    const axiosErr = err as AxiosError<{ detail?: string }>
+    if (axiosErr.response) {
+      const detail = axiosErr.response.data?.detail
+      error.value = detail
+        ? `Service error: ${detail}`
+        : `HTTP ${axiosErr.response.status}: ${axiosErr.response.statusText}`
+    } else if (axiosErr.request) {
+      error.value = `No response from gateway — is Docker running? (${GATEWAY_URL})`
+    } else {
+      error.value = axiosErr.message ?? 'Unknown error'
+    }
   } finally {
     isProcessing.value = false
   }
@@ -68,6 +94,8 @@ function clearFile() {
   selectedFile.value = null
   result.value = ''
   error.value = ''
+  uploadProgress.value = 0
+  if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
 function formatSize(bytes: number) {
@@ -94,9 +122,20 @@ function formatSize(bytes: number) {
 
     <div class="pa-5">
       <p class="helper-text mb-4">
-        Upload a <code>.wav</code> file to test the transcription service directly — mirrors the Swagger UI flow.
-        The request goes to <code>POST /api/transcription/transcribe</code> via the API Gateway.
+        Upload a <code>.wav</code> file to invoke the transcription service through the
+        API Gateway (<code>POST /api/v1/transcription/</code>). After a successful run,
+        check RabbitMQ — the <code>transcription.completed</code> fanout exchange should
+        carry the result.
       </p>
+
+      <!-- Hidden native file input — the only reliable way to trigger the OS picker -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept=".wav,audio/wav"
+        style="display: none"
+        @change="onNativeInput"
+      />
 
       <!-- Drop zone -->
       <div
@@ -105,23 +144,13 @@ function formatSize(bytes: number) {
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
+        @click="!selectedFile && openFilePicker()"
       >
-        <v-file-input
-          v-if="!selectedFile"
-          accept=".wav,audio/wav"
-          hide-details
-          variant="plain"
-          class="file-input-hidden"
-          @update:model-value="handleFileChange"
-        >
-          <template #default>
-            <div class="drop-content text-center py-4">
-              <v-icon size="40" color="indigo" class="mb-3" opacity="0.5">mdi-waveform</v-icon>
-              <p class="drop-text">Drag &amp; drop a <strong>.wav</strong> file here</p>
-              <p class="drop-sub mt-1">or click to browse</p>
-            </div>
-          </template>
-        </v-file-input>
+        <div v-if="!selectedFile" class="drop-content text-center py-6">
+          <v-icon size="40" color="indigo" class="mb-3" opacity="0.5">mdi-waveform</v-icon>
+          <p class="drop-text">Drag &amp; drop a <strong>.wav</strong> file here</p>
+          <p class="drop-sub mt-1">or click to browse</p>
+        </div>
 
         <div v-else class="file-selected d-flex align-center ga-3 pa-3">
           <v-avatar color="indigo" size="40" rounded="lg">
@@ -141,7 +170,7 @@ function formatSize(bytes: number) {
         </div>
       </div>
 
-      <!-- Run button -->
+      <!-- Run button — enabled only when a file is selected -->
       <v-btn
         color="indigo"
         rounded="lg"
@@ -155,11 +184,22 @@ function formatSize(bytes: number) {
         Run Transcription
       </v-btn>
 
-      <!-- Processing indicator -->
+      <!-- Upload progress -->
       <v-expand-transition>
-        <div v-if="isProcessing" class="text-center mt-4">
-          <v-progress-linear indeterminate color="indigo" rounded height="3" />
-          <p class="processing-text mt-2">Sending to transcription service...</p>
+        <div v-if="isProcessing" class="mt-4">
+          <div class="d-flex justify-space-between mb-1">
+            <span class="processing-text">
+              {{ uploadProgress < 100 ? 'Uploading…' : 'Transcribing (may take a moment)…' }}
+            </span>
+            <span class="processing-text">{{ uploadProgress }}%</span>
+          </div>
+          <v-progress-linear
+            :model-value="uploadProgress"
+            :indeterminate="uploadProgress === 100"
+            color="indigo"
+            rounded
+            height="4"
+          />
         </div>
       </v-expand-transition>
 
@@ -185,14 +225,20 @@ function formatSize(bytes: number) {
               <v-icon size="14" color="success" class="mr-1">mdi-check-circle</v-icon>
               Transcription Result
             </span>
-            <v-btn
-              size="x-small"
-              variant="tonal"
-              color="success"
-              @click="$emit('transcriptReady', result)"
-            >
-              Use in Prescription
-            </v-btn>
+            <div class="d-flex ga-2">
+              <v-chip color="teal" size="x-small" variant="tonal">
+                <v-icon start size="12">mdi-rabbit</v-icon>
+                Event published to RabbitMQ
+              </v-chip>
+              <v-btn
+                size="x-small"
+                variant="tonal"
+                color="success"
+                @click="$emit('transcriptReady', result)"
+              >
+                Use in Prescription
+              </v-btn>
+            </div>
           </div>
           <div class="result-box">
             <p class="result-text">{{ result }}</p>
@@ -213,80 +259,39 @@ function formatSize(bytes: number) {
   display: flex;
   align-items: center;
 }
-
-.helper-text {
-  font-size: 0.8rem;
-  line-height: 1.6;
-  opacity: 0.65;
-}
-
+.helper-text { font-size: 0.8rem; line-height: 1.6; opacity: 0.65; }
 code {
   background: rgba(var(--v-theme-on-surface), 0.08);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.78rem;
 }
-
 .drop-zone {
   border: 2px dashed rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
-  min-height: 80px;
+  min-height: 90px;
 }
-
+.drop-zone:hover:not(.has-file) {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.04);
+}
 .drop-zone.dragging {
   border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.05);
+  background: rgba(99, 102, 241, 0.08);
 }
-
 .drop-zone.has-file {
   border-style: solid;
   border-color: rgba(99, 102, 241, 0.4);
+  cursor: default;
 }
-
-.file-input-hidden :deep(.v-field) {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.drop-content {
-  pointer-events: none;
-}
-
-.drop-text {
-  font-size: 0.88rem;
-  margin: 0;
-}
-
-.drop-sub {
-  font-size: 0.76rem;
-  opacity: 0.5;
-  margin: 0;
-}
-
-.file-selected {
-  border-radius: 10px;
-}
-
-.file-name {
-  font-size: 0.84rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.file-size {
-  font-size: 0.72rem;
-  opacity: 0.55;
-  margin: 0;
-}
-
-.processing-text {
-  font-size: 0.78rem;
-  opacity: 0.6;
-}
-
+.drop-content { pointer-events: none; }
+.drop-text { font-size: 0.88rem; margin: 0; }
+.drop-sub { font-size: 0.76rem; opacity: 0.5; margin: 0; }
+.file-name { font-size: 0.84rem; font-weight: 600; margin: 0; }
+.file-size { font-size: 0.72rem; opacity: 0.55; margin: 0; }
+.processing-text { font-size: 0.78rem; opacity: 0.6; }
 .result-label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -294,17 +299,11 @@ code {
   display: flex;
   align-items: center;
 }
-
 .result-box {
   padding: 14px 16px;
   border-radius: 10px;
-  background: rgba(var(--v-theme-success, 76, 175, 80), 0.06);
+  background: rgba(76, 175, 80, 0.06);
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
-
-.result-text {
-  font-size: 0.84rem;
-  line-height: 1.7;
-  margin: 0;
-}
+.result-text { font-size: 0.84rem; line-height: 1.7; margin: 0; }
 </style>
