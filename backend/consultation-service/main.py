@@ -21,18 +21,27 @@ from src.messaging.pubsub_facade import PubSubFacade
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-AMQP_URL = os.getenv("AMQP_URL")
-if not AMQP_URL:
-    logger.error("AMQP_URL not set in environment variables")
-    raise ValueError("AMQP_URL not set in environment variables")
 
-messaging_manager.add_pubsubs(
-    [
-        PubSubFacade(AMQP_URL, CONSULTATION_CREATED),
-        PubSubFacade(AMQP_URL, CONSULTATION_STARTED),
-        PubSubFacade(AMQP_URL, CONSULTATION_COMPLETED),
-    ]
-)
+
+def _is_truthy(value: str | None) -> bool:
+    """Interpret common truthy environment variable values."""
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+AMQP_URL = os.getenv("AMQP_URL")
+MESSAGING_REQUIRED = _is_truthy(os.getenv("MESSAGING_REQUIRED"))
+MESSAGING_ENABLED = bool(AMQP_URL)
+
+if MESSAGING_ENABLED:
+    messaging_manager.add_pubsubs(
+        [
+            PubSubFacade(AMQP_URL, CONSULTATION_CREATED),
+            PubSubFacade(AMQP_URL, CONSULTATION_STARTED),
+            PubSubFacade(AMQP_URL, CONSULTATION_COMPLETED),
+        ]
+    )
+else:
+    logger.warning("AMQP_URL not set; consultation messaging is disabled.")
 
 
 @asynccontextmanager
@@ -46,13 +55,25 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
         AsyncGenerator[None, Any]: An async generator for lifespan management.
 
     """
-    logger.info("Starting up messaging manager...")
-    await messaging_manager.start_all()
-    logger.info("Messaging manager started.")
+    messaging_started = False
+    if MESSAGING_ENABLED:
+        logger.info("Starting up messaging manager...")
+        try:
+            await messaging_manager.start_all()
+            messaging_started = True
+            logger.info("Messaging manager started.")
+        except Exception:
+            if MESSAGING_REQUIRED:
+                logger.exception("Messaging startup failed and is required.")
+                raise
+            logger.exception("Messaging startup failed; continuing without messaging.")
+    else:
+        logger.info("Skipping messaging startup because messaging is disabled.")
     yield
-    logger.info("Shutting down messaging manager...")
-    await messaging_manager.stop_all()
-    logger.info("Messaging manager stopped.")
+    if messaging_started:
+        logger.info("Shutting down messaging manager...")
+        await messaging_manager.stop_all()
+        logger.info("Messaging manager stopped.")
 
 
 app = FastAPI(title="consultation-service", lifespan=lifespan)

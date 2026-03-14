@@ -33,7 +33,7 @@ services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
-        image: mita28/opdvertex:gateway-1.0.2
+        image: mita28/opdvertex:gateway-1.0.3
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -161,7 +161,7 @@ services:
 
     # ── Consultation Service ──────────────────────────────────────────────────
     consultation-service:
-        image: mita28/opdvertex:consultation-service-1.0.0
+        image: mita28/opdvertex:consultation-service-1.0.1
         build: backend/consultation-service/.
         container_name: consultation-service
         restart: unless-stopped

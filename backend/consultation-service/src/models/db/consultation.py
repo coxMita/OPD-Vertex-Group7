@@ -17,7 +17,7 @@ class Consultation(SQLModel, table=True):
     """Represents a patient consultation session tied to an appointment."""
 
     id: int | None = Field(default=None, primary_key=True)
-    appointment_id: int = Field(foreign_key="appointment.id", unique=True)
+    appointment_id: int = Field(unique=True)
     doctor_id: int
     start_time: time | None = Field(default=None)
     end_time: time | None = Field(default=None)
