@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import axios, { type AxiosError } from 'axios'
+import { transcriptionApi } from '@/services/transcriptionApi'
 
 const emit = defineEmits<{
   (e: 'transcriptReady', text: string): void
@@ -13,9 +13,6 @@ const uploadProgress = ref(0)
 const result = ref('')
 const error = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
-
-const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8000'
-const TRANSCRIPTION_ENDPOINT = `${GATEWAY_URL}/api/v1/transcription/`
 
 function pickFile(file: File) {
   if (file.name.endsWith('.wav') || file.type === 'audio/wav') {
@@ -50,41 +47,15 @@ async function runTranscription() {
   result.value = ''
   error.value = ''
 
-  const formData = new FormData()
-  formData.append('file', selectedFile.value)
-
   try {
-    const response = await axios.post<{ transcript?: string; text?: string }>(
-      TRANSCRIPTION_ENDPOINT,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120_000,
-        onUploadProgress(progressEvent) {
-          if (progressEvent.total) {
-            uploadProgress.value = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total,
-            )
-          }
-        },
-      },
+    const { transcript } = await transcriptionApi.transcribeFile(
+      selectedFile.value,
+      (percent) => { uploadProgress.value = percent },
     )
-    const text =
-      response.data.transcript ?? response.data.text ?? JSON.stringify(response.data)
-    result.value = text
-    emit('transcriptReady', text)
+    result.value = transcript
+    emit('transcriptReady', transcript)
   } catch (err) {
-    const axiosErr = err as AxiosError<{ detail?: string }>
-    if (axiosErr.response) {
-      const detail = axiosErr.response.data?.detail
-      error.value = detail
-        ? `Service error: ${detail}`
-        : `HTTP ${axiosErr.response.status}: ${axiosErr.response.statusText}`
-    } else if (axiosErr.request) {
-      error.value = `No response from gateway — is Docker running? (${GATEWAY_URL})`
-    } else {
-      error.value = axiosErr.message ?? 'Unknown error'
-    }
+    error.value = transcriptionApi.formatError(err, transcriptionApi.gatewayUrl)
   } finally {
     isProcessing.value = false
   }
@@ -128,7 +99,7 @@ function formatSize(bytes: number) {
         carry the result.
       </p>
 
-      <!-- Hidden native file input — the only reliable way to trigger the OS picker -->
+      <!-- Hidden native file input -->
       <input
         ref="fileInputRef"
         type="file"
@@ -160,17 +131,11 @@ function formatSize(bytes: number) {
             <p class="file-name text-truncate">{{ selectedFile.name }}</p>
             <p class="file-size">{{ formatSize(selectedFile.size) }} · audio/wav</p>
           </div>
-          <v-btn
-            icon="mdi-close"
-            size="x-small"
-            variant="tonal"
-            color="error"
-            @click.stop="clearFile"
-          />
+          <v-btn icon="mdi-close" size="x-small" variant="tonal" color="error" @click.stop="clearFile" />
         </div>
       </div>
 
-      <!-- Run button — enabled only when a file is selected -->
+      <!-- Run button -->
       <v-btn
         color="indigo"
         rounded="lg"
@@ -230,12 +195,7 @@ function formatSize(bytes: number) {
                 <v-icon start size="12">mdi-rabbit</v-icon>
                 Event published to RabbitMQ
               </v-chip>
-              <v-btn
-                size="x-small"
-                variant="tonal"
-                color="success"
-                @click="$emit('transcriptReady', result)"
-              >
+              <v-btn size="x-small" variant="tonal" color="success" @click="$emit('transcriptReady', result)">
                 Use in Prescription
               </v-btn>
             </div>

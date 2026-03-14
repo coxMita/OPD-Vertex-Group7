@@ -6,7 +6,7 @@ import CalendarToolbar from '@/components/DoctorCalendar/CalendarToolbar.vue'
 import CalendarDayView from '@/components/DoctorCalendar/CalendarDayView.vue'
 import CalendarWeekView from '@/components/DoctorCalendar/CalendarWeekView.vue'
 import CalendarMonthView from '@/components/DoctorCalendar/CalendarMonthView.vue'
-// import ConsultationView from '@/components/DoctorConsultation/ConsultationView.vue'
+import ConsultationView from '@/views/ConsultationView.vue'
 
 type DoctorSection = 'calendar' | 'consultations'
 const activeSection = ref<DoctorSection>('calendar')
@@ -146,11 +146,7 @@ onMounted(() => {
     <!-- Consultations section — swap comment when component is ready -->
     <template v-if="activeSection === 'consultations'">
       <!-- <ConsultationView :doctorId="doctorId" /> -->
-      <div class="consultations-placeholder">
-        <v-icon size="48" color="primary" class="mb-4">mdi-stethoscope</v-icon>
-        <p class="text-h6 font-weight-medium">Consultations</p>
-        <p class="text-medium-emphasis text-body-2">Connect your ConsultationView component here.</p>
-      </div>
+      <ConsultationView :doctorId="doctorId" />
     </template>
   </div>
 </template>

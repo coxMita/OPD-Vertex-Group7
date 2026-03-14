@@ -14,14 +14,14 @@ const { appointment, rxDraft } = useConsultationData()
 const isSelected = ref(false)
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
 const currentRxText = ref(rxDraft.text)
+const prescriptionKey = ref(0) // bump to force PrescriptionCard remount on new transcript
 
-function onRecordingStatusChange(status: 'idle' | 'recording' | 'done') {
+function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | 'done' | 'error') {
   if (status === 'recording') consultationStatus.value = 'active'
   else if (status === 'done') consultationStatus.value = 'done'
 }
 
 function onTranscriptReady(text: string) {
-  // When recording finishes, update the rx with enriched draft
   currentRxText.value = `PATIENT: ${appointment.name}
 DATE: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}  |  DR. HANSEN
 
@@ -37,6 +37,7 @@ MEDICATIONS:
 NOTES:
 Follow-up in 1 week if symptoms persist.
 Avoid dairy 2h before/after Amoxicillin.`
+  prescriptionKey.value++  // force PrescriptionCard to remount with fresh text
 }
 
 function onUploadTranscript(text: string) {
@@ -52,6 +53,7 @@ Review transcript above and update accordingly.
 
 NOTES:
 AI-assisted draft from uploaded audio file.`
+  prescriptionKey.value++  // force PrescriptionCard to remount with fresh text
 }
 
 function onApproved(_text: string) {
@@ -116,6 +118,7 @@ function onApproved(_text: string) {
           />
 
           <PrescriptionCard
+            :key="prescriptionKey"
             :initial-text="currentRxText"
             :patient-name="appointment.name"
             :patient-email="appointment.email"
