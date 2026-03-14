@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
 import src.logger_config  # noqa: F401, I001
 from src.api.routes.appointment_routes import router as appointment_router
@@ -106,11 +106,3 @@ async def trigger_session(preference: str) -> dict:
     pref = TimePreference.AM if preference.upper() == "AM" else TimePreference.PM
     await _notify_session(_get_repo(), messaging_manager, pref)
     return {"triggered": preference}
-
-
-@app.delete("/debug/clear-db")
-def clear_db() -> dict:
-    """Drop and recreate all tables. Remove before production."""
-    SQLModel.metadata.drop_all(_engine)
-    SQLModel.metadata.create_all(_engine)
-    return {"cleared": True}
