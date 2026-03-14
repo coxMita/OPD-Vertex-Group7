@@ -1,5 +1,6 @@
 """API routes for appointments."""
 
+import uuid
 from datetime import date
 from typing import Annotated
 
@@ -46,14 +47,14 @@ async def create_appointment(
 
 @router.get("/{appointment_id}", status_code=status.HTTP_200_OK)
 async def get_appointment(
-    appointment_id: int,
+    appointment_id: uuid.UUID,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
     response: Response,
 ) -> AppointmentResponse | dict:
     """Get a specific appointment by ID.
 
     Args:
-        appointment_id (int): The appointment ID.
+        appointment_id (uuid.UUID): The appointment ID.
         service (AppointmentService): The appointment service.
         response (Response): The FastAPI response object.
 
@@ -70,14 +71,14 @@ async def get_appointment(
 
 @router.get("/queue/day", status_code=status.HTTP_200_OK)
 async def get_queue(
-    doctor_id: int,
+    doctor_id: uuid.UUID,
     appointment_date: date,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
 ) -> list[AppointmentResponse]:
     """Get the ordered queue for a doctor on a specific date.
 
     Args:
-        doctor_id (int): The doctor's ID.
+        doctor_id (uuid.UUID): The doctor's ID.
         appointment_date (date): The date of the session.
         service (AppointmentService): The appointment service.
 
@@ -90,13 +91,13 @@ async def get_queue(
 
 @router.get("/patient/{patient_id}", status_code=status.HTTP_200_OK)
 async def get_patient_appointments(
-    patient_id: int,
+    patient_id: uuid.UUID,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
 ) -> list[AppointmentResponse]:
     """Get all appointments for a patient.
 
     Args:
-        patient_id (int): The patient's ID.
+        patient_id (uuid.UUID): The patient's ID.
         service (AppointmentService): The appointment service.
 
     Returns:
@@ -108,7 +109,7 @@ async def get_patient_appointments(
 
 @router.patch("/{appointment_id}/status", status_code=status.HTTP_200_OK)
 async def update_status(
-    appointment_id: int,
+    appointment_id: uuid.UUID,
     request: AppointmentStatusUpdateRequest,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
     response: Response,
@@ -116,7 +117,7 @@ async def update_status(
     """Update the status of an appointment.
 
     Args:
-        appointment_id (int): The appointment ID.
+        appointment_id (uuid.UUID): The appointment ID.
         request (AppointmentStatusUpdateRequest): The new status.
         service (AppointmentService): The appointment service.
         response (Response): The FastAPI response object.
@@ -134,7 +135,7 @@ async def update_status(
 
 @router.patch("/queue/reorder", status_code=status.HTTP_200_OK)
 async def reorder_queue(
-    doctor_id: int,
+    doctor_id: uuid.UUID,
     appointment_date: date,
     request: QueueReorderRequest,
     service: Annotated[AppointmentService, Depends(get_appointment_service)],
@@ -143,7 +144,7 @@ async def reorder_queue(
     """Reorder the appointment queue for a doctor session.
 
     Args:
-        doctor_id (int): The doctor's ID.
+        doctor_id (uuid.UUID): The doctor's ID.
         appointment_date (date): The date of the session.
         request (QueueReorderRequest): Ordered list of appointment IDs.
         service (AppointmentService): The appointment service.

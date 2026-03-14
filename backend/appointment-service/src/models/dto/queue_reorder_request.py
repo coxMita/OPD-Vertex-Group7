@@ -1,5 +1,7 @@
 """DTO for reordering the appointment queue."""
 
+import uuid
+
 from pydantic import BaseModel
 
 
@@ -10,4 +12,4 @@ class QueueReorderRequest(BaseModel):
     representing the desired queue order.
     """
 
-    appointment_ids: list[int]
+    appointment_ids: list[uuid.UUID]
