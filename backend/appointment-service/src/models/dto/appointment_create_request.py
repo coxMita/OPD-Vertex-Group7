@@ -1,5 +1,6 @@
 """DTO for creating an appointment."""
 
+import uuid
 from datetime import date
 
 from pydantic import BaseModel
@@ -14,8 +15,8 @@ class AppointmentCreateRequest(BaseModel):
     The assigned time slot is determined automatically by the service.
     """
 
-    patient_id: int
-    doctor_id: int
+    patient_id: uuid.UUID
+    doctor_id: uuid.UUID
     appointment_date: date
     time_preference: TimePreference
     notes: str | None = None

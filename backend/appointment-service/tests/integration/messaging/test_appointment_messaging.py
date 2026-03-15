@@ -1,6 +1,7 @@
 """Integration tests for appointment service messaging."""
 
 import asyncio
+import uuid
 from asyncio import AbstractEventLoop
 from datetime import date, time
 from typing import Generator
@@ -22,6 +23,10 @@ from tests.integration.messaging.utils.rabbitmq_container import (
     rabbitmq_container as _rabbitmq_container,  # noqa: F401
 )
 
+APPOINTMENT_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+PATIENT_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
+DOCTOR_ID = uuid.UUID("00000000-0000-0000-0000-000000000003")
+
 
 @pytest.fixture(scope="module")
 def event_loop() -> Generator[AbstractEventLoop, None, None]:
@@ -34,9 +39,9 @@ def event_loop() -> Generator[AbstractEventLoop, None, None]:
 def _make_appointment_message() -> AppointmentMessage:
     """Create a test appointment message."""
     return AppointmentMessage(
-        appointment_id=1,
-        patient_id=1,
-        doctor_id=1,
+        appointment_id=APPOINTMENT_ID,
+        patient_id=PATIENT_ID,
+        doctor_id=DOCTOR_ID,
         appointment_date=date(2026, 3, 10),
         time_preference=TimePreference.AM,
         assigned_time=time(8, 0),
@@ -134,13 +139,13 @@ async def test_subscribe_and_receive_appointment_status_changed(
     publisher = PubSubFacade(amqp_url, APPOINTMENT_STATUS_CHANGED)
     await publisher.connect()
     message = AppointmentMessage(
-        appointment_id=1,
-        patient_id=1,
-        doctor_id=1,
+        appointment_id=APPOINTMENT_ID,
+        patient_id=PATIENT_ID,
+        doctor_id=DOCTOR_ID,
         appointment_date=date(2026, 3, 10),
         time_preference=TimePreference.AM,
         assigned_time=time(8, 0),
-        status=AppointmentStatus.IN_PROGRESS,
+        status=AppointmentStatus.HANDED_OFF,
     )
     await publisher.publish(message)
     await publisher.close()
@@ -153,6 +158,6 @@ async def test_subscribe_and_receive_appointment_status_changed(
         )
 
     assert len(received_messages) == 1
-    assert received_messages[0].status == AppointmentStatus.IN_PROGRESS
+    assert received_messages[0].status == AppointmentStatus.HANDED_OFF
 
     await subscriber.close()
