@@ -8,6 +8,7 @@ from src.config import settings
 
 logging.basicConfig(level=logging.INFO)
 
+
 async def main() -> None:
     """Trigger an email via RabbitMQ."""
     print(f"Connecting to RabbitMQ at {settings.RABBITMQ_URL}...")
@@ -29,7 +30,7 @@ async def main() -> None:
                 "successfully routed the event to the email-service container, "
                 "which then sent this real email."
             ),
-            "is_html": False
+            "is_html": False,
         }
 
         message_body = json.dumps(email_event).encode()
@@ -45,6 +46,7 @@ async def main() -> None:
             f"Waiting for the email-service container to pick it up and email "
             f"{settings.SMTP_FROM_EMAIL}..."
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

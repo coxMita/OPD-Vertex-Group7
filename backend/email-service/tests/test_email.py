@@ -20,12 +20,13 @@ async def main() -> None:
             message=(
                 "This is a test email sent from the newly configured email service."
             ),
-            is_html=False
+            is_html=False,
         )
         print("Test email sent successfully!")
     except Exception as e:
         print(f"Failed to send email: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
