@@ -10,6 +10,7 @@ from src.consumer import start_consumer
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manage the application lifecycle events.
@@ -31,16 +32,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         yield
     finally:
         # On shutdown
-        if 'connection' in locals():
+        if "connection" in locals():
             await connection.close()
             logger.info("RabbitMQ connection closed.")
 
+
 app = FastAPI(title="email-service", lifespan=lifespan)
+
 
 @app.get("/")
 def root() -> dict[str, str]:
     """Root endpoint."""
     return {"service": "email-service"}
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
