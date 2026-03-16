@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml uv.lock .python-version ./
+COPY pyproject.toml uv.lock .python-version .env* ./
 COPY main.py .
 COPY src ./src
 RUN uv venv && uv sync

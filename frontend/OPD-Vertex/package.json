@@ -19,6 +19,7 @@
     "@mdi/font": "^7.4.47",
     "@tanstack/vue-query": "^5.92.9",
     "axios": "^1.13.5",
+    "keycloak-js": "^26.2.3",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "vite-plugin-vuetify": "^2.1.3",
