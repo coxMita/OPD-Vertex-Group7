@@ -42,4 +42,28 @@ export const appointmentApi = {
       .get<Appointment[]>(`/api/v1/appointments/patient/${patientId}`)
       .then((res) => res.data)
   },
+
+  /**
+   * Reorder the appointment queue for a doctor on a specific date.
+   * Redistributes assigned_time slots based on the new order.
+   * Maps to: PATCH /api/v1/appointments/queue/reorder?doctor_id=...&appointment_date=...
+   */
+  reorderQueue(
+    doctorId: string,
+    appointmentDate: string,
+    appointmentIds: string[],
+  ): Promise<Appointment[]> {
+    return apiClient
+      .patch<Appointment[]>(
+        '/api/v1/appointments/queue/reorder',
+        { appointment_ids: appointmentIds },
+        {
+          params: {
+            doctor_id: doctorId,
+            appointment_date: appointmentDate,
+          },
+        },
+      )
+      .then((res) => res.data)
+  },
 }

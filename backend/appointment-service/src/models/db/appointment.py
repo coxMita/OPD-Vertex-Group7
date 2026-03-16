@@ -4,6 +4,8 @@ import uuid
 from datetime import date, time
 from enum import Enum
 
+from sqlalchemy import Column
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, SQLModel
 
 
@@ -32,5 +34,11 @@ class Appointment(SQLModel, table=True):
     appointment_date: date
     time_preference: TimePreference
     assigned_time: time | None = Field(default=None)
-    status: AppointmentStatus = Field(default=AppointmentStatus.SCHEDULED)
+    status: AppointmentStatus = Field(
+        default=AppointmentStatus.SCHEDULED,
+        sa_column=Column(
+            SAEnum(AppointmentStatus, values_callable=lambda x: [e.value for e in x]),
+            nullable=False,
+        ),
+    )
     notes: str | None = Field(default=None)
