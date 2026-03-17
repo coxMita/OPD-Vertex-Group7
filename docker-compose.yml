@@ -29,6 +29,7 @@ volumes:
     pgadmin_data:
     ollama_data:
 
+
 services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
@@ -206,6 +207,14 @@ services:
         restart: unless-stopped
         ports:
             - "8084:8000"
+        environment:
+            SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+            SMTP_PORT: ${SMTP_PORT:-587}
+            SMTP_USER: ${SMTP_USER}
+            SMTP_PASSWORD: ${SMTP_PASSWORD}
+            SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+            SMTP_USE_TLS: ${SMTP_USE_TLS:-True}
+            RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         networks:
             - internal-api
             - bus
@@ -326,6 +335,17 @@ services:
             timeout: 10s
             retries: 5
             start_period: 5s
+
+    # ── Mailpit (Local SMTP Testing) ──────────────────────────────────────────
+    mailpit:
+        image: axllent/mailpit
+        container_name: mailpit
+        restart: unless-stopped
+        ports:
+            - "8025:8025"
+            - "1025:1025"
+        networks:
+            - bus
 
     # ── pgAdmin ───────────────────────────────────────────────────────────────
     pgadmin:
