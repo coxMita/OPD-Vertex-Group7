@@ -154,7 +154,7 @@ services:
         networks:
             - appointment-net
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${APPOINTMENT_DB_USER} -d ${APPOINTMENT_DB_NAME}" ]
+            test: ["CMD-SHELL", "pg_isready -U ${APPOINTMENT_DB_USER} -d ${APPOINTMENT_DB_NAME}"]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -193,7 +193,7 @@ services:
         networks:
             - consultation-net
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${CONSULTATION_DB_USER} -d ${CONSULTATION_DB_NAME}" ]
+            test: ["CMD-SHELL", "pg_isready -U ${CONSULTATION_DB_USER} -d ${CONSULTATION_DB_NAME}"]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -255,7 +255,7 @@ services:
         networks:
             - prescription-net
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${PRESCRIPTION_DB_USER} -d ${PRESCRIPTION_DB_NAME}" ]
+            test: ["CMD-SHELL", "pg_isready -U ${PRESCRIPTION_DB_USER} -d ${PRESCRIPTION_DB_NAME}"]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -313,7 +313,7 @@ services:
         networks:
             - user-net
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}" ]
+            test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -330,7 +330,7 @@ services:
         networks:
             - bus
         healthcheck:
-            test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
+            test: ["CMD", "rabbitmq-diagnostics", "check_running"]
             interval: 5s
             timeout: 10s
             retries: 5
