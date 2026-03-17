@@ -1,7 +1,7 @@
 """recreate appointment table with correct schema
 
 Revision ID: a1b2c3d4e5f6
-Revises:
+Revises: 
 Create Date: 2026-03-16 00:00:00.000000
 
 """
