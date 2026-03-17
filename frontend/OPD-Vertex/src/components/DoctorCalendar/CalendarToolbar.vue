@@ -4,12 +4,14 @@ import type { CalendarView } from '@/composables/useCalendarNavigation'
 defineProps<{
   currentDateDisplay: string
   currentView: CalendarView
+  editMode: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'navigate', direction: number): void
   (e: 'go-to-today'): void
   (e: 'update:currentView', view: CalendarView): void
+  (e: 'toggle-edit-mode'): void
 }>()
 </script>
 
@@ -25,10 +27,26 @@ const emit = defineEmits<{
         </v-btn>
         <span class="current-date">{{ currentDateDisplay }}</span>
       </div>
-      <v-btn variant="tonal" color="primary" size="small" @click="emit('go-to-today')">Today</v-btn>
+      <v-btn variant="tonal" color="primary" size="small" @click="emit('go-to-today')">
+        Today
+      </v-btn>
     </div>
 
     <div class="toolbar-right">
+      <!-- Edit Mode toggle -->
+      <v-btn
+        :color="editMode ? 'warning' : 'default'"
+        :variant="editMode ? 'flat' : 'outlined'"
+        size="small"
+        :prepend-icon="editMode ? 'mdi-pencil-off' : 'mdi-pencil'"
+        @click="emit('toggle-edit-mode')"
+      >
+        {{ editMode ? 'Done Editing' : 'Edit' }}
+        <v-tooltip activator="parent" location="bottom">
+          {{ editMode ? 'Exit edit mode' : 'Enable drag & drop to reschedule appointments' }}
+        </v-tooltip>
+      </v-btn>
+
       <v-btn-toggle
         :model-value="currentView"
         mandatory
@@ -56,6 +74,10 @@ const emit = defineEmits<{
   flex-shrink: 0;
   gap: 12px;
   flex-wrap: wrap;
+  transition: background 0.2s ease;
+}
+.calendar-toolbar.edit-active {
+  background: rgba(var(--v-theme-warning), 0.04);
 }
 .toolbar-left {
   display: flex;

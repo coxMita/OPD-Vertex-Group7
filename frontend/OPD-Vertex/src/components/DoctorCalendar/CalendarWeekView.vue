@@ -10,6 +10,18 @@ const props = defineProps<{
   getApptStyle: (status: string) => Record<string, string>
   getStatusIcon: (status: string) => string
   isToday: (date: Date) => boolean
+  editMode: boolean
+  draggingId: string | null
+  isDragOver: (date: string, hour: number) => boolean
+  formatDate: (date: Date) => string
+}>()
+
+const emit = defineEmits<{
+  (e: 'dragstart', id: string): void
+  (e: 'dragover', date: string, hour: number): void
+  (e: 'dragleave'): void
+  (e: 'drop', date: string, hour: number): void
+  (e: 'select', id: string): void
 }>()
 
 const weekBodyRef = ref<HTMLElement | null>(null)
@@ -30,20 +42,32 @@ defineExpose({ weekBodyRef })
     <div class="week-body" ref="weekBodyRef">
       <div class="week-grid">
         <template v-for="hour in TIME_SLOTS" :key="hour">
-          <div class="week-time-label">{{ hour.toString().padStart(2, '0') }}:00</div>
+          <div class="week-time-label">{{ hour.toString().padStart(2, '00') }}:00</div>
           <div
             v-for="(day, dayIdx) in weekDaysInView"
             :key="`${hour}-${dayIdx}`"
             class="week-time-slot"
+            :class="{
+              'drop-target': editMode && isDragOver(formatDate(day), hour),
+              'edit-mode': editMode,
+            }"
+            @dragover.prevent="emit('dragover', formatDate(day), hour)"
+            @dragleave="emit('dragleave')"
+            @drop.prevent="emit('drop', formatDate(day), hour)"
           >
             <AppointmentCard
               v-for="appt in getAppointmentsForTimeSlot(day, hour)"
               :key="appt.id"
+              :appointmentId="appt.id"
               :statusIcon="getStatusIcon(appt.status)"
               :assignedTime="appt.assigned_time"
               :patientId="appt.patient_id"
               :apptStyle="getApptStyle(appt.status)"
+              :editMode="editMode"
+              :isDragging="draggingId === appt.id"
               compact
+              @dragstart="emit('dragstart', $event)"
+              @select="emit('select', $event)"
             />
           </div>
         </template>
@@ -133,5 +157,14 @@ defineExpose({ weekBodyRef })
   border-left: 1px solid rgba(var(--v-theme-on-surface), 0.04);
   min-height: 50px;
   box-sizing: border-box;
+  transition: background 0.12s ease;
+}
+.week-time-slot.edit-mode {
+  cursor: default;
+}
+.week-time-slot.drop-target {
+  background: rgba(var(--v-theme-primary), 0.08);
+  outline: 2px dashed rgba(var(--v-theme-primary), 0.4);
+  outline-offset: -2px;
 }
 </style>
