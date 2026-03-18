@@ -1,5 +1,6 @@
 """Consultation database model."""
 
+import uuid
 from datetime import datetime, time
 from enum import Enum
 
@@ -17,8 +18,8 @@ class Consultation(SQLModel, table=True):
     """Represents a patient consultation session tied to an appointment."""
 
     id: int | None = Field(default=None, primary_key=True)
-    appointment_id: int = Field(unique=True)
-    doctor_id: int
+    appointment_id: uuid.UUID = Field(unique=True)
+    doctor_id: uuid.UUID
     start_time: time | None = Field(default=None)
     end_time: time | None = Field(default=None)
     status: ConsultationStatus = Field(default=ConsultationStatus.ACTIVE)

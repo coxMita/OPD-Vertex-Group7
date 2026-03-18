@@ -1,5 +1,6 @@
 """Pytest configuration and shared fixtures."""
 
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
@@ -51,8 +52,8 @@ def consultation_service(consultation_repository, mock_messaging_manager):
 def test_consultation_data():
     """Create test consultation data."""
     return {
-        "appointment_id": 1,
-        "doctor_id": 200,
+        "appointment_id": uuid.uuid4(),
+        "doctor_id": uuid.uuid4(),
     }
 
 

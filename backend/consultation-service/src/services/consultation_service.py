@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import uuid
 from datetime import datetime
 
 from src.messaging.messaging_manager import MessagingManager
@@ -84,11 +85,13 @@ class ConsultationService:
         consultation = self._repo.get_by_id(consultation_id)
         return ConsultationResponse.from_entity(consultation) if consultation else None
 
-    def get_by_appointment_id(self, appointment_id: int) -> ConsultationResponse | None:
+    def get_by_appointment_id(
+        self, appointment_id: uuid.UUID
+    ) -> ConsultationResponse | None:
         """Get a consultation by appointment ID.
 
         Args:
-            appointment_id (int): The appointment ID.
+            appointment_id (uuid.UUID): The appointment ID.
 
         Returns:
             ConsultationResponse | None: The consultation if found, else None.
@@ -97,11 +100,13 @@ class ConsultationService:
         consultation = self._repo.get_by_appointment_id(appointment_id)
         return ConsultationResponse.from_entity(consultation) if consultation else None
 
-    def get_doctor_consultations(self, doctor_id: int) -> list[ConsultationResponse]:
+    def get_doctor_consultations(
+        self, doctor_id: uuid.UUID
+    ) -> list[ConsultationResponse]:
         """Get all consultations for a doctor.
 
         Args:
-            doctor_id (int): The doctor's ID.
+            doctor_id (uuid.UUID): The doctor's ID.
 
         Returns:
             list[ConsultationResponse]: The doctor's consultations.

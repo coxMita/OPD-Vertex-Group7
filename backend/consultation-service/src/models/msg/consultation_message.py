@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING
 
 from src.models.db.consultation import ConsultationStatus
@@ -26,8 +27,8 @@ class ConsultationMessage(AbstractMessage):
     """
 
     consultation_id: int
-    appointment_id: int
-    doctor_id: int
+    appointment_id: uuid.UUID
+    doctor_id: uuid.UUID
     status: ConsultationStatus
     audio_path: str | None = None
     transcript_id: int | None = None

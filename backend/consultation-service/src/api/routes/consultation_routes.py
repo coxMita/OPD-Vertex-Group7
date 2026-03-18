@@ -1,5 +1,6 @@
 """API routes for consultations."""
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
@@ -68,14 +69,14 @@ async def get_consultation(
 
 @router.get("/appointment/{appointment_id}", status_code=status.HTTP_200_OK)
 async def get_consultation_by_appointment(
-    appointment_id: int,
+    appointment_id: uuid.UUID,
     service: Annotated[ConsultationService, Depends(get_consultation_service)],
     response: Response,
 ) -> ConsultationResponse | dict:
     """Get a consultation by appointment ID.
 
     Args:
-        appointment_id (int): The appointment ID.
+        appointment_id (uuid.UUID): The appointment ID.
         service (ConsultationService): The consultation service.
         response (Response): The FastAPI response object.
 
@@ -92,13 +93,13 @@ async def get_consultation_by_appointment(
 
 @router.get("/doctor/{doctor_id}", status_code=status.HTTP_200_OK)
 async def get_doctor_consultations(
-    doctor_id: int,
+    doctor_id: uuid.UUID,
     service: Annotated[ConsultationService, Depends(get_consultation_service)],
 ) -> list[ConsultationResponse]:
     """Get all consultations for a doctor.
 
     Args:
-        doctor_id (int): The doctor's ID.
+        doctor_id (uuid.UUID): The doctor's ID.
         service (ConsultationService): The consultation service.
 
     Returns:

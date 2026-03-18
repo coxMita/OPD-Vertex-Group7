@@ -1,5 +1,7 @@
 """Repository for consultation data access."""
 
+import uuid
+
 from sqlmodel import Session, select
 
 from src.models.db.consultation import Consultation, ConsultationStatus
@@ -42,11 +44,11 @@ class ConsultationRepository:
         """
         return self._session.get(Consultation, consultation_id)
 
-    def get_by_appointment_id(self, appointment_id: int) -> Consultation | None:
+    def get_by_appointment_id(self, appointment_id: uuid.UUID) -> Consultation | None:
         """Retrieve a consultation by its appointment ID.
 
         Args:
-            appointment_id (int): The ID of the appointment.
+            appointment_id (uuid.UUID): The ID of the appointment.
 
         Returns:
             Consultation | None: The consultation if found, else None.
@@ -56,11 +58,11 @@ class ConsultationRepository:
             select(Consultation).where(Consultation.appointment_id == appointment_id)
         ).first()
 
-    def get_by_doctor_id(self, doctor_id: int) -> list[Consultation]:
+    def get_by_doctor_id(self, doctor_id: uuid.UUID) -> list[Consultation]:
         """Retrieve all consultations for a specific doctor.
 
         Args:
-            doctor_id (int): The ID of the doctor.
+            doctor_id (uuid.UUID): The ID of the doctor.
 
         Returns:
             list[Consultation]: List of the doctor's consultations.

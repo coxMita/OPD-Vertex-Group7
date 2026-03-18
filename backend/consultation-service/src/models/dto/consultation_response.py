@@ -1,5 +1,6 @@
 """DTO for consultation responses."""
 
+import uuid
 from datetime import datetime, time
 
 from pydantic import BaseModel
@@ -11,8 +12,8 @@ class ConsultationResponse(BaseModel):
     """Response DTO for a consultation session."""
 
     id: int
-    appointment_id: int
-    doctor_id: int
+    appointment_id: uuid.UUID
+    doctor_id: uuid.UUID
     start_time: time | None
     end_time: time | None
     status: ConsultationStatus
