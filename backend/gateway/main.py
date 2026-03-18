@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers.appointment_proxy import router as appointment_router
+from src.routers.consultation_proxy import router as consultation_router
 from src.routers.transcription_proxy import router as transcription_router
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(appointment_router)
+app.include_router(consultation_router)
 app.include_router(transcription_router)
 
 
