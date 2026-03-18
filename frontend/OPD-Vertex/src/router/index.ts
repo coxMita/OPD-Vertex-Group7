@@ -13,6 +13,11 @@ const router = createRouter({
       name: 'patient',
       component: () => import('../views/PatientFormView.vue'),
     },
+    {
+      path: '/doctor',
+      name: 'doctor-calendar',
+      component: () => import('../views/DoctorCalendarView.vue'),
+    },
   ],
 })
 

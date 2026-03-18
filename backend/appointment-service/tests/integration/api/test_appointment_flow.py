@@ -1,5 +1,6 @@
 """Integration tests for appointment API flow."""
 
+import uuid
 from typing import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,6 +19,19 @@ HTTP_201 = 201
 HTTP_404 = 404
 HTTP_409 = 409
 MIN_EXPECTED_APPOINTMENTS = 2
+
+PATIENT_ID_1 = str(uuid.UUID("00000000-0000-0000-0000-000000000001"))
+PATIENT_ID_2 = str(uuid.UUID("00000000-0000-0000-0000-000000000002"))
+PATIENT_ID_42 = str(uuid.UUID("00000000-0000-0000-0000-000000000042"))
+PATIENT_ID_99 = str(uuid.UUID("00000000-0000-0000-0000-000000000099"))
+
+DOCTOR_ID_1 = str(uuid.UUID("00000000-0000-0000-0001-000000000001"))
+DOCTOR_ID_2 = str(uuid.UUID("00000000-0000-0000-0001-000000000002"))
+DOCTOR_ID_3 = str(uuid.UUID("00000000-0000-0000-0001-000000000003"))
+DOCTOR_ID_4 = str(uuid.UUID("00000000-0000-0000-0001-000000000004"))
+DOCTOR_ID_5 = str(uuid.UUID("00000000-0000-0000-0001-000000000005"))
+DOCTOR_ID_6 = str(uuid.UUID("00000000-0000-0000-0001-000000000006"))
+DOCTOR_ID_7 = str(uuid.UUID("00000000-0000-0000-0001-000000000007"))
 
 
 class DummyMessaging:
@@ -66,7 +80,6 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
     def override_repo() -> AppointmentRepository:
         return AppointmentRepository(db_session)
 
-    # Mock messaging so lifespan doesn't try to connect to RabbitMQ
     mock_messaging = MagicMock(spec=MessagingManager)
     mock_messaging.start_all = AsyncMock()
     mock_messaging.stop_all = AsyncMock()
@@ -91,8 +104,8 @@ def test_create_appointment_returns_201(client: TestClient) -> None:
     response = client.post(
         "/api/v1/appointments",
         json={
-            "patient_id": 1,
-            "doctor_id": 1,
+            "patient_id": PATIENT_ID_1,
+            "doctor_id": DOCTOR_ID_1,
             "appointment_date": "2026-03-10",
             "time_preference": "AM",
         },
@@ -105,12 +118,13 @@ def test_create_appointment_returns_201(client: TestClient) -> None:
 
 def test_create_appointment_assigns_sequential_slots(client: TestClient) -> None:
     """Sequential bookings should get sequential slots."""
-    for i in range(2):
+    patient_ids = [PATIENT_ID_1, PATIENT_ID_2]
+    for patient_id in patient_ids:
         client.post(
             "/api/v1/appointments",
             json={
-                "patient_id": i + 1,
-                "doctor_id": 2,
+                "patient_id": patient_id,
+                "doctor_id": DOCTOR_ID_2,
                 "appointment_date": "2026-03-11",
                 "time_preference": "AM",
             },
@@ -118,7 +132,7 @@ def test_create_appointment_assigns_sequential_slots(client: TestClient) -> None
 
     response = client.get(
         "/api/v1/appointments/queue/day",
-        params={"doctor_id": 2, "appointment_date": "2026-03-11"},
+        params={"doctor_id": DOCTOR_ID_2, "appointment_date": "2026-03-11"},
     )
     assert response.status_code == HTTP_200
     slots = [a["assigned_time"] for a in response.json()]
@@ -127,12 +141,15 @@ def test_create_appointment_assigns_sequential_slots(client: TestClient) -> None
 
 def test_create_appointment_returns_409_when_full(client: TestClient) -> None:
     """Should return 409 when all slots are taken."""
-    for i in range(4):
+    patient_ids = [
+        str(uuid.UUID(f"00000000-0000-0000-0000-{i:012d}")) for i in range(1, 5)
+    ]
+    for patient_id in patient_ids:
         client.post(
             "/api/v1/appointments",
             json={
-                "patient_id": i + 1,
-                "doctor_id": 3,
+                "patient_id": patient_id,
+                "doctor_id": DOCTOR_ID_3,
                 "appointment_date": "2026-03-12",
                 "time_preference": "PM",
             },
@@ -141,8 +158,8 @@ def test_create_appointment_returns_409_when_full(client: TestClient) -> None:
     response = client.post(
         "/api/v1/appointments",
         json={
-            "patient_id": 99,
-            "doctor_id": 3,
+            "patient_id": PATIENT_ID_99,
+            "doctor_id": DOCTOR_ID_3,
             "appointment_date": "2026-03-12",
             "time_preference": "PM",
         },
@@ -158,8 +175,8 @@ def test_get_appointment_returns_200(client: TestClient) -> None:
     create = client.post(
         "/api/v1/appointments",
         json={
-            "patient_id": 1,
-            "doctor_id": 4,
+            "patient_id": PATIENT_ID_1,
+            "doctor_id": DOCTOR_ID_4,
             "appointment_date": "2026-03-13",
             "time_preference": "AM",
         },
@@ -172,7 +189,8 @@ def test_get_appointment_returns_200(client: TestClient) -> None:
 
 def test_get_appointment_returns_404(client: TestClient) -> None:
     """Should return 404 for non-existent appointment."""
-    response = client.get("/api/v1/appointments/99999")
+    random_uuid = str(uuid.uuid4())
+    response = client.get(f"/api/v1/appointments/{random_uuid}")
     assert response.status_code == HTTP_404
 
 
@@ -184,8 +202,8 @@ def test_update_status_returns_updated_appointment(client: TestClient) -> None:
     create = client.post(
         "/api/v1/appointments",
         json={
-            "patient_id": 1,
-            "doctor_id": 5,
+            "patient_id": PATIENT_ID_1,
+            "doctor_id": DOCTOR_ID_5,
             "appointment_date": "2026-03-14",
             "time_preference": "AM",
         },
@@ -193,17 +211,18 @@ def test_update_status_returns_updated_appointment(client: TestClient) -> None:
     appointment_id = create.json()["id"]
     response = client.patch(
         f"/api/v1/appointments/{appointment_id}/status",
-        json={"status": "in_progress"},
+        json={"status": "handed_off"},
     )
     assert response.status_code == HTTP_200
-    assert response.json()["status"] == "in_progress"
+    assert response.json()["status"] == "handed_off"
 
 
 def test_update_status_returns_404_when_not_found(client: TestClient) -> None:
     """Should return 404 for non-existent appointment."""
+    random_uuid = str(uuid.uuid4())
     response = client.patch(
-        "/api/v1/appointments/99999/status",
-        json={"status": "done"},
+        f"/api/v1/appointments/{random_uuid}/status",
+        json={"status": "completed"},
     )
     assert response.status_code == HTTP_404
 
@@ -213,16 +232,16 @@ def test_update_status_returns_404_when_not_found(client: TestClient) -> None:
 
 def test_get_patient_appointments_returns_list(client: TestClient) -> None:
     """Should return all appointments for a patient."""
-    for i in range(2):
+    for doctor_id in [DOCTOR_ID_6, DOCTOR_ID_7]:
         client.post(
             "/api/v1/appointments",
             json={
-                "patient_id": 42,
-                "doctor_id": 6 + i,
+                "patient_id": PATIENT_ID_42,
+                "doctor_id": doctor_id,
                 "appointment_date": "2026-03-15",
                 "time_preference": "AM",
             },
         )
-    response = client.get("/api/v1/appointments/patient/42")
+    response = client.get(f"/api/v1/appointments/patient/{PATIENT_ID_42}")
     assert response.status_code == HTTP_200
     assert len(response.json()) >= MIN_EXPECTED_APPOINTMENTS
