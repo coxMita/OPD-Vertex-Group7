@@ -1,5 +1,6 @@
 """Tests for consultation service."""
 
+import uuid
 from datetime import time
 
 import pytest
@@ -32,7 +33,7 @@ class TestConsultationRepository:
 
     def test_get_by_id_not_found(self, consultation_repository):
         """Test getting a non-existent consultation."""
-        result = consultation_repository.get_by_id(9999)
+        result = consultation_repository.get_by_id(uuid.uuid4())
         assert result is None
 
     def test_get_by_appointment_id(self, consultation_repository, test_consultation):
@@ -53,11 +54,9 @@ class TestConsultationRepository:
         """Test updating a consultation."""
         updated = consultation_repository.update(
             test_consultation,
-            audio_path="/path/to/audio.wav",
-            transcript_id=1,
+            start_time=time(8, 0),
         )
-        assert updated.audio_path == "/path/to/audio.wav"
-        assert updated.transcript_id == 1
+        assert updated.start_time == time(8, 0)
 
     def test_update_status(self, consultation_repository, test_consultation):
         """Test updating consultation status."""
@@ -98,7 +97,7 @@ class TestConsultationService:
 
     def test_get_consultation_not_found(self, consultation_service):
         """Test getting a non-existent consultation."""
-        result = consultation_service.get_consultation(9999)
+        result = consultation_service.get_consultation(uuid.uuid4())
         assert result is None
 
     def test_get_by_appointment_id(self, consultation_service, test_consultation):
@@ -120,16 +119,16 @@ class TestConsultationService:
         request = ConsultationUpdateRequest(
             start_time=time(9, 0),
             end_time=time(9, 30),
-            audio_path="/audio/consultation.wav",
         )
         result = consultation_service.update_consultation(test_consultation.id, request)
         assert result is not None
-        assert result.audio_path == "/audio/consultation.wav"
+        assert result.start_time == time(9, 0)
+        assert result.end_time == time(9, 30)
 
     def test_update_consultation_not_found(self, consultation_service):
         """Test updating a non-existent consultation."""
-        request = ConsultationUpdateRequest(audio_path="/test.wav")
-        result = consultation_service.update_consultation(9999, request)
+        request = ConsultationUpdateRequest(start_time=time(10, 0))
+        result = consultation_service.update_consultation(uuid.uuid4(), request)
         assert result is None
 
     def test_update_status(self, consultation_service, test_consultation):

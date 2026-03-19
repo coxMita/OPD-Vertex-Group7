@@ -19,6 +19,3 @@ class ConsultationUpdateRequest(BaseModel):
     start_time: time | None = None
     end_time: time | None = None
     status: ConsultationStatus | None = None
-    audio_path: str | None = None
-    transcript_id: int | None = None
-    prescription_id: int | None = None

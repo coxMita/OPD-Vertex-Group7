@@ -45,14 +45,14 @@ async def create_consultation(
 
 @router.get("/{consultation_id}", status_code=status.HTTP_200_OK)
 async def get_consultation(
-    consultation_id: int,
+    consultation_id: uuid.UUID,
     service: Annotated[ConsultationService, Depends(get_consultation_service)],
     response: Response,
 ) -> ConsultationResponse | dict:
     """Get a specific consultation by ID.
 
     Args:
-        consultation_id (int): The consultation ID.
+        consultation_id (uuid.UUID): The consultation ID.
         service (ConsultationService): The consultation service.
         response (Response): The FastAPI response object.
 
@@ -111,7 +111,7 @@ async def get_doctor_consultations(
 
 @router.patch("/{consultation_id}", status_code=status.HTTP_200_OK)
 async def update_consultation(
-    consultation_id: int,
+    consultation_id: uuid.UUID,
     request: ConsultationUpdateRequest,
     service: Annotated[ConsultationService, Depends(get_consultation_service)],
     response: Response,
@@ -119,7 +119,7 @@ async def update_consultation(
     """Update a consultation.
 
     Args:
-        consultation_id (int): The consultation ID.
+        consultation_id (uuid.UUID): The consultation ID.
         request (ConsultationUpdateRequest): The update request.
         service (ConsultationService): The consultation service.
         response (Response): The FastAPI response object.

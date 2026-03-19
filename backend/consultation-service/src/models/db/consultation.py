@@ -17,14 +17,11 @@ class ConsultationStatus(str, Enum):
 class Consultation(SQLModel, table=True):
     """Represents a patient consultation session tied to an appointment."""
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     appointment_id: uuid.UUID = Field(unique=True)
     doctor_id: uuid.UUID
     start_time: time | None = Field(default=None)
     end_time: time | None = Field(default=None)
     status: ConsultationStatus = Field(default=ConsultationStatus.ACTIVE)
-    audio_path: str | None = Field(default=None)
-    transcript_id: int | None = Field(default=None)
-    prescription_id: int | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

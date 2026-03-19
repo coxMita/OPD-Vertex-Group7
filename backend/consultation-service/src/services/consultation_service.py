@@ -72,11 +72,13 @@ class ConsultationService:
         self._publish(created, CONSULTATION_STARTED)
         return ConsultationResponse.from_entity(created)
 
-    def get_consultation(self, consultation_id: int) -> ConsultationResponse | None:
+    def get_consultation(
+        self, consultation_id: uuid.UUID
+    ) -> ConsultationResponse | None:
         """Get a consultation by ID.
 
         Args:
-            consultation_id (int): The consultation ID.
+            consultation_id (uuid.UUID): The consultation ID.
 
         Returns:
             ConsultationResponse | None: The consultation if found, else None.
@@ -117,13 +119,13 @@ class ConsultationService:
 
     def update_consultation(
         self,
-        consultation_id: int,
+        consultation_id: uuid.UUID,
         request: ConsultationUpdateRequest,
     ) -> ConsultationResponse | None:
         """Update a consultation.
 
         Args:
-            consultation_id (int): The consultation ID.
+            consultation_id (uuid.UUID): The consultation ID.
             request (ConsultationUpdateRequest): The update request.
 
         Returns:
@@ -139,12 +141,6 @@ class ConsultationService:
             update_fields["start_time"] = request.start_time
         if request.end_time is not None:
             update_fields["end_time"] = request.end_time
-        if request.audio_path is not None:
-            update_fields["audio_path"] = request.audio_path
-        if request.transcript_id is not None:
-            update_fields["transcript_id"] = request.transcript_id
-        if request.prescription_id is not None:
-            update_fields["prescription_id"] = request.prescription_id
 
         update_fields["updated_at"] = datetime.utcnow()
 
@@ -159,12 +155,12 @@ class ConsultationService:
         return ConsultationResponse.from_entity(updated)
 
     def update_status(
-        self, consultation_id: int, status: ConsultationStatus
+        self, consultation_id: uuid.UUID, status: ConsultationStatus
     ) -> ConsultationResponse | None:
         """Update the status of a consultation.
 
         Args:
-            consultation_id (int): The consultation ID.
+            consultation_id (uuid.UUID): The consultation ID.
             status (ConsultationStatus): The new status.
 
         Returns:

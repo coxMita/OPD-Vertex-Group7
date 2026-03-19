@@ -11,15 +11,12 @@ from src.models.db.consultation import Consultation, ConsultationStatus
 class ConsultationResponse(BaseModel):
     """Response DTO for a consultation session."""
 
-    id: int
+    id: uuid.UUID
     appointment_id: uuid.UUID
     doctor_id: uuid.UUID
     start_time: time | None
     end_time: time | None
     status: ConsultationStatus
-    audio_path: str | None
-    transcript_id: int | None
-    prescription_id: int | None
     created_at: datetime
     updated_at: datetime
 
@@ -41,9 +38,6 @@ class ConsultationResponse(BaseModel):
             start_time=entity.start_time,
             end_time=entity.end_time,
             status=entity.status,
-            audio_path=entity.audio_path,
-            transcript_id=entity.transcript_id,
-            prescription_id=entity.prescription_id,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

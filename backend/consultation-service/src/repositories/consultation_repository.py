@@ -32,11 +32,11 @@ class ConsultationRepository:
         self._save_and_refresh(consultation)
         return consultation
 
-    def get_by_id(self, consultation_id: int) -> Consultation | None:
+    def get_by_id(self, consultation_id: uuid.UUID) -> Consultation | None:
         """Retrieve a consultation by its ID.
 
         Args:
-            consultation_id (int): The ID of the consultation.
+            consultation_id (uuid.UUID): The ID of the consultation.
 
         Returns:
             Consultation | None: The consultation if found, else None.
