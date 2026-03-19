@@ -29,6 +29,7 @@ volumes:
     pgadmin_data:
     ollama_data:
 
+
 services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
@@ -122,7 +123,7 @@ services:
 
     # ── Appointment Service ───────────────────────────────────────────────────
     appointment-service:
-        image: mita28/opdvertex:appointment-service-1.1.11
+        image: mita28/opdvertex:appointment-service-1.1.18
         build: backend/appointment-service/.
         container_name: appointment-service
         restart: unless-stopped
@@ -200,12 +201,16 @@ services:
 
     # ── Email Service ─────────────────────────────────────────────────────────
     email-service:
-        image: mita28/opdvertex:email-service-1.0.0
+        image: mita28/opdvertex:email-service-1.1.0
         build: backend/email-service/.
         container_name: email-service
         restart: unless-stopped
         ports:
             - "8084:8000"
+        env_file:
+            - backend/email-service/.env
+        environment:
+            RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         networks:
             - internal-api
             - bus
@@ -326,6 +331,17 @@ services:
             timeout: 10s
             retries: 5
             start_period: 5s
+
+    # ── Mailpit (Local SMTP Testing) ──────────────────────────────────────────
+    mailpit:
+        image: axllent/mailpit
+        container_name: mailpit
+        restart: unless-stopped
+        ports:
+            - "8025:8025"
+            - "1025:1025"
+        networks:
+            - bus
 
     # ── pgAdmin ───────────────────────────────────────────────────────────────
     pgadmin:

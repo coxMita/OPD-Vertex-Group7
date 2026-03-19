@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
+import { useCalendarDragDrop } from '@/composables/useCalendarDragDrop'
 import CalendarToolbar from '@/components/DoctorCalendar/CalendarToolbar.vue'
 import CalendarDayView from '@/components/DoctorCalendar/CalendarDayView.vue'
 import CalendarWeekView from '@/components/DoctorCalendar/CalendarWeekView.vue'
 import CalendarMonthView from '@/components/DoctorCalendar/CalendarMonthView.vue'
+import AppointmentDetailModal from '@/components/DoctorCalendar/AppointmentDetailModal.vue'
 import ConsultationView from '@/views/ConsultationView.vue'
+import type { Appointment } from '@/models/appointment/appointment.interface'
 
 type DoctorSection = 'calendar' | 'consultations'
 const activeSection = ref<DoctorSection>('calendar')
@@ -27,6 +30,7 @@ const {
   navigate,
   goToToday,
   isToday,
+  formatDate,
 } = useCalendarNavigation()
 
 const {
@@ -40,7 +44,33 @@ const {
   fetchAppointments,
 } = useCalendarAppointments(doctorId)
 
-// Refs to child scroll containers
+const {
+  editMode,
+  draggingId,
+  toggleEditMode,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  isDragOver,
+} = useCalendarDragDrop(appointments)
+
+// ── Modal ──────────────────────────────────────────────────
+const modalOpen = ref(false)
+const selectedAppointment = ref<Appointment | null>(null)
+
+function handleSelectAppointment(id: string) {
+  const appt = appointments.value.find((a) => a.id === id) ?? null
+  selectedAppointment.value = appt
+  modalOpen.value = true
+}
+
+// ── Drag handlers (bubble from child views) ────────────────
+function handleDrop(date: string, hour: number) {
+  onDrop(date, hour, doctorId.value)
+}
+
+// ── Scroll to 6am ──────────────────────────────────────────
 const dayViewRef = ref<InstanceType<typeof CalendarDayView> | null>(null)
 const weekViewRef = ref<InstanceType<typeof CalendarWeekView> | null>(null)
 
@@ -72,6 +102,14 @@ onMounted(() => {
       height="2"
       class="progress-bar"
     />
+
+    <!-- Edit mode banner -->
+    <v-expand-transition>
+      <div v-if="editMode" class="edit-banner">
+        <v-icon size="16" class="mr-2">mdi-drag</v-icon>
+        Edit mode active — drag appointments to reschedule. Click any appointment to view details.
+      </div>
+    </v-expand-transition>
 
     <!-- Doctor section tabs -->
     <div class="doctor-tabs">
@@ -109,9 +147,11 @@ onMounted(() => {
       <CalendarToolbar
         :currentDateDisplay="currentDateDisplay"
         :currentView="currentView"
+        :editMode="editMode"
         @navigate="navigate"
         @go-to-today="goToToday"
         @update:currentView="currentView = $event"
+        @toggle-edit-mode="toggleEditMode"
       />
 
       <CalendarDayView
@@ -121,6 +161,15 @@ onMounted(() => {
         :getAppointmentsForTimeSlot="getAppointmentsForTimeSlot"
         :getApptStyle="getApptStyle"
         :getStatusIcon="getStatusIcon"
+        :editMode="editMode"
+        :draggingId="draggingId"
+        :isDragOver="isDragOver"
+        :formatDate="formatDate"
+        @dragstart="onDragStart"
+        @dragover="onDragOver"
+        @dragleave="onDragLeave"
+        @drop="handleDrop"
+        @select="handleSelectAppointment"
       />
 
       <CalendarWeekView
@@ -131,6 +180,15 @@ onMounted(() => {
         :getApptStyle="getApptStyle"
         :getStatusIcon="getStatusIcon"
         :isToday="isToday"
+        :editMode="editMode"
+        :draggingId="draggingId"
+        :isDragOver="isDragOver"
+        :formatDate="formatDate"
+        @dragstart="onDragStart"
+        @dragover="onDragOver"
+        @dragleave="onDragLeave"
+        @drop="handleDrop"
+        @select="handleSelectAppointment"
       />
 
       <CalendarMonthView
@@ -140,14 +198,19 @@ onMounted(() => {
         :getApptStyle="getApptStyle"
         :getStatusIcon="getStatusIcon"
         :isToday="isToday"
+        @select="handleSelectAppointment"
       />
     </template>
 
-    <!-- Consultations section — swap comment when component is ready -->
     <template v-if="activeSection === 'consultations'">
-      <!-- <ConsultationView :doctorId="doctorId" /> -->
       <ConsultationView :doctorId="doctorId" />
     </template>
+
+    <!-- Appointment detail modal -->
+    <AppointmentDetailModal
+      v-model="modalOpen"
+      :appointment="selectedAppointment"
+    />
   </div>
 </template>
 
@@ -166,6 +229,18 @@ onMounted(() => {
   right: 0;
   z-index: 10;
 }
+.edit-banner {
+  background: rgba(var(--v-theme-warning), 0.1);
+  border-bottom: 1px solid rgba(var(--v-theme-warning), 0.25);
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 6px 24px;
+  display: flex;
+  align-items: center;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
 
 /* ── Doctor section tabs ─────────────────────────────────── */
 .doctor-tabs {
@@ -177,7 +252,6 @@ onMounted(() => {
   border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   flex-shrink: 0;
 }
-
 .doctor-tab {
   display: inline-flex;
   align-items: center;
@@ -195,33 +269,19 @@ onMounted(() => {
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
-
 .doctor-tab:hover {
   color: rgba(var(--v-theme-on-surface), 0.85);
 }
-
 .doctor-tab.active {
   color: rgb(var(--v-theme-primary));
   border-bottom-color: rgb(var(--v-theme-primary));
   font-weight: 600;
 }
-
 .doctor-tab .tab-icon {
   opacity: 0.75;
   transition: opacity 0.18s ease;
 }
-
 .doctor-tab.active .tab-icon {
   opacity: 1;
-}
-
-/* ── Consultations placeholder ───────────────────────────── */
-.consultations-placeholder {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: rgba(var(--v-theme-on-surface), 0.5);
 }
 </style>
