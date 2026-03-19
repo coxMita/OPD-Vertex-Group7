@@ -295,6 +295,14 @@ exit
 
 # Copy the generated migration file back to your local machine
 docker cp appointment-service:/app/migrations ./
+
+
+# Commit the changes to git and push them to the repository.
+
+git add migrations
+git commit -m "feat: migrate database schema"
+git push origin <branch-name>
+
 ```
 
 ### Apply Migrations
