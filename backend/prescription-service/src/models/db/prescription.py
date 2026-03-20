@@ -1,9 +1,13 @@
-"""Appointment database model."""
-import uuid, json
-from datetime import date, time
+"""Prescription database model."""
+
+import uuid
+from datetime import datetime
 from enum import Enum
 
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
+
 
 class PrescriptionStatus(str, Enum):
     """Status of an prescription."""
@@ -11,6 +15,7 @@ class PrescriptionStatus(str, Enum):
     DRAFT = "draft"
     APPROVED = "approved"
     SENT = "sent"
+
 
 class Prescription(SQLModel, table=True):
     """Represents a patient prescription."""
@@ -20,5 +25,10 @@ class Prescription(SQLModel, table=True):
     patient_id: uuid.UUID
     doctor_id: uuid.UUID
     status: PrescriptionStatus = Field(default=PrescriptionStatus.DRAFT)
-    medications_json: json
-    approved_at: time | None = Field(default=None)
+    prescription_json: dict = Field(
+        default_factory=dict, sa_column=Column(JSONB, nullable=False)
+    )
+    summary_json: dict = Field(
+        default_factory=dict, sa_column=Column(JSONB, nullable=False)
+    )
+    approved_at: datetime | None = Field(default=None)

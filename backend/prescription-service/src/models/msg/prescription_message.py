@@ -1,9 +1,11 @@
 """Prescription event message."""
-import uuid, json
-from datetime import date, time
 
-from src.models.db.prescription import PrescriptionStatus, Prescription
+import uuid
+from datetime import datetime
+
 from msg.abstract_message import AbstractMessage
+
+from src.models.db.prescription import Prescription, PrescriptionStatus
 
 
 class PrescriptionMessage(AbstractMessage):
@@ -23,10 +25,11 @@ class PrescriptionMessage(AbstractMessage):
     id: uuid.UUID
     consultation_id: uuid.UUID
     patient_id: uuid.UUID
-    doctor_id: uuid.UUID 
+    doctor_id: uuid.UUID
     status: PrescriptionStatus
-    medications_json: json
-    approved_at: time | None 
+    prescription_json: dict
+    summary_json: dict
+    approved_at: datetime | None
 
     @classmethod
     def from_entity(cls, entity: "Prescription") -> "PrescriptionMessage":  # noqa: F821
@@ -40,11 +43,12 @@ class PrescriptionMessage(AbstractMessage):
 
         """
         return cls(
-            prescription_id=entity.id,
+            id=entity.id,
             patient_id=entity.patient_id,
             doctor_id=entity.doctor_id,
             consultation_id=entity.consultation_id,
             approved_at=entity.approved_at,
-            medications_json=entity.medications_json,
+            prescription_json=entity.prescription_json,
+            summary_json=entity.summary_json,
             status=entity.status,
         )
