@@ -2,6 +2,7 @@
 
 import json
 import logging
+import uuid
 
 from src.ai.service import process_transcript
 from src.messaging.messaging_manager import messaging_manager
@@ -30,6 +31,7 @@ async def on_transcript_message(body: bytes) -> None:
 
     transcript: str = payload.get("transcript", "")
     filename: str = payload.get("filename", "unknown")
+    consultation_id_raw: str | None = payload.get("consultation_id")
 
     if not transcript:
         logger.warning(
@@ -37,8 +39,27 @@ async def on_transcript_message(body: bytes) -> None:
         )
         return
 
+    if not consultation_id_raw:
+        logger.warning(
+            "Missing consultation_id in message from file '%s'; skipping.", filename
+        )
+        return
+
+    try:
+        consultation_id = uuid.UUID(consultation_id_raw)
+    except ValueError:
+        logger.error(
+            "Invalid consultation_id '%s' in message from file '%s'; skipping.",
+            consultation_id_raw,
+            filename,
+        )
+        return
+
     logger.info(
-        "Processing transcript from file '%s' (%d chars).", filename, len(transcript)
+        "Processing transcript from file '%s' (%d chars) for consultation '%s'.",
+        filename,
+        len(transcript),
+        consultation_id,
     )
 
     try:
@@ -60,14 +81,16 @@ async def on_transcript_message(body: bytes) -> None:
         filename=filename,
         summary=result["summary"],  # type: ignore[arg-type]
         prescription=result["prescription"],  # type: ignore[arg-type]
+        consultation_id=consultation_id,
     )
 
     try:
         await messaging_manager.get_pubsub(AI_COMPLETED).publish(message)
         logger.info(
-            "Published AICompletedMessage for file '%s' to '%s'.",
+            "Published AICompletedMessage for file '%s' to '%s' (consultation: '%s').",
             filename,
             AI_COMPLETED,
+            consultation_id,
         )
     except RuntimeError:
         logger.exception(
