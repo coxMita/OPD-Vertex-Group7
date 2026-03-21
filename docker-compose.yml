@@ -162,7 +162,7 @@ services:
 
     # ── Consultation Service ──────────────────────────────────────────────────
     consultation-service:
-        image: mita28/opdvertex:consultation-service-1.0.0
+        image: mita28/opdvertex:consultation-service-1.0.2
         build: backend/consultation-service/.
         container_name: consultation-service
         restart: unless-stopped
