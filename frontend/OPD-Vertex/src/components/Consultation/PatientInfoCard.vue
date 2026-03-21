@@ -3,7 +3,6 @@ import type { ConsultationPatient } from '@/composables/useConsultationData'
 
 defineProps<{
   patient: ConsultationPatient
-  status: 'waiting' | 'active' | 'done'
 }>()
 
 const statusConfig = {
@@ -41,14 +40,6 @@ const infoFields = (p: ConsultationPatient) => [
             </span>
           </div>
         </div>
-        <v-chip
-          :color="statusConfig[status].color"
-          variant="tonal"
-          size="small"
-          class="font-weight-bold"
-        >
-          {{ statusConfig[status].label }}
-        </v-chip>
       </div>
     </div>
 
