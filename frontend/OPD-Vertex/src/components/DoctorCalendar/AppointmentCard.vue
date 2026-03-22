@@ -3,6 +3,7 @@ const props = defineProps<{
   statusIcon: string
   assignedTime: string | null | undefined
   patientId: string
+  patientName?: string | null
   appointmentId: string
   timePreference?: string
   statusLabel?: string
@@ -17,6 +18,18 @@ const emit = defineEmits<{
   (e: 'select', id: string): void
   (e: 'dragstart', id: string): void
 }>()
+
+function displayName(full: boolean): string {
+  if (props.patientName) {
+    // In compact/pill mode show shortened name, in full mode show full name
+    if (!full) {
+      const parts = props.patientName.split(' ')
+      return parts.length >= 2 ? `${parts[0]} ${parts[1]!.charAt(0)}.` : props.patientName
+    }
+    return props.patientName
+  }
+  return full ? `Patient #${props.patientId.slice(0, 8)}` : `P#${props.patientId.slice(0, 8)}`
+}
 </script>
 
 <template>
@@ -32,7 +45,7 @@ const emit = defineEmits<{
   >
     <v-icon size="9" style="color: currentColor; flex-shrink: 0">{{ statusIcon }}</v-icon>
     <span class="month-appt-time">{{ assignedTime ?? '' }}</span>
-    <span class="month-appt-name">P#{{ patientId }}</span>
+    <span class="month-appt-name">{{ displayName(false) }}</span>
   </div>
 
   <!-- Week compact -->
@@ -47,7 +60,7 @@ const emit = defineEmits<{
   >
     <v-icon size="10" style="color: currentColor; flex-shrink: 0">{{ statusIcon }}</v-icon>
     <span class="appt-time ml-1">{{ assignedTime }}</span>
-    <div class="appt-name">P#{{ patientId }}</div>
+    <div class="appt-name">{{ displayName(false) }}</div>
     <v-icon v-if="editMode" size="10" class="drag-handle">mdi-drag</v-icon>
   </div>
 
@@ -66,7 +79,7 @@ const emit = defineEmits<{
       <span class="appt-time">{{ assignedTime }}</span>
       <v-icon v-if="editMode" size="12" class="drag-handle ml-auto">mdi-drag</v-icon>
     </div>
-    <div class="appt-name">Patient #{{ patientId }}</div>
+    <div class="appt-name">{{ displayName(true) }}</div>
     <div class="appt-type">{{ timePreference }} · {{ statusLabel }}</div>
   </div>
 </template>

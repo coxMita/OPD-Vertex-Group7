@@ -7,6 +7,8 @@ const props = defineProps<{
   contact: string
   cardColor: string
   tealColor: string
+  loading?: boolean
+  error?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -53,6 +55,7 @@ const config = {
 
     <v-btn
       :color="config[mode].color"
+      :loading="loading"
       size="x-large"
       rounded="lg"
       block
@@ -65,5 +68,15 @@ const config = {
       </span>
       <v-icon end color="white">mdi-arrow-right</v-icon>
     </v-btn>
+
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      rounded="lg"
+      class="mt-4"
+    >
+      {{ error }}
+    </v-alert>
   </v-card>
 </template>

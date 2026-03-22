@@ -7,47 +7,41 @@ const apiClient = axios.create({
   timeout: 10_000,
 })
 
+export interface CreateAppointmentRequest {
+  patient_id: string
+  doctor_id: string
+  appointment_date: string   // "YYYY-MM-DD"
+  time_preference: 'AM' | 'PM'
+  notes?: string | null
+}
+
 export const appointmentApi = {
-  /**
-   * Fetch the ordered appointment queue for a doctor on a specific date.
-   * Maps to: GET /api/v1/appointments/queue/day?doctor_id=...&appointment_date=...
-   */
   getQueueForDay(doctorId: string, appointmentDate: string): Promise<Appointment[]> {
     return apiClient
       .get<Appointment[]>('/api/v1/appointments/queue/day', {
-        params: {
-          doctor_id: doctorId,
-          appointment_date: appointmentDate,
-        },
+        params: { doctor_id: doctorId, appointment_date: appointmentDate },
       })
       .then((res) => res.data)
   },
 
-  /**
-   * Fetch a single appointment by ID.
-   * Maps to: GET /api/v1/appointments/{id}
-   */
   getAppointment(appointmentId: string): Promise<Appointment> {
     return apiClient
       .get<Appointment>(`/api/v1/appointments/${appointmentId}`)
       .then((res) => res.data)
   },
 
-  /**
-   * Fetch all appointments for a patient.
-   * Maps to: GET /api/v1/appointments/patient/{patient_id}
-   */
   getPatientAppointments(patientId: string): Promise<Appointment[]> {
     return apiClient
       .get<Appointment[]>(`/api/v1/appointments/patient/${patientId}`)
       .then((res) => res.data)
   },
 
-  /**
-   * Reorder the appointment queue for a doctor on a specific date.
-   * Redistributes assigned_time slots based on the new order.
-   * Maps to: PATCH /api/v1/appointments/queue/reorder?doctor_id=...&appointment_date=...
-   */
+  createAppointment(data: CreateAppointmentRequest): Promise<Appointment> {
+    return apiClient
+      .post<Appointment>('/api/v1/appointments', data)
+      .then((res) => res.data)
+  },
+
   reorderQueue(
     doctorId: string,
     appointmentDate: string,
@@ -57,12 +51,7 @@ export const appointmentApi = {
       .patch<Appointment[]>(
         '/api/v1/appointments/queue/reorder',
         { appointment_ids: appointmentIds },
-        {
-          params: {
-            doctor_id: doctorId,
-            appointment_date: appointmentDate,
-          },
-        },
+        { params: { doctor_id: doctorId, appointment_date: appointmentDate } },
       )
       .then((res) => res.data)
   },

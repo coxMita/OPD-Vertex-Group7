@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useTheme } from 'vuetify'
+import { usePatientLookup } from '@/composables/usePatientLookup'
 
 export type Mode = 'book' | 'check' | 'cancel'
 
@@ -8,11 +9,14 @@ export interface PatientFormData {
   lastName: string
   phone: string
   email: string
+  dateOfBirth: string     // "YYYY-MM-DD"
+  gender: string          // "male" | "female" | "other"
   date: string
   time: string
   reason: string
   department: string
   doctor: string
+  doctorId: string
 }
 
 export interface LookupData {
@@ -30,32 +34,40 @@ export function usePatientForm() {
 
   const mode = ref<Mode>('book')
   const submitted = ref(false)
+  const submitting = ref(false)
+  const submitError = ref<string | null>(null)
 
   const form = ref<PatientFormData>({
     firstName: '',
     lastName: '',
     phone: '',
     email: '',
+    dateOfBirth: '',
+    gender: '',
     date: '',
     time: 'AM',
     reason: '',
     department: 'General Practice',
     doctor: '',
+    doctorId: '',
   })
 
   const lookup = ref<LookupData>({ contact: '' })
 
-  function handleSubmit() {
-    submitted.value = true
-  }
+  const { loading: lookupLoading, error: lookupError, patient: lookedUpPatient, appointments: lookedUpAppointments, lookupByEmail } = usePatientLookup()
 
-  function handleLookup() {
-    submitted.value = true
+  async function handleLookup() {
+    if (!lookup.value.contact) return
+    await lookupByEmail(lookup.value.contact)
+    if (lookedUpPatient.value) {
+      submitted.value = true
+    }
   }
 
   function switchMode(m: Mode) {
     mode.value = m
     submitted.value = false
+    submitError.value = null
   }
 
   return {
@@ -64,11 +76,16 @@ export function usePatientForm() {
     tealColor,
     cardColor,
     actionCardBg,
+    lookupLoading,
+    lookupError,
+    lookedUpPatient,
+    lookedUpAppointments,
     mode,
     submitted,
+    submitting,
+    submitError,
     form,
     lookup,
-    handleSubmit,
     handleLookup,
     switchMode,
   }

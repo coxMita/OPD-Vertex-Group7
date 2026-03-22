@@ -11,6 +11,7 @@ const props = defineProps<{
   getAppointmentsForTimeSlot: (date: Date, hour: number) => Appointment[]
   getApptStyle: (status: string) => Record<string, string>
   getStatusIcon: (status: string) => string
+  getPatientName: (patientId: string) => string | null
   editMode: boolean
   draggingId: string | null
   isDragOver: (date: string, hour: number) => boolean
@@ -52,6 +53,7 @@ defineExpose({ dayViewRef })
             :statusIcon="getStatusIcon(appt.status)"
             :assignedTime="appt.assigned_time"
             :patientId="appt.patient_id"
+            :patientName="getPatientName(appt.patient_id)"
             :timePreference="appt.time_preference"
             :statusLabel="STATUS_CONFIG[appt.status as StatusKey]?.label ?? appt.status.replace('_', ' ')"
             :apptStyle="getApptStyle(appt.status)"
@@ -98,7 +100,6 @@ defineExpose({ dayViewRef })
   transition: background 0.12s ease;
 }
 .time-slot.edit-mode {
-  /* Subtle hint that slots are droppable */
   cursor: default;
 }
 .time-slot.drop-target {

@@ -8,6 +8,7 @@ defineProps<{
   getAppointmentsForDate: (date: Date) => Appointment[]
   getApptStyle: (status: string) => Record<string, string>
   getStatusIcon: (status: string) => string
+  getPatientName: (patientId: string) => string | null
   isToday: (date: Date) => boolean
 }>()
 </script>
@@ -27,9 +28,11 @@ defineProps<{
           <AppointmentCard
             v-for="appt in getAppointmentsForDate(day.date)"
             :key="appt.id"
+            :appointmentId="appt.id"
             :statusIcon="getStatusIcon(appt.status)"
             :assignedTime="appt.assigned_time"
             :patientId="appt.patient_id"
+            :patientName="getPatientName(appt.patient_id)"
             :apptStyle="getApptStyle(appt.status)"
             pill
           />
