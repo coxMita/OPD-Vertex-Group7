@@ -1,20 +1,43 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useConsultationData } from '@/composables/useConsultationData'
+import { useConsultationList } from '@/composables/useConsultationList'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
 import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
 import RecordingCard from '@/components/Consultation/RecordingCard.vue'
 import TranscriptionUploadCard from '@/components/Consultation/TranscriptionUploadCard.vue'
 import PrescriptionCard from '@/components/Consultation/PrescriptionCard.vue'
+import type { Consultation } from '@/models/consultation/consultation.interface'
+
+const props = defineProps<{
+  doctorId: string
+}>()
 
 const router = useRouter()
-const { appointment, rxDraft } = useConsultationData()
 
-const isSelected = ref(false)
+const {
+  consultations,
+  loading,
+  error,
+  selectedConsultation,
+  fetchConsultations,
+  selectConsultation,
+} = useConsultationList()
+
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
-const currentRxText = ref(rxDraft.text)
-const prescriptionKey = ref(0) // bump to force PrescriptionCard remount on new transcript
+const currentRxText = ref('')
+const prescriptionKey = ref(0)
+
+onMounted(() => {
+  fetchConsultations(props.doctorId)
+})
+
+function onSelect(consultation: Consultation) {
+  selectConsultation(consultation)
+  consultationStatus.value = consultation.status === 'ACTIVE' ? 'active' : 'done'
+  currentRxText.value = ''
+  prescriptionKey.value++
+}
 
 function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | 'done' | 'error') {
   if (status === 'recording') consultationStatus.value = 'active'
@@ -22,42 +45,55 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
 }
 
 function onTranscriptReady(text: string) {
-  currentRxText.value = `PATIENT: ${appointment.name}
-DATE: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}  |  DR. HANSEN
-
-TRANSCRIPT SUMMARY:
-${text}
-
-MEDICATIONS:
-1. Amoxicillin 500mg — 3× daily for 7 days
-   Take with food. Complete full course.
-2. Ibuprofen 400mg — as needed (max 3/day)
-   Avoid on empty stomach.
-
-NOTES:
-Follow-up in 1 week if symptoms persist.
-Avoid dairy 2h before/after Amoxicillin.`
-  prescriptionKey.value++  // force PrescriptionCard to remount with fresh text
+  currentRxText.value = buildRxDraft(text, 'Recording')
+  prescriptionKey.value++
 }
 
 function onUploadTranscript(text: string) {
-  currentRxText.value = `PATIENT: ${appointment.name}
-DATE: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}  |  DR. HANSEN
+  currentRxText.value = buildRxDraft(text, 'Upload')
+  prescriptionKey.value++
+}
 
-[From uploaded audio]
+function buildRxDraft(transcript: string, source: string): string {
+  const date = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  return `DATE: ${date}  |  DR. (doctor)
+
+[Source: ${source}]
 TRANSCRIPT:
-${text}
+${transcript}
 
 MEDICATIONS:
 Review transcript above and update accordingly.
 
 NOTES:
-AI-assisted draft from uploaded audio file.`
-  prescriptionKey.value++  // force PrescriptionCard to remount with fresh text
+AI-assisted draft — please review before approving.`
 }
 
 function onApproved(_text: string) {
   consultationStatus.value = 'done'
+}
+
+// Mock patient info — replace with real patient data when user-service is connected
+const mockPatient = {
+  id: '',
+  name: 'Patient',
+  time: '—',
+  department: 'Consultation',
+  status: 'waiting' as const,
+  tag: 'new' as const,
+  phone: '—',
+  email: '—',
+  dob: '—',
+  age: 0,
+  gender: '—',
+  cpr: '—',
+  blood: '—',
+  allergy: '—',
+  reason: '—',
 }
 </script>
 
@@ -65,9 +101,10 @@ function onApproved(_text: string) {
   <div class="consultation-layout">
     <!-- Sidebar -->
     <AppointmentSidebar
-      :appointment="appointment"
-      :selected="isSelected"
-      @select="isSelected = true"
+      :consultations="consultations"
+      :selected-id="selectedConsultation?.id ?? null"
+      :loading="loading"
+      @select="onSelect"
     />
 
     <!-- Main panel -->
@@ -93,18 +130,45 @@ function onApproved(_text: string) {
 
       <v-divider />
 
+      <!-- Error -->
+      <v-alert
+        v-if="error"
+        type="error"
+        variant="tonal"
+        density="compact"
+        closable
+        class="mx-4 mt-2"
+      >
+        {{ error }}
+      </v-alert>
+
       <!-- Empty state -->
-      <div v-if="!isSelected" class="empty-state">
+      <div v-if="!selectedConsultation" class="empty-state">
         <v-icon size="64" color="primary" opacity="0.2" class="mb-4">mdi-cursor-default-click</v-icon>
-        <p class="empty-title">Select a patient to begin</p>
-        <p class="empty-sub">Click on an appointment in the left sidebar</p>
+        <p class="empty-title">Select a consultation to begin</p>
+        <p class="empty-sub">Click on a consultation in the left sidebar</p>
       </div>
 
       <!-- Consultation content -->
       <div v-else class="content-scroll">
         <div class="content-inner pa-6">
+          <!-- Consultation meta -->
+          <v-card rounded="lg" elevation="1" class="mb-4 pa-4">
+            <div class="d-flex align-center justify-space-between">
+              <div>
+                <p class="meta-label mb-1">CONSULTATION ID</p>
+                <p class="meta-value mono">{{ selectedConsultation.id }}</p>
+              </div>
+              <div>
+                <p class="meta-label mb-1">APPOINTMENT</p>
+                <p class="meta-value mono">{{ selectedConsultation.appointment_id }}</p>
+              </div>
+            </div>
+          </v-card>
+
+          <!-- TODO: PatientInfoCard — conectează la user-service când e disponibil -->
           <PatientInfoCard
-            :patient="appointment"
+            :patient="mockPatient"
             :status="consultationStatus"
           />
 
@@ -120,8 +184,8 @@ function onApproved(_text: string) {
           <PrescriptionCard
             :key="prescriptionKey"
             :initial-text="currentRxText"
-            :patient-name="appointment.name"
-            :patient-email="appointment.email"
+            :patient-name="mockPatient.name"
+            :patient-email="mockPatient.email"
             @approved="onApproved"
           />
         </div>
@@ -133,7 +197,7 @@ function onApproved(_text: string) {
 <style scoped>
 .consultation-layout {
   display: flex;
-  height: calc(100vh - 64px); /* subtract app bar */
+  height: calc(100vh - 64px);
   overflow: hidden;
 }
 
@@ -194,5 +258,26 @@ function onApproved(_text: string) {
 
 .content-inner {
   max-width: 760px;
+}
+
+.meta-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.45;
+  margin: 0;
+}
+
+.meta-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.meta-value.mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  word-break: break-all;
 }
 </style>
