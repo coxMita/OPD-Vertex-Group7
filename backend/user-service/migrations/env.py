@@ -11,7 +11,7 @@ from alembic import context
 # Ensure the project root is on sys.path so `src` can be imported.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.models.db import user  # noqa: F401
+from src.models.db import user, patient, doctor  # noqa: F401
 
 load_dotenv()
 # this is the Alembic Config object, which provides
