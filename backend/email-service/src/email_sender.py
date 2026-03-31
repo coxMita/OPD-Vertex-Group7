@@ -13,7 +13,11 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def send_email(
-    to_email: str, subject: str, message: str, is_html: bool = False
+    to_email: str,
+    subject: str,
+    message: str,
+    is_html: bool = False,
+    attachments: list[tuple[str, bytes]] | None = None,
 ) -> None:
     """Send an email using configured SMTP settings."""
     email_msg = EmailMessage()
@@ -26,6 +30,12 @@ async def send_email(
         email_msg.add_alternative(message, subtype="html")
     else:
         email_msg.set_content(message)
+
+    if attachments:
+        for filename, content in attachments:
+            email_msg.add_attachment(
+                content, maintype="application", subtype="pdf", filename=filename
+            )
 
     try:
         # aiosmtplib kwargs: if use_tls=True, it connects via implicit TLS

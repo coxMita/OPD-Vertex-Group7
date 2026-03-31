@@ -44,6 +44,7 @@ async def test_process_message_valid_event(mock_message: MagicMock) -> None:
             subject="Welcome",
             message="Hello User!",
             is_html=False,
+            attachments=None,
         )
         mock_message.ack.assert_called_once()
         mock_message.nack.assert_not_called()
@@ -93,3 +94,35 @@ async def test_process_message_send_email_failure(mock_message: MagicMock) -> No
         mock_send_email.assert_called_once()
         mock_message.nack.assert_called_once_with(requeue=True)
         mock_message.ack.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_process_message_with_document(mock_message: MagicMock) -> None:
+    """Test successful processing of an email event with document data."""
+    event_data = {
+        "to_email": "user@example.com",
+        "subject": "Prescription",
+        "message": "See attached",
+        "is_html": False,
+        "document_title": "Rx",
+        "document_content": {"medicine": "Paracetamol"}
+    }
+    mock_message.body = json.dumps(event_data).encode()
+
+    with (
+        patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email,
+        patch(
+            "src.consumer.generate_pdf", return_value=b"mockpdf"
+        ) as mock_generate_pdf,
+    ):
+        await process_message(mock_message)
+
+        mock_generate_pdf.assert_called_once_with("Rx", {"medicine": "Paracetamol"})
+        mock_send_email.assert_called_once_with(
+            to_email="user@example.com",
+            subject="Prescription",
+            message="See attached",
+            is_html=False,
+            attachments=[("Rx.pdf", b"mockpdf")],
+        )
+        mock_message.ack.assert_called_once()
