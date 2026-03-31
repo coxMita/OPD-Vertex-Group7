@@ -20,6 +20,21 @@ def find_or_create_patient(
     return service.find_or_create_patient(request)
 
 
+# IMPORTANT: /by-email must be before /{patient_id} to avoid UUID parse conflict
+@router.get("/by-email", status_code=status.HTTP_200_OK)
+def get_patient_by_email(
+    email: str,
+    service: Annotated[PatientService, Depends(get_patient_service)],
+    response: Response,
+) -> PatientDTO | dict[str, str]:
+    """Get a patient by email address."""
+    patient = service.get_patient_by_email(email)
+    if patient is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"message": "Patient not found"}
+    return patient
+
+
 @router.get("/{patient_id}", status_code=status.HTTP_200_OK)
 def get_patient(
     patient_id: UUID,

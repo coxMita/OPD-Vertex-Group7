@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 WORKDIR /app
-COPY pyproject.toml uv.lock .python-version .env main.py alembic.ini ./
+COPY pyproject.toml uv.lock .python-version .env main.py alembic.ini seed.py ./
 COPY src ./src
 COPY migrations ./migrations
 RUN uv venv && uv sync

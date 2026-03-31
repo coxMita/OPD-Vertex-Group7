@@ -31,3 +31,10 @@ class PatientService:
     def _to_dto(self, patient: Patient) -> PatientDTO:
         """Convert a Patient entity to a PatientDTO."""
         return PatientDTO(**patient.model_dump())
+
+    def get_patient_by_email(self, email: str) -> PatientDTO | None:
+        """Get a patient by email address."""
+        patient = self._repo.get_by_email(email)
+        if patient is None:
+            return None
+        return self._to_dto(patient)

@@ -1,7 +1,9 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { userApi } from '@/services/userApi'
 import type { PatientFormData } from './usePatientForm'
 
 export interface Doctor {
+  id: string
   name: string
   specialty: string
   avatar: string
@@ -17,46 +19,57 @@ export const DEPARTMENTS = [
   'Psychiatry',
 ]
 
-const DOCTORS_BY_DEPARTMENT: Record<string, Doctor[]> = {
-  'General Practice': [
-    { name: 'Dr. Ana Popescu', specialty: 'General Practitioner', avatar: 'AP' },
-    { name: 'Dr. Ion Marinescu', specialty: 'General Practitioner', avatar: 'IM' },
-  ],
-  'Cardiology': [
-    { name: 'Dr. Elena Dumitrescu', specialty: 'Cardiologist', avatar: 'ED' },
-    { name: 'Dr. Mihai Ionescu', specialty: 'Interventional Cardiologist', avatar: 'MI' },
-  ],
-  'Dermatology': [
-    { name: 'Dr. Raluca Stan', specialty: 'Dermatologist', avatar: 'RS' },
-    { name: 'Dr. Andrei Popa', specialty: 'Cosmetic Dermatologist', avatar: 'AP' },
-  ],
-  'Neurology': [
-    { name: 'Dr. Cristina Vlad', specialty: 'Neurologist', avatar: 'CV' },
-    { name: 'Dr. Bogdan Radu', specialty: 'Pediatric Neurologist', avatar: 'BR' },
-  ],
-  'Orthopedics': [
-    { name: 'Dr. Alexandru Marin', specialty: 'Orthopedic Surgeon', avatar: 'AM' },
-    { name: 'Dr. Ioana Constantin', specialty: 'Sports Medicine', avatar: 'IC' },
-  ],
-  'Pediatrics': [
-    { name: 'Dr. Maria Georgescu', specialty: 'Pediatrician', avatar: 'MG' },
-    { name: 'Dr. Vlad Nistor', specialty: 'Neonatologist', avatar: 'VN' },
-  ],
-  'Psychiatry': [
-    { name: 'Dr. Andreea Matei', specialty: 'Psychiatrist', avatar: 'AM' },
-    { name: 'Dr. Radu Florescu', specialty: 'Child Psychiatrist', avatar: 'RF' },
-  ],
+function getAvatarInitials(fullName: string): string {
+  const parts = fullName.trim().split(' ').filter(Boolean)
+  if (parts.length >= 2) {
+    return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase()
+  }
+  return (parts[0] ?? '?').charAt(0).toUpperCase()
 }
 
 export function useDoctorSelection(form: { value: PatientFormData }) {
-  // Resets selected doctor whenever department changes
-  const availableDoctors = computed<Doctor[]>(() => {
-    form.value.doctor = ''
-    return DOCTORS_BY_DEPARTMENT[form.value.department] ?? []
-  })
+  const availableDoctors = ref<Doctor[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  async function fetchDoctorsByDepartment(department: string) {
+    if (!department) {
+      availableDoctors.value = []
+      return
+    }
+    loading.value = true
+    error.value = null
+    try {
+      const data = await userApi.getDoctorsByDepartment(department)
+      availableDoctors.value = data.map((d) => ({
+        id: d.doctor_id,
+        name: `Dr. ${d.full_name}`,
+        specialty: d.department_name,
+        avatar: getAvatarInitials(d.full_name),
+      }))
+    } catch (err) {
+      console.error('Failed to fetch doctors:', err)
+      error.value = 'Could not load doctors.'
+      availableDoctors.value = []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Re-fetch doctors when department changes, reset selected doctor
+  watch(
+    () => form.value.department,
+    (newDepartment) => {
+      form.value.doctor = ''
+      fetchDoctorsByDepartment(newDepartment)
+    },
+  )
 
   return {
     departments: DEPARTMENTS,
     availableDoctors,
+    loading,
+    error,
+    fetchDoctorsByDepartment,
   }
 }

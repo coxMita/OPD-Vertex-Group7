@@ -9,6 +9,7 @@ const props = defineProps<{
   getAppointmentsForTimeSlot: (date: Date, hour: number) => Appointment[]
   getApptStyle: (status: string) => Record<string, string>
   getStatusIcon: (status: string) => string
+  getPatientName: (patientId: string) => string | null
   isToday: (date: Date) => boolean
   editMode: boolean
   draggingId: string | null
@@ -62,6 +63,7 @@ defineExpose({ weekBodyRef })
               :statusIcon="getStatusIcon(appt.status)"
               :assignedTime="appt.assigned_time"
               :patientId="appt.patient_id"
+              :patientName="getPatientName(appt.patient_id)"
               :apptStyle="getApptStyle(appt.status)"
               :editMode="editMode"
               :isDragging="draggingId === appt.id"

@@ -24,6 +24,5 @@ class PatientRepository:
         return self._session.get(Patient, patient_id)
 
     def get_by_email(self, email: str) -> Patient | None:
-        """Retrieve a patient by their email."""
-        statement = select(Patient).where(Patient.email == email)
-        return self._session.exec(statement).first()
+        """Retrieve a patient by their email address."""
+        return self._session.exec(select(Patient).where(Patient.email == email)).first()
