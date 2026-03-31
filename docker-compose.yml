@@ -278,7 +278,7 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-1.0.0
+        image: mita28/opdvertex:user-service-1.1.2
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
