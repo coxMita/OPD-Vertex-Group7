@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePatientForm } from '@/composables/usePatientForm'
 import { useDoctorSelection } from '@/composables/useDoctorSelection'
+import { userApi } from '@/services/userApi'
+import { appointmentApi } from '@/services/appointmentApi'
 import ModeSelector from '@/components/PatientForm/ModeSelector.vue'
 import BookingForm from '@/components/PatientForm/BookingForm.vue'
 import LookupForm from '@/components/PatientForm/LookupForm.vue'
@@ -17,14 +20,64 @@ const {
   actionCardBg,
   mode,
   submitted,
+  submitting,
+  submitError,
   form,
+  lookupLoading,
+  lookupError,
+  lookedUpPatient,
+  lookedUpAppointments,
   lookup,
-  handleSubmit,
   handleLookup,
   switchMode,
 } = usePatientForm()
 
-const { departments, availableDoctors } = useDoctorSelection(form)
+const { departments, availableDoctors, fetchDoctorsByDepartment } = useDoctorSelection(form)
+
+onMounted(() => {
+  // Fetch doctors for the default department on load
+  fetchDoctorsByDepartment(form.value.department)
+})
+
+async function handleSubmit() {
+  submitError.value = null
+  submitting.value = true
+
+  try {
+    // Step 1: find-or-create patient
+    const patient = await userApi.findOrCreatePatient({
+      first_name: form.value.firstName,
+      last_name: form.value.lastName,
+      email: form.value.email,
+      phone_number: Number(form.value.phone_number),
+      date_of_birth: form.value.dateOfBirth,
+      gender: form.value.gender,
+    })
+
+    // Step 2: create appointment
+    await appointmentApi.createAppointment({
+      patient_id: patient.patient_id,
+      doctor_id: form.value.doctorId,
+      appointment_date: form.value.date,
+      time_preference: form.value.time as 'AM' | 'PM',
+      notes: form.value.reason || null,
+    })
+
+    submitted.value = true
+  } catch (err: unknown) {
+    console.error('Booking failed:', err)
+    const axiosErr = err as { response?: { data?: { message?: string }; status?: number } }
+    if (axiosErr.response?.status === 409) {
+      submitError.value = 'No available slots for this doctor on the selected date and time. Please choose another date or time.'
+    } else if (axiosErr.response?.data?.message) {
+      submitError.value = axiosErr.response.data.message
+    } else {
+      submitError.value = 'Booking failed. Please check your details and try again.'
+    }
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -53,7 +106,9 @@ const { departments, availableDoctors } = useDoctorSelection(form)
         :action-card-bg="actionCardBg"
         :card-color="cardColor"
         :is-dark="isDark"
-        @update:field="(field, value) => (form[field] = value)"
+        :submitting="submitting"
+        :submit-error="submitError"
+        @update:field="(field, value) => (form[field] = value as any)"
         @submit="handleSubmit"
       />
 
@@ -63,6 +118,8 @@ const { departments, availableDoctors } = useDoctorSelection(form)
         :contact="lookup.contact"
         :card-color="cardColor"
         :teal-color="tealColor"
+        :loading="lookupLoading"
+        :error="lookupError"
         @update:contact="lookup.contact = $event"
         @submit="handleLookup"
       />
@@ -73,6 +130,8 @@ const { departments, availableDoctors } = useDoctorSelection(form)
         :form="form"
         :accent-color="accentColor"
         :teal-color="tealColor"
+        :patient="lookedUpPatient"
+        :appointments="lookedUpAppointments"
         @back="router.push('/')"
       />
 

@@ -3,7 +3,8 @@ import type { Doctor } from '@/composables/useDoctorSelection'
 
 const props = defineProps<{
   doctors: Doctor[]
-  modelValue: string
+  modelValue: string       // selected doctor display name (for UI highlight)
+  modelDoctorId: string    // selected doctor id (for API)
   accentColor: string
   actionCardBg: string
   isDark: boolean
@@ -11,7 +12,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
+  (e: 'update:modelDoctorId', value: string): void
 }>()
+
+function selectDoctor(doctor: Doctor) {
+  emit('update:modelValue', doctor.name)
+  emit('update:modelDoctorId', doctor.id)
+}
 </script>
 
 <template>
@@ -21,14 +28,14 @@ const emit = defineEmits<{
       <div class="mt-2">
         <v-card
           v-for="doctor in doctors"
-          :key="doctor.name"
+          :key="doctor.id"
           :style="modelValue === doctor.name
             ? { border: `2px solid ${accentColor}`, background: isDark ? '#2a2a2a' : '#fff5f5' }
             : { border: '2px solid transparent', background: actionCardBg }"
           rounded="lg"
           elevation="0"
           class="doctor-card mb-2"
-          @click="emit('update:modelValue', doctor.name)"
+          @click="selectDoctor(doctor)"
         >
           <v-card-text class="d-flex align-center ga-3 pa-4">
             <v-avatar

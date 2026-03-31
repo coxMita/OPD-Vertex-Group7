@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { useTheme } from 'vuetify'
 import type { Appointment } from '@/models/appointment/appointment.interface'
 import { appointmentApi } from '@/services/appointmentApi'
+import { userApi } from '@/services/userApi'
 
 export type StatusKey = 'scheduled' | 'handed_off' | 'completed' | 'cancelled'
 
@@ -46,6 +47,9 @@ export function useCalendarAppointments(doctorId: { value: string }) {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  // patient_id → "First Last"
+  const patientNames = ref<Record<string, string>>({})
+
   function formatDate(date: Date): string {
     const year = date.getFullYear()
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
@@ -66,6 +70,10 @@ export function useCalendarAppointments(doctorId: { value: string }) {
     return STATUS_CONFIG[status as StatusKey]?.icon ?? 'mdi-calendar'
   }
 
+  function getPatientName(patientId: string): string | null {
+    return patientNames.value[patientId] ?? null
+  }
+
   function getAppointmentsForDate(date: Date): Appointment[] {
     const dateStr = formatDate(date)
     return appointments.value.filter((a) => a.appointment_date === dateStr)
@@ -78,16 +86,39 @@ export function useCalendarAppointments(doctorId: { value: string }) {
     })
   }
 
+  async function enrichPatientNames(appts: Appointment[]) {
+    // Get unique patient_ids not yet in cache
+    const uniqueIds = [...new Set(appts.map((a) => a.patient_id))].filter(
+      (id) => !(id in patientNames.value),
+    )
+    if (uniqueIds.length === 0) return
+
+    // Fetch all in parallel, ignore failures (fake patient_ids etc.)
+    await Promise.allSettled(
+      uniqueIds.map(async (id) => {
+        try {
+          const patient = await userApi.getPatient(id)
+          const lastName = patient.last_name.charAt(0).toUpperCase() + patient.last_name.slice(1)
+          patientNames.value[id] = `${patient.first_name} ${lastName}`
+        } catch {
+          // Leave missing — displayName fallback in AppointmentCard handles it
+        }
+      }),
+    )
+  }
+
   async function fetchAppointments(visibleDates: Date[]) {
     loading.value = true
     error.value = null
     try {
       const results = await Promise.all(
         visibleDates.map((date) =>
-          appointmentApi.getQueueForDay(doctorId.value, formatDate(date))
+          appointmentApi.getQueueForDay(doctorId.value, formatDate(date)),
         ),
       )
       appointments.value = results.flat()
+      // Enrich patient names in background — don't block calendar render
+      enrichPatientNames(appointments.value)
     } catch (err) {
       console.error('Failed to fetch appointments:', err)
       error.value = 'Could not load appointments. Is the backend running?'
@@ -101,9 +132,11 @@ export function useCalendarAppointments(doctorId: { value: string }) {
     appointments,
     loading,
     error,
+    patientNames,
     formatDate,
     getApptStyle,
     getStatusIcon,
+    getPatientName,
     getAppointmentsForDate,
     getAppointmentsForTimeSlot,
     fetchAppointments,

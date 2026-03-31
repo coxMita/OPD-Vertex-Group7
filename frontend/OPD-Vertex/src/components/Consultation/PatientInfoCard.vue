@@ -5,25 +5,15 @@ defineProps<{
   patient: ConsultationPatient
 }>()
 
-const statusConfig = {
-  waiting: { label: 'Waiting', color: 'warning' },
-  active: { label: '● Active', color: 'success' },
-  done: { label: '✓ Done', color: 'default' },
-}
-
 const infoFields = (p: ConsultationPatient) => [
   { label: 'DOB', value: p.dob },
   { label: 'Age', value: `${p.age} years` },
   { label: 'Gender', value: p.gender },
-  { label: 'CPR / ID', value: p.cpr },
-  { label: 'Blood Type', value: p.blood },
-  { label: 'Allergies', value: p.allergy },
 ]
 </script>
 
 <template>
   <v-card rounded="lg" elevation="1" class="mb-4">
-    <!-- Header row -->
     <div class="patient-header px-5 pt-4 pb-3">
       <div class="d-flex align-center justify-space-between flex-wrap ga-2">
         <div>
@@ -36,7 +26,7 @@ const infoFields = (p: ConsultationPatient) => [
               <v-icon size="14" class="mr-1">mdi-email-outline</v-icon>{{ patient.email }}
             </span>
             <span class="meta-item">
-              <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>{{ patient.time }} · {{ patient.department }}
+              <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>{{ patient.time }}
             </span>
           </div>
         </div>
@@ -45,7 +35,6 @@ const infoFields = (p: ConsultationPatient) => [
 
     <v-divider />
 
-    <!-- Info grid -->
     <div class="info-grid pa-5">
       <div class="section-label mb-3">
         <v-icon size="14" color="primary" class="mr-1">mdi-circle</v-icon>
@@ -71,14 +60,12 @@ const infoFields = (p: ConsultationPatient) => [
   font-weight: 800;
   letter-spacing: -0.02em;
 }
-
 .meta-item {
   font-size: 0.78rem;
   opacity: 0.65;
   display: flex;
   align-items: center;
 }
-
 .section-label {
   font-size: 0.68rem;
   font-weight: 700;
@@ -88,15 +75,11 @@ const infoFields = (p: ConsultationPatient) => [
   display: flex;
   align-items: center;
 }
-
 .grid-cells {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px 16px;
 }
-
-.info-cell {}
-
 .cell-label {
   font-size: 0.68rem;
   font-weight: 600;
@@ -105,13 +88,11 @@ const infoFields = (p: ConsultationPatient) => [
   opacity: 0.45;
   margin: 0 0 2px;
 }
-
 .cell-value {
   font-size: 0.88rem;
   font-weight: 600;
   margin: 0;
 }
-
 .reason-text {
   font-style: italic;
   font-weight: 400;

@@ -13,6 +13,8 @@ const props = defineProps<{
   actionCardBg: string
   cardColor: string
   isDark: boolean
+  submitting?: boolean
+  submitError?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -59,8 +61,9 @@ function update(field: keyof PatientFormData, value: string) {
           <FormField
             label="Phone Number"
             placeholder="+45 12 34 56 78"
-            :model-value="form.phone"
-            @update:model-value="update('phone', $event)"
+            type="tel"
+            :model-value="String(form.phone_number)"
+            @update:model-value="update('phone_number', $event)"
           />
         </v-col>
         <v-col cols="12" sm="6">
@@ -70,6 +73,27 @@ function update(field: keyof PatientFormData, value: string) {
             type="email"
             :model-value="form.email"
             @update:model-value="update('email', $event)"
+          />
+        </v-col>
+        <v-col cols="12" sm="6">
+          <FormField
+            label="Date of Birth"
+            type="date"
+            :model-value="form.dateOfBirth"
+            @update:model-value="update('dateOfBirth', $event)"
+          />
+        </v-col>
+        <v-col cols="12" sm="6">
+          <label class="field-label">Gender</label>
+          <v-select
+            :model-value="form.gender"
+            :items="['male', 'female', 'other']"
+            variant="outlined"
+            rounded="lg"
+            density="comfortable"
+            hide-details
+            placeholder="Select gender"
+            @update:model-value="update('gender', $event)"
           />
         </v-col>
       </v-row>
@@ -129,14 +153,28 @@ function update(field: keyof PatientFormData, value: string) {
           <DoctorPicker
             :doctors="availableDoctors"
             :model-value="form.doctor"
+            :model-doctor-id="form.doctorId"
             :accent-color="accentColor"
             :action-card-bg="actionCardBg"
             :is-dark="isDark"
             @update:model-value="update('doctor', $event)"
+            @update:model-doctor-id="update('doctorId', $event)"
           />
         </v-col>
       </v-row>
     </FormSection>
+
+    <!-- Submit error -->
+    <v-alert
+      v-if="submitError"
+      type="error"
+      variant="tonal"
+      density="compact"
+      rounded="lg"
+      class="mb-4"
+    >
+      {{ submitError }}
+    </v-alert>
 
     <v-btn
       color="primary"
@@ -145,6 +183,8 @@ function update(field: keyof PatientFormData, value: string) {
       block
       elevation="0"
       class="mt-4"
+      :loading="submitting"
+      :disabled="submitting"
       @click="emit('submit')"
     >
       <span class="font-weight-bold">Confirm Booking</span>
