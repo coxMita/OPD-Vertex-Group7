@@ -1,5 +1,8 @@
+"""Transcription router for transcription-service."""
+
 import os
 import tempfile
+import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -12,8 +15,20 @@ router = APIRouter(prefix="/transcription", tags=["transcription"])
 
 
 @router.post("/")
-async def transcribe(file: UploadFile = File(...)) -> dict[str, str]:
-    """Receive an audio file, return its transcript, and publish it to RabbitMQ."""
+async def transcribe(
+    consultation_id: uuid.UUID,
+    file: UploadFile = File(...),
+) -> dict[str, str]:
+    """Receive an audio file, return its transcript, and publish it to RabbitMQ.
+
+    Args:
+        consultation_id: UUID of the consultation this recording belongs to.
+        file: The uploaded audio file to transcribe.
+
+    Returns:
+        dict with the transcript text.
+
+    """
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         tmp.write(await file.read())
         tmp_path = tmp.name
@@ -30,12 +45,12 @@ async def transcribe(file: UploadFile = File(...)) -> dict[str, str]:
         transcript=transcript,
         language=language,
         language_probability=language_probability,
+        consultation_id=consultation_id,
     )
 
     try:
         await messaging_manager.get_pubsub(TRANSCRIPTION_COMPLETED).publish(message)
     except Exception as e:
-        # Log but don't fail the request if messaging is unavailable
         raise HTTPException(
             status_code=500,
             detail=f"Transcription succeeded but failed to publish message: {e}",

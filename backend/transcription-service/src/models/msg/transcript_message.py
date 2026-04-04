@@ -1,5 +1,6 @@
 """Transcript message published after a successful audio transcription."""
 
+import uuid
 from datetime import datetime, timezone
 
 from src.models.msg.abstract_message import AbstractMessage
@@ -14,6 +15,7 @@ class TranscriptMessage(AbstractMessage):
         language (str): Detected language code (e.g. "en").
         language_probability (float): Confidence score for the detected language.
         transcribed_at (datetime): UTC timestamp of when transcription completed.
+        consultation_id (uuid.UUID): ID of the consultation this transcript belongs to.
 
     """
 
@@ -22,6 +24,7 @@ class TranscriptMessage(AbstractMessage):
     language: str
     language_probability: float
     transcribed_at: datetime = None
+    consultation_id: uuid.UUID
 
     def model_post_init(self, __context: object) -> None:
         """Set transcribed_at to current UTC time if not provided."""
