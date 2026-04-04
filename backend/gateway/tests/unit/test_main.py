@@ -28,3 +28,15 @@ def test_health(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"status": "ok"}
+
+
+def test_root_response_is_json(client: TestClient) -> None:
+    """Root should return JSON content-type."""
+    response = client.get("/")
+    assert "application/json" in response.headers["content-type"]
+
+
+def test_health_response_is_json(client: TestClient) -> None:
+    """Health should return JSON content-type."""
+    response = client.get("/health")
+    assert "application/json" in response.headers["content-type"]
