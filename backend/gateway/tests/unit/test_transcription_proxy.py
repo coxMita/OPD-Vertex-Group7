@@ -9,6 +9,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from main import app
+from src.config import TRANSCRIPTION_SERVICE_URL
 
 CONSULTATION_ID = str(uuid.UUID("11111111-1111-1111-1111-111111111111"))
 
@@ -87,7 +88,7 @@ async def test_transcription_proxy_targets_correct_service_url(
     )
 
     called_url: str = mock_request.call_args[1]["url"]
-    assert "transcription-service:8000" in called_url
+    assert called_url.startswith(f"{TRANSCRIPTION_SERVICE_URL}/transcription/")
     assert "/transcription/" in called_url
 
 
@@ -98,7 +99,7 @@ async def test_transcription_proxy_passes_through_422(
 ) -> None:
     """Should pass through 422 from transcription-service unchanged."""
     mock_request.return_value = _mock_response(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content=b'{"detail": [{"msg": "Field required"}]}',
     )
 
@@ -107,7 +108,7 @@ async def test_transcription_proxy_passes_through_422(
         content=b"bytes",
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 @pytest.mark.asyncio
