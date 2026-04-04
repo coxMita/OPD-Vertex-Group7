@@ -28,18 +28,16 @@ const {
   selectConsultation,
 } = useConsultationList()
 
-// ── Enriched sidebar items (with patient_name + assigned_time) ─
+// ── Enriched sidebar items ─────────────────────────────────────
 const sidebarItems = ref<ConsultationSidebarItem[]>([])
 
 async function enrichConsultationsForSidebar(rawConsultations: Consultation[]) {
-  // Start with placeholders immediately so sidebar renders fast
   sidebarItems.value = rawConsultations.map((c) => ({
     ...c,
     patient_name: null,
     assigned_time: null,
   }))
 
-  // Enrich each item in parallel
   await Promise.allSettled(
     rawConsultations.map(async (c, index) => {
       try {
@@ -51,13 +49,13 @@ async function enrichConsultationsForSidebar(rawConsultations: Consultation[]) {
           assigned_time: appointment.assigned_time,
         }
       } catch {
-        // Keep placeholder if fetch fails (e.g. fake patient_id)
+        // Keep placeholder
       }
     }),
   )
 }
 
-// ── Patient state for main panel ───────────────────────────────
+// ── Patient state ──────────────────────────────────────────────
 const currentPatient = ref<ConsultationPatient | null>(null)
 const patientLoading = ref(false)
 const patientError = ref<string | null>(null)
@@ -72,13 +70,13 @@ async function fetchPatientForConsultation(consultation: Consultation) {
     const patient = await userApi.getPatient(appointment.patient_id)
 
     currentPatient.value = {
-      id: patient.id,
+      id: patient.patient_id,
       name: `${patient.first_name} ${capitalize(patient.last_name)}`,
       time: appointment.assigned_time?.slice(0, 5) ?? '—',
       department: '—',
       status: consultation.status === 'ACTIVE' ? 'active' : 'done',
       tag: 'new',
-      phone: patient.phone ?? '—',
+      phone: String(patient.phone_number ?? '—'),
       email: patient.email,
       dob: patient.date_of_birth
         ? new Date(patient.date_of_birth).toLocaleDateString('en-GB', {
@@ -113,16 +111,16 @@ function calculateAge(dateOfBirth: string): number {
   if (isNaN(birth.getTime())) return 0
   let age = today.getFullYear() - birth.getFullYear()
   const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--
   return Math.max(0, age)
 }
 
-// ── Consultation state ─────────────────────────────────────────
+// ── Consultation / prescription state ──────────────────────────
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
 const currentRxText = ref('')
 const prescriptionKey = ref(0)
+// The consultation ID to pass to PrescriptionCard for polling
+const activePrescriptionConsultationId = ref<string | null>(null)
 
 onMounted(async () => {
   await fetchConsultations(props.doctorId)
@@ -134,8 +132,9 @@ async function onSelect(consultation: ConsultationSidebarItem) {
   consultationStatus.value = consultation.status === 'ACTIVE' ? 'active' : 'done'
   currentRxText.value = ''
   prescriptionKey.value++
+  // Set the consultationId — PrescriptionCard will start polling automatically
+  activePrescriptionConsultationId.value = consultation.id
 
-  // Reuse sidebar data if already enriched, still fetch for full detail
   await fetchPatientForConsultation(consultation)
 }
 
@@ -144,35 +143,12 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
   else if (status === 'done') consultationStatus.value = 'done'
 }
 
-function onTranscriptReady(text: string) {
-  currentRxText.value = buildRxDraft(text, 'Recording')
-  prescriptionKey.value++
+function onTranscriptReady(_text: string) {
+  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
 }
 
-function onUploadTranscript(text: string) {
-  currentRxText.value = buildRxDraft(text, 'Upload')
-  prescriptionKey.value++
-}
-
-function buildRxDraft(transcript: string, source: string): string {
-  const date = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-  const patientName = currentPatient.value?.name ?? 'Patient'
-  return `PATIENT: ${patientName}
-DATE: ${date}  |  DR. (doctor)
-
-[Source: ${source}]
-TRANSCRIPT:
-${transcript}
-
-MEDICATIONS:
-Review transcript above and update accordingly.
-
-NOTES:
-AI-assisted draft — please review before approving.`
+function onUploadTranscript(_text: string) {
+  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
 }
 
 function onApproved(_text: string) {
@@ -263,23 +239,28 @@ function onApproved(_text: string) {
           <PatientInfoCard
             v-else-if="currentPatient"
             :patient="currentPatient"
-            :status="consultationStatus"
           />
 
           <RecordingCard
+            :key="`recording-${selectedConsultation?.id}`"
+            :consultation-id="activePrescriptionConsultationId"
             @transcript-ready="onTranscriptReady"
             @status-change="onRecordingStatusChange"
           />
 
           <TranscriptionUploadCard
+            :key="`upload-${selectedConsultation?.id}`"
+            :consultation-id="activePrescriptionConsultationId"
             @transcript-ready="onUploadTranscript"
           />
 
+          <!-- PrescriptionCard receives consultationId and polls automatically -->
           <PrescriptionCard
             :key="prescriptionKey"
             :initial-text="currentRxText"
             :patient-name="currentPatient?.name ?? ''"
             :patient-email="currentPatient?.email ?? ''"
+            :consultation-id="activePrescriptionConsultationId"
             @approved="onApproved"
           />
 
@@ -334,9 +315,7 @@ function onApproved(_text: string) {
   flex: 1;
   overflow-y: auto;
 }
-.content-scroll::-webkit-scrollbar {
-  width: 5px;
-}
+.content-scroll::-webkit-scrollbar { width: 5px; }
 .content-scroll::-webkit-scrollbar-thumb {
   background: rgba(var(--v-border-color), 0.4);
   border-radius: 4px;

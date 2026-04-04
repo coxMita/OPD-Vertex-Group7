@@ -2,6 +2,10 @@
 import { ref, onUnmounted } from 'vue'
 import { transcriptionApi } from '@/services/transcriptionApi'
 
+const props = defineProps<{
+  consultationId: string | null
+}>()
+
 const emit = defineEmits<{
   (e: 'transcriptReady', text: string): void
   (e: 'statusChange', status: 'idle' | 'recording' | 'processing' | 'done' | 'error'): void
@@ -25,21 +29,19 @@ let analyser: AnalyserNode | null = null
 let animFrame: number | null = null
 let clockTimer: ReturnType<typeof setInterval> | null = null
 
-// ── Waveform (real AnalyserNode data when recording, idle bars otherwise) ─────
+// ── Waveform ──────────────────────────────────────────────────────────────────
 function startWaveform(stream: MediaStream) {
   audioContext = new AudioContext()
   analyser = audioContext.createAnalyser()
   analyser.fftSize = 128
   const source = audioContext.createMediaStreamSource(stream)
   source.connect(analyser)
-
   const data = new Uint8Array(analyser.frequencyBinCount)
-
   function tick() {
     analyser!.getByteFrequencyData(data)
     waveHeights.value = Array.from({ length: 48 }, (_, i) => {
       const idx = Math.floor((i / 48) * data.length)
-      return Math.max(4, Math.floor((data[idx] / 255) * 36))
+      return Math.max(4, Math.floor(((data[idx] ?? 0) / 255) * 36))
     })
     animFrame = requestAnimationFrame(tick)
   }
@@ -47,28 +49,19 @@ function startWaveform(stream: MediaStream) {
 }
 
 function stopWaveform() {
-  if (animFrame !== null) {
-    cancelAnimationFrame(animFrame)
-    animFrame = null
-  }
-  if (audioContext) {
-    audioContext.close()
-    audioContext = null
-    analyser = null
-  }
+  if (animFrame !== null) { cancelAnimationFrame(animFrame); animFrame = null }
+  if (audioContext) { audioContext.close(); audioContext = null; analyser = null }
   waveHeights.value = Array.from({ length: 48 }, () => 4)
 }
 
-// ── Recording clock ───────────────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────────────────
 function startClock() {
   recordingSeconds.value = 0
   clockTimer = setInterval(() => { recordingSeconds.value++ }, 1000)
 }
-
 function stopClock() {
   if (clockTimer) { clearInterval(clockTimer); clockTimer = null }
 }
-
 function formatTime(s: number) {
   const m = Math.floor(s / 60).toString().padStart(2, '0')
   const sec = (s % 60).toString().padStart(2, '0')
@@ -76,16 +69,10 @@ function formatTime(s: number) {
 }
 
 // ── WAV encoding ──────────────────────────────────────────────────────────────
-/**
- * Decode the browser's native container (webm/ogg), resample to 16 kHz mono,
- * then encode as a standard PCM WAV — exactly what Faster-Whisper expects.
- */
 async function blobToWav(chunks: Blob[]): Promise<File> {
   const raw = new Blob(chunks)
   const arrayBuf = await raw.arrayBuffer()
-
   const decoded = await new AudioContext().decodeAudioData(arrayBuf)
-
   const targetSampleRate = 16000
   const offlineCtx = new OfflineAudioContext(
     1,
@@ -97,7 +84,6 @@ async function blobToWav(chunks: Blob[]): Promise<File> {
   src.connect(offlineCtx.destination)
   src.start(0)
   const resampled = await offlineCtx.startRendering()
-
   const pcm = resampled.getChannelData(0)
   const wavBuf = pcmToWav(pcm, targetSampleRate)
   return new File([wavBuf], `recording_${Date.now()}.wav`, { type: 'audio/wav' })
@@ -106,34 +92,29 @@ async function blobToWav(chunks: Blob[]): Promise<File> {
 function pcmToWav(pcm: Float32Array, sampleRate: number): ArrayBuffer {
   const numSamples = pcm.length
   const bytesPerSample = 2
-  const blockAlign = bytesPerSample
-  const byteRate = sampleRate * blockAlign
   const dataSize = numSamples * bytesPerSample
   const buf = new ArrayBuffer(44 + dataSize)
   const view = new DataView(buf)
-
   const writeStr = (offset: number, str: string) => {
     for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i))
   }
   const clamp = (v: number) => Math.max(-1, Math.min(1, v))
-
   writeStr(0, 'RIFF')
   view.setUint32(4, 36 + dataSize, true)
   writeStr(8, 'WAVE')
   writeStr(12, 'fmt ')
   view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)           // PCM
-  view.setUint16(22, 1, true)           // mono
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
   view.setUint32(24, sampleRate, true)
-  view.setUint32(28, byteRate, true)
-  view.setUint16(32, blockAlign, true)
-  view.setUint16(34, 16, true)          // 16-bit
+  view.setUint32(28, sampleRate * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
   writeStr(36, 'data')
   view.setUint32(40, dataSize, true)
-
   let offset = 44
   for (let i = 0; i < numSamples; i++) {
-    view.setInt16(offset, Math.round(clamp(pcm[i]) * 0x7fff), true)
+    view.setInt16(offset, Math.round(clamp(pcm[i] ?? 0) * 0x7fff), true)
     offset += 2
   }
   return buf
@@ -141,6 +122,12 @@ function pcmToWav(pcm: Float32Array, sampleRate: number): ArrayBuffer {
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 async function startRecording() {
+  if (!props.consultationId) {
+    errorMsg.value = 'No consultation selected. Please select a consultation first.'
+    emit('statusChange', 'error')
+    return
+  }
+
   errorMsg.value = ''
   transcript.value = ''
   uploadProgress.value = 0
@@ -149,22 +136,19 @@ async function startRecording() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
   } catch {
-    errorMsg.value = 'Microphone access denied. Please allow microphone permission and try again.'
+    errorMsg.value = 'Microphone access denied.'
     emit('statusChange', 'error')
     return
   }
 
   audioStream = stream
   audioChunks = []
-
   const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', ''].find(
     (m) => !m || MediaRecorder.isTypeSupported(m),
   ) ?? ''
-
   mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
   mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data) }
   mediaRecorder.onstop = handleRecordingStop
-
   mediaRecorder.start(200)
   isRecording.value = true
   startWaveform(stream)
@@ -199,6 +183,7 @@ async function handleRecordingStop() {
   try {
     const { transcript: text } = await transcriptionApi.transcribeFile(
       wavFile,
+      props.consultationId!,
       (percent) => { uploadProgress.value = percent },
     )
     transcript.value = text
@@ -241,12 +226,11 @@ onUnmounted(() => {
     <v-divider />
 
     <div class="pa-5">
-      <!-- Controls -->
       <div class="d-flex justify-center ga-3 mb-4">
         <v-btn
           color="teal"
           rounded="pill"
-          :disabled="isRecording || isProcessing"
+          :disabled="isRecording || isProcessing || !consultationId"
           prepend-icon="mdi-record-circle"
           @click="startRecording"
         >
@@ -264,7 +248,6 @@ onUnmounted(() => {
         </v-btn>
       </div>
 
-      <!-- Waveform -->
       <div class="waveform mb-4">
         <div
           v-for="(h, i) in waveHeights"
@@ -275,7 +258,6 @@ onUnmounted(() => {
         />
       </div>
 
-      <!-- Upload / transcription progress -->
       <v-expand-transition>
         <div v-if="isProcessing" class="mb-4">
           <div class="d-flex justify-space-between mb-1">
@@ -294,7 +276,6 @@ onUnmounted(() => {
         </div>
       </v-expand-transition>
 
-      <!-- Error -->
       <v-expand-transition>
         <v-alert
           v-if="errorMsg"
@@ -308,7 +289,6 @@ onUnmounted(() => {
         </v-alert>
       </v-expand-transition>
 
-      <!-- Transcript -->
       <div class="transcript-box">
         <p v-if="!transcript && !isProcessing" class="transcript-placeholder">
           Transcript will appear here after recording stops…
@@ -331,51 +311,28 @@ onUnmounted(() => {
   align-items: center;
 }
 .rec-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #94a3b8;
-  flex-shrink: 0;
-  transition: background 0.2s;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #94a3b8; flex-shrink: 0; transition: background 0.2s;
 }
-.rec-dot.live {
-  background: #ef4444;
-  animation: blink 1s infinite;
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
+.rec-dot.live { background: #ef4444; animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .rec-status-text { font-size: 0.75rem; opacity: 0.65; }
 .waveform {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px; height: 44px;
 }
 .wbar {
-  width: 3px;
-  border-radius: 2px;
+  width: 3px; border-radius: 2px;
   background: rgba(var(--v-border-color), 0.5);
-  transition: height 0.09s ease;
-  min-height: 4px;
+  transition: height 0.09s ease; min-height: 4px;
 }
 .wbar.active { background: #0d9488; }
 .transcript-box {
-  min-height: 72px;
-  padding: 14px 16px;
-  border-radius: 10px;
+  min-height: 72px; padding: 14px 16px; border-radius: 10px;
   background: rgba(var(--v-theme-on-surface), 0.04);
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
-.transcript-placeholder {
-  font-size: 0.84rem;
-  font-style: italic;
-  opacity: 0.45;
-  margin: 0;
-  line-height: 1.6;
-}
+.transcript-placeholder { font-size: 0.84rem; font-style: italic; opacity: 0.45; margin: 0; line-height: 1.6; }
 .transcript-text { font-size: 0.84rem; line-height: 1.7; margin: 0; opacity: 0.85; }
 .processing-text { font-size: 0.78rem; opacity: 0.6; }
 </style>

@@ -1,8 +1,8 @@
 import axios, { type AxiosError } from 'axios'
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8000',
-  timeout: 120_000, // Whisper can be slow on large files
+  baseURL: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8080',
+  timeout: 120_000,
 })
 
 export interface TranscriptionResult {
@@ -14,11 +14,12 @@ export interface TranscriptionError {
 }
 
 /**
- * POST /api/v1/transcription/
+ * POST /api/v1/transcription/?consultation_id={consultationId}
  * Accepts a WAV audio file and returns the transcript text.
  */
 async function transcribeFile(
   file: File,
+  consultationId: string,
   onUploadProgress?: (percent: number) => void,
 ): Promise<TranscriptionResult> {
   const formData = new FormData()
@@ -28,6 +29,7 @@ async function transcribeFile(
     '/api/v1/transcription/',
     formData,
     {
+      params: { consultation_id: consultationId },
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress(ev) {
         if (onUploadProgress && ev.total) {
@@ -43,14 +45,14 @@ async function transcribeFile(
   return { transcript: text }
 }
 
-/**
- * Formats an AxiosError into a human-readable message, consistent across
- * TranscriptionUploadCard and RecordingCard.
- */
 function formatError(err: unknown, gatewayUrl: string): string {
   const axiosErr = err as AxiosError<TranscriptionError>
   if (axiosErr.response) {
     const detail = axiosErr.response.data?.detail
+    // detail may be an array (FastAPI validation errors) or a string
+    if (Array.isArray(detail)) {
+      return `Validation error: ${detail.map((d: Record<string, unknown>) => d.msg ?? d).join(', ')}`
+    }
     return detail
       ? `Service error: ${detail}`
       : `HTTP ${axiosErr.response.status}: ${axiosErr.response.statusText}`
@@ -64,6 +66,5 @@ function formatError(err: unknown, gatewayUrl: string): string {
 export const transcriptionApi = {
   transcribeFile,
   formatError,
-  /** Exposed so components can show the URL in error messages without re-reading env */
-  gatewayUrl: (import.meta.env.VITE_GATEWAY_URL as string | undefined) ?? 'http://localhost:8000',
+  gatewayUrl: (import.meta.env.VITE_GATEWAY_URL as string | undefined) ?? 'http://localhost:8080',
 }

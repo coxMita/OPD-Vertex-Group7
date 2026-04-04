@@ -23,8 +23,23 @@ _transcription_client = httpx.AsyncClient(
 
 @router.post("/")
 async def proxy_transcription(request: Request) -> Response:
-    """Proxy POST requests to the transcription-service."""
+    """Proxy POST requests to the transcription-service.
+
+    Forwards the full query string (including consultation_id) to the
+    downstream service.
+
+    Args:
+        request: The incoming FastAPI request.
+
+    Returns:
+        Response: The response from the transcription-service.
+
+    """
+    query_string = request.url.query
     url = f"{TRANSCRIPTION_SERVICE_URL}/transcription/"
+    if query_string:
+        url = f"{url}?{query_string}"
+
     logger.info("Proxying transcription request to: %s", url)
 
     body = await request.body()

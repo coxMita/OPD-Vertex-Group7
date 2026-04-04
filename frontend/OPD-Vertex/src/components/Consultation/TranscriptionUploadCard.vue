@@ -2,6 +2,10 @@
 import { ref } from 'vue'
 import { transcriptionApi } from '@/services/transcriptionApi'
 
+const props = defineProps<{
+  consultationId: string | null
+}>()
+
 const emit = defineEmits<{
   (e: 'transcriptReady', text: string): void
 }>()
@@ -42,6 +46,12 @@ function openFilePicker() {
 
 async function runTranscription() {
   if (!selectedFile.value) return
+
+  if (!props.consultationId) {
+    error.value = 'No consultation selected. Please select a consultation first.'
+    return
+  }
+
   isProcessing.value = true
   uploadProgress.value = 0
   result.value = ''
@@ -50,7 +60,10 @@ async function runTranscription() {
   try {
     const { transcript } = await transcriptionApi.transcribeFile(
       selectedFile.value,
-      (percent) => { uploadProgress.value = percent },
+      props.consultationId,
+      (percent) => {
+        uploadProgress.value = percent
+      },
     )
     result.value = transcript
     emit('transcriptReady', transcript)
@@ -99,6 +112,18 @@ function formatSize(bytes: number) {
         carry the result.
       </p>
 
+      <!-- No consultation warning -->
+      <v-alert
+        v-if="!consultationId"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        rounded="lg"
+        class="mb-4"
+      >
+        Select a consultation from the sidebar before running transcription.
+      </v-alert>
+
       <!-- Hidden native file input -->
       <input
         ref="fileInputRef"
@@ -140,7 +165,7 @@ function formatSize(bytes: number) {
         color="indigo"
         rounded="lg"
         block
-        :disabled="!selectedFile || isProcessing"
+        :disabled="!selectedFile || isProcessing || !consultationId"
         :loading="isProcessing"
         size="large"
         @click="runTranscription"
