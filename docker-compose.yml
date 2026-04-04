@@ -220,7 +220,7 @@ services:
 
     # ── Prescription Service ──────────────────────────────────────────────────
     prescription-service:
-        image: mita28/opdvertex:prescription-service-1.0.0
+        image: mita28/opdvertex:prescription-service-1.0.5
         build: backend/prescription-service/.
         container_name: prescription-service
         restart: unless-stopped
