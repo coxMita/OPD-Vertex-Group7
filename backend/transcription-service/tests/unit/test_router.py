@@ -1,6 +1,9 @@
 """Unit tests for src/transcription/router.py."""
 
 import os
+import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from http import HTTPStatus
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,6 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
 
+import main as main_module
+from main import app
 from src.models.msg.transcript_message import TranscriptMessage
 
 # ── App bootstrap (mock heavy deps before importing main) ─────────────────────
@@ -18,21 +23,33 @@ _mock_facade.close = AsyncMock()
 _mock_facade.publish = AsyncMock()
 _mock_facade.exchange_name = "transcription.completed"
 
-with (
-    patch("src.messaging.pubsub_facade.PubSubFacade", return_value=_mock_facade),
-    patch("src.transcription.whisper.get_model", return_value=MagicMock()),
-):
-    from main import app
+FAKE_AUDIO: tuple[str, bytes, str] = ("audio.wav", b"fake-audio-bytes", "audio/wav")
+FAKE_TRANSCRIPTION: tuple[str, str, float] = ("Hello world", "en", 0.99)
+FAKE_CONSULTATION_ID = uuid.UUID("12345678-1234-5678-1234-567812345678")
+EXPECTED_TUPLE_LENGTH = 3
+
+main_module.PubSubFacade = MagicMock(return_value=_mock_facade)
+main_module.get_model = MagicMock(return_value=MagicMock())
+
+
+@asynccontextmanager
+async def _noop_lifespan(_app: object) -> AsyncGenerator[None, None]:
+    yield
+
+
+app.router.lifespan_context = _noop_lifespan
 
 client = TestClient(app)
 
-FAKE_AUDIO: tuple[str, bytes, str] = ("audio.wav", b"fake-audio-bytes", "audio/wav")
-FAKE_TRANSCRIPTION: tuple[str, str, float] = ("Hello world", "en", 0.99)
-EXPECTED_TUPLE_LENGTH = 3
 
-
-def _post_audio(audio: tuple[str, bytes, str] = FAKE_AUDIO) -> Response:
-    return client.post("/transcription/", files={"file": audio})
+def _post_audio(
+    audio: tuple[str, bytes, str] = FAKE_AUDIO,
+    consultation_id: uuid.UUID | None = FAKE_CONSULTATION_ID,
+) -> Response:
+    params = {}
+    if consultation_id is not None:
+        params["consultation_id"] = str(consultation_id)
+    return client.post("/transcription/", params=params, files={"file": audio})
 
 
 # ── GET / ─────────────────────────────────────────────────────────────────────
@@ -109,7 +126,15 @@ class TestTranscribeEndpoint:
 
     def test_returns_422_without_file(self) -> None:
         """Endpoint returns HTTP 422 when no file is provided."""
-        response = client.post("/transcription/")
+        response = client.post(
+            "/transcription/",
+            params={"consultation_id": str(FAKE_CONSULTATION_ID)},
+        )
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_returns_422_without_consultation_id(self) -> None:
+        """Endpoint returns HTTP 422 when no consultation_id is provided."""
+        response = _post_audio(consultation_id=None)
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     @patch("src.transcription.router.messaging_manager")
@@ -191,3 +216,4 @@ class TestTranscribeEndpoint:
         assert published_msg.transcript == "Hello world"
         assert published_msg.language == "en"
         assert published_msg.language_probability == pytest.approx(0.99)
+        assert published_msg.consultation_id == FAKE_CONSULTATION_ID
