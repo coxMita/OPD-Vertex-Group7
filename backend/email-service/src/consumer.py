@@ -6,6 +6,7 @@ from pydantic import BaseModel, ValidationError
 
 from src.config import settings
 from src.email_sender import send_email
+from src.pdf_generator import generate_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,8 @@ class EmailEvent(BaseModel):
     subject: str
     message: str
     is_html: bool = False
+    document_title: str | None = None
+    document_content: dict | str | None = None
 
 
 async def process_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
@@ -32,11 +35,18 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage) -> None
             return
 
         try:
+            attachments = None
+            if event.document_title and event.document_content:
+                pdf_bytes = generate_pdf(event.document_title, event.document_content)
+                filename = f"{event.document_title.replace(' ', '_')}.pdf"
+                attachments = [(filename, pdf_bytes)]
+
             await send_email(
                 to_email=event.to_email,
                 subject=event.subject,
                 message=event.message,
                 is_html=event.is_html,
+                attachments=attachments,
             )
             logger.info(f"Successfully processed email request for {event.to_email}")
             await message.ack()

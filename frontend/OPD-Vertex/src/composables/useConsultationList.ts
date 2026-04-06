@@ -14,9 +14,22 @@ export function useConsultationList() {
     try {
       consultations.value = await consultationApi.getConsultationsForDoctor(doctorId)
     } catch (err) {
-      console.error('Failed to fetch consultations:', err)
-      error.value = 'Could not load consultations. Is the backend running?'
-      consultations.value = []
+      console.warn('Failed to fetch consultations. Using mock data instead.', err)
+      error.value = 'Could not load from backend. Using mock consultation data for testing.'
+      
+      // Fallback mock data so you can test the UI without the backend services!
+      consultations.value = [
+        {
+          id: 'test-consultation-1234',
+          appointment_id: 'app-999',
+          doctor_id: doctorId,
+          start_time: '14:00:00',
+          end_time: null,
+          status: 'ACTIVE',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
     } finally {
       loading.value = false
     }

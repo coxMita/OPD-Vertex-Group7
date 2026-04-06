@@ -4,6 +4,12 @@ import logging
 
 import aio_pika
 
+import sys
+from pathlib import Path
+
+# Add the parent directory to sys.path so 'src' can be imported when running as a script
+sys.path.append(str(Path(__file__).parent.parent))
+
 from src.config import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -24,13 +30,21 @@ async def main() -> None:
         # We'll send it to the FROM email address just to test that it arrives
         email_event = {
             "to_email": settings.SMTP_FROM_EMAIL,
-            "subject": "System Test: RabbitMQ Integration works!",
+            "subject": "System Test: PDF Generation & Attachment Works!",
             "message": (
-                "Hello! If you are reading this, the RabbitMQ message broker "
-                "successfully routed the event to the email-service container, "
-                "which then sent this real email."
+                "Hello! If you are reading this and see a PDF attached, "
+                "the RabbitMQ message broker successfully routed the event to "
+                "the email-service container, generated the PDF on the fly, "
+                "and sent it."
             ),
             "is_html": False,
+            "document_title": "Mock Prescription",
+            "document_content": {
+                "Patient Name": "John Doe",
+                "Medication": "Amoxicillin 500mg",
+                "Dosage": "1 capsule three times a day for 7 days",
+                "Doctor Notes": "Take with food.",
+            },
         }
 
         message_body = json.dumps(email_event).encode()
@@ -41,11 +55,15 @@ async def main() -> None:
             routing_key="email_queue",
         )
 
-        print("✅ Successfully published test message to RabbitMQ 'email_queue'!")
+        print("Successfully published test message to RabbitMQ 'email_queue'!")
         print(
             f"Waiting for the email-service container to pick it up and email "
             f"{settings.SMTP_FROM_EMAIL}..."
         )
+        
+        # Add a short delay to allow the network buffer to flush to RabbitMQ 
+        # before the async with context manager closes the connection immediately.
+        await asyncio.sleep(1.0)
 
 
 if __name__ == "__main__":

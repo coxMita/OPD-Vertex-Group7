@@ -151,8 +151,29 @@ function onUploadTranscript(_text: string) {
   // Transcript sent to backend — PrescriptionCard polls DB for the AI result
 }
 
-function onApproved(_text: string) {
+function onApproved(text: string) {
   consultationStatus.value = 'done'
+
+  const toEmail = mockPatient.email !== '—' ? mockPatient.email : 'opdvertex00@gmail.com'
+
+  fetch('http://localhost:8084/api/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to_email: toEmail,
+      subject: 'Consultation Transcript & Prescription',
+      message: 'Hello! Your doctor has approved your prescription. Attached is the PDF document for your records.',
+      is_html: false,
+      document_title: 'Approved Prescription',
+      document_content: text
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw Error('Network response was not ok')
+    return res.json()
+  })
+  .then(data => console.log('Mock email triggered successfully:', data))
+  .catch(err => console.error('Failed to trigger mock email:', err))
 }
 </script>
 
