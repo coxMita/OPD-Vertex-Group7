@@ -25,8 +25,8 @@ DOCTORS = [
         doctor_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
         full_name="Anders Hansen",
         department_name="General Practice",
-        email="a.hansen@opd-vertex.dk",
-        keycloak_id=uuid.UUID("aaaaaaaa-0000-0000-0000-000000000001"),
+        email="hansen@opd-vertex.dk",
+        keycloak_id=uuid.UUID("b2197d04-def5-4a47-a444-0ff565023ba0"),
     ),
     Doctor(
         doctor_id=uuid.UUID("00000000-0000-0000-0001-000000000002"),

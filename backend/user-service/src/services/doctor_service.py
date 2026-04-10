@@ -25,3 +25,8 @@ class DoctorService:
     def _to_dto(self, doctor: Doctor) -> DoctorDTO:
         """Convert a Doctor entity to a DoctorDTO."""
         return DoctorDTO(**doctor.model_dump())
+
+    def get_doctor_by_keycloak_id(self, keycloak_id: UUID) -> DoctorDTO | None:
+        """Get a doctor by Keycloak ID."""
+        doctor = self._repo.get_by_keycloak_id(keycloak_id)
+        return self._to_dto(doctor) if doctor else None

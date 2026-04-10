@@ -1,9 +1,6 @@
-import axios, { type AxiosError } from 'axios'
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8080',
-  timeout: 120_000,
-})
+// src/services/transcriptionApi.ts
+import { type AxiosError } from 'axios'
+import { authClient } from './httpClient'
 
 export interface TranscriptionResult {
   transcript: string
@@ -13,10 +10,6 @@ export interface TranscriptionError {
   detail?: string
 }
 
-/**
- * POST /api/v1/transcription/?consultation_id={consultationId}
- * Accepts a WAV audio file and returns the transcript text.
- */
 async function transcribeFile(
   file: File,
   consultationId: string,
@@ -25,7 +18,7 @@ async function transcribeFile(
   const formData = new FormData()
   formData.append('file', file)
 
-  const response = await apiClient.post<{ transcript?: string; text?: string }>(
+  const response = await authClient.post<{ transcript?: string; text?: string }>(
     '/api/v1/transcription/',
     formData,
     {
@@ -49,7 +42,6 @@ function formatError(err: unknown, gatewayUrl: string): string {
   const axiosErr = err as AxiosError<TranscriptionError>
   if (axiosErr.response) {
     const detail = axiosErr.response.data?.detail
-    // detail may be an array (FastAPI validation errors) or a string
     if (Array.isArray(detail)) {
       return `Validation error: ${detail.map((d: Record<string, unknown>) => d.msg ?? d).join(', ')}`
     }

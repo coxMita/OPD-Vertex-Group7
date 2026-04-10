@@ -6,16 +6,16 @@ import httpx
 from fastapi import APIRouter, Request, Response
 
 from src.config import TRANSCRIPTION_SERVICE_URL
+from src.dependencies.auth import require_doctor
 
 router = APIRouter(prefix="/api/v1/transcription")
 logger = logging.getLogger(__name__)
 
-# Dedicated client for transcription — needs much longer timeouts for audio files
 _transcription_client = httpx.AsyncClient(
     timeout=httpx.Timeout(
         connect=10.0,
-        write=600.0,  # 5 min to upload the file
-        read=600.0,  # 5 min to wait for Whisper to finish
+        write=600.0,
+        read=600.0,
         pool=10.0,
     )
 )
@@ -25,8 +25,7 @@ _transcription_client = httpx.AsyncClient(
 async def proxy_transcription(request: Request) -> Response:
     """Proxy POST requests to the transcription-service.
 
-    Forwards the full query string (including consultation_id) to the
-    downstream service.
+    Protected: doctor role required.
 
     Args:
         request: The incoming FastAPI request.
@@ -35,6 +34,8 @@ async def proxy_transcription(request: Request) -> Response:
         Response: The response from the transcription-service.
 
     """
+    require_doctor(request)
+
     query_string = request.url.query
     url = f"{TRANSCRIPTION_SERVICE_URL}/transcription/"
     if query_string:

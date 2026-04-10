@@ -1,18 +1,19 @@
+// src/main.ts
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import '@mdi/font/css/materialdesignicons.css'
-
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 
 const vuetify = createVuetify({
   components,
@@ -35,4 +36,8 @@ const vuetify = createVuetify({
 
 app.use(vuetify)
 app.use(router)
-app.mount('#app')
+
+const authStore = useAuthStore()
+authStore.init().then(() => {
+  app.mount('#app')
+})

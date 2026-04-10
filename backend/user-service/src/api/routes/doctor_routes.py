@@ -19,6 +19,20 @@ def get_doctors_by_department(
     return service.get_doctors_by_department(department_name)
 
 
+@router.get("/doctors/me", status_code=status.HTTP_200_OK)
+def get_doctor_by_keycloak_id(
+    keycloak_id: UUID,
+    service: Annotated[DoctorService, Depends(get_doctor_service)],
+    response: Response,
+) -> DoctorDTO | dict[str, str]:
+    """Get a doctor by their Keycloak ID."""
+    doctor = service.get_doctor_by_keycloak_id(keycloak_id)
+    if doctor is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"message": "Doctor not found"}
+    return doctor
+
+
 @router.get("/doctors/{doctor_id}", status_code=status.HTTP_200_OK)
 def get_doctor(
     doctor_id: UUID,

@@ -5,15 +5,23 @@ import logging
 from fastapi import APIRouter, Request, Response
 
 from src.config import CONSULTATION_SERVICE_URL
+from src.dependencies.auth import require_doctor
 from src.utils.http_client import client
 
 router = APIRouter(prefix="/api/v1/consultations")
 logger = logging.getLogger(__name__)
 
+# Consultation routes are protected — doctor role required for all endpoints
+
 
 @router.api_route("", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy_consultation_root(request: Request) -> Response:
-    """Proxy requests to the consultation-service root."""
+    """Proxy requests to the consultation-service root.
+
+    Protected: doctor role required.
+    """
+    require_doctor(request)
+
     query_string = request.url.query
     url = f"{CONSULTATION_SERVICE_URL}/api/v1/consultations"
     if query_string:
@@ -41,7 +49,12 @@ async def proxy_consultation_root(request: Request) -> Response:
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy_consultation(request: Request, path: str) -> Response:
-    """Proxy requests to the consultation-service with path."""
+    """Proxy requests to the consultation-service with path.
+
+    Protected: doctor role required.
+    """
+    require_doctor(request)
+
     path = path.rstrip("/")
     query_string = request.url.query
     url = f"{CONSULTATION_SERVICE_URL}/api/v1/consultations/{path}"

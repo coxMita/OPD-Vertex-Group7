@@ -108,25 +108,30 @@ export function useCalendarAppointments(doctorId: { value: string }) {
   }
 
   async function fetchAppointments(visibleDates: Date[]) {
-    loading.value = true
-    error.value = null
-    try {
-      const results = await Promise.all(
-        visibleDates.map((date) =>
-          appointmentApi.getQueueForDay(doctorId.value, formatDate(date)),
-        ),
-      )
-      appointments.value = results.flat()
-      // Enrich patient names in background — don't block calendar render
-      enrichPatientNames(appointments.value)
-    } catch (err) {
-      console.error('Failed to fetch appointments:', err)
-      error.value = 'Could not load appointments. Is the backend running?'
-      appointments.value = []
-    } finally {
-      loading.value = false
-    }
+  // Nu face nimic dacă doctorId e gol
+  if (!doctorId.value) {
+    console.warn('doctorId not set yet, skipping fetch')
+    return
   }
+
+  loading.value = true
+  error.value = null
+  try {
+    const results = await Promise.all(
+      visibleDates.map((date) =>
+        appointmentApi.getQueueForDay(doctorId.value, formatDate(date)),
+      ),
+    )
+    appointments.value = results.flat()
+    enrichPatientNames(appointments.value)
+  } catch (err) {
+    console.error('Failed to fetch appointments:', err)
+    error.value = 'Could not load appointments. Is the backend running?'
+    appointments.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
   return {
     appointments,

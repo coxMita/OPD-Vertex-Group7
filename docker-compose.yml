@@ -19,6 +19,8 @@ networks:
         driver: bridge
     ai-net:
         driver: bridge
+    keycloak-net:
+        driver: bridge
 
 volumes:
     appointment_db_data:
@@ -28,13 +30,55 @@ volumes:
     ai_db_data:
     pgadmin_data:
     ollama_data:
-
+    keycloak_db_data:
 
 services:
+    # ── Keycloak ───────────────────────────────────────────────────────────────
+    keycloak:
+        image: quay.io/keycloak/keycloak:24.0.1
+        container_name: keycloak
+        restart: unless-stopped
+        command: start-dev
+        environment:
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak_db
+            KC_DB_USERNAME: keycloak_user
+            KC_DB_PASSWORD: keycloak_pass
+            KC_HTTP_PORT: 8180
+        ports:
+            - "8180:8180"
+        networks:
+            - frontend
+            - keycloak-net
+        depends_on:
+            keycloak-db:
+                condition: service_healthy
+
+    # ── Keycloak DB ───────────────────────────────────────────────────────────
+    keycloak-db:
+        image: postgres:17
+        container_name: keycloak-db
+        restart: always
+        environment:
+            POSTGRES_USER: keycloak_user
+            POSTGRES_PASSWORD: keycloak_pass
+            POSTGRES_DB: keycloak_db
+        volumes:
+            - keycloak_db_data:/var/lib/postgresql/data
+        networks:
+            - keycloak-net
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U keycloak_user -d keycloak_db"]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
-        image: mita28/opdvertex:gateway-3.0.0
+        image: mita28/opdvertex:gateway-3.0.1
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -43,6 +87,7 @@ services:
         networks:
             - frontend
             - internal-api
+            - keycloak-net
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -278,7 +323,7 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-3.0.0
+        image: mita28/opdvertex:user-service-3.0.1
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped

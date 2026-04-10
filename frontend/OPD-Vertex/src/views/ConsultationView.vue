@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConsultationList } from '@/composables/useConsultationList'
 import { appointmentApi } from '@/services/appointmentApi'
 import { userApi } from '@/services/userApi'
+import { useAuthStore } from '@/stores/auth'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
 import type { ConsultationSidebarItem } from '@/components/Consultation/AppointmentSidebar.vue'
 import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
@@ -18,6 +19,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const {
   consultations,
@@ -119,20 +121,37 @@ function calculateAge(dateOfBirth: string): number {
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
 const currentRxText = ref('')
 const prescriptionKey = ref(0)
-// The consultation ID to pass to PrescriptionCard for polling
 const activePrescriptionConsultationId = ref<string | null>(null)
 
-onMounted(async () => {
-  await fetchConsultations(props.doctorId)
+// ── Load consultations ─────────────────────────────────────────
+async function loadConsultations(id: string) {
+  if (!id) return
+  await fetchConsultations(id)
   await enrichConsultationsForSidebar(consultations.value)
+}
+
+onMounted(async () => {
+  // doctorId poate fi deja disponibil (dacă store-ul a terminat fetch-ul)
+  if (props.doctorId) {
+    await loadConsultations(props.doctorId)
+  }
 })
+
+// Watch pentru cazul în care doctorId vine mai târziu din store
+watch(
+  () => props.doctorId,
+  async (newId) => {
+    if (newId) {
+      await loadConsultations(newId)
+    }
+  },
+)
 
 async function onSelect(consultation: ConsultationSidebarItem) {
   selectConsultation(consultation)
   consultationStatus.value = consultation.status === 'ACTIVE' ? 'active' : 'done'
   currentRxText.value = ''
   prescriptionKey.value++
-  // Set the consultationId — PrescriptionCard will start polling automatically
   activePrescriptionConsultationId.value = consultation.id
 
   await fetchPatientForConsultation(consultation)
@@ -154,6 +173,11 @@ function onUploadTranscript(_text: string) {
 function onApproved(_text: string) {
   consultationStatus.value = 'done'
 }
+
+// Numele doctorului din store pentru afișare în UI
+const doctorDisplayName = authStore.userProfile?.lastName
+  ? `Dr. ${authStore.userProfile.lastName}`
+  : 'Dr. Hansen'
 </script>
 
 <template>
@@ -180,7 +204,7 @@ function onApproved(_text: string) {
         <v-spacer />
         <v-chip color="teal" variant="tonal" size="small">
           <v-icon start size="12">mdi-stethoscope</v-icon>
-          Dr. Hansen
+          {{ doctorDisplayName }}
         </v-chip>
       </div>
 
@@ -197,75 +221,82 @@ function onApproved(_text: string) {
         {{ error }}
       </v-alert>
 
-      <div v-if="!selectedConsultation" class="empty-state">
-        <v-icon size="64" color="primary" opacity="0.2" class="mb-4">mdi-cursor-default-click</v-icon>
-        <p class="empty-title">Select a consultation to begin</p>
-        <p class="empty-sub">Click on a consultation in the left sidebar</p>
+      <!-- Loading state când doctorId nu e încă disponibil -->
+      <div v-if="!props.doctorId" class="empty-state">
+        <v-progress-circular indeterminate color="primary" size="32" class="mb-4" />
+        <p class="empty-sub">Loading doctor profile…</p>
       </div>
 
-      <div v-else class="content-scroll">
-        <div class="content-inner pa-6">
-
-          <v-card rounded="lg" elevation="1" class="mb-4 pa-4">
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <p class="meta-label mb-1">CONSULTATION ID</p>
-                <p class="meta-value mono">{{ selectedConsultation.id }}</p>
-              </div>
-              <div>
-                <p class="meta-label mb-1">APPOINTMENT</p>
-                <p class="meta-value mono">{{ selectedConsultation.appointment_id }}</p>
-              </div>
-            </div>
-          </v-card>
-
-          <v-card v-if="patientLoading" rounded="lg" elevation="1" class="mb-4 pa-6">
-            <div class="d-flex align-center ga-3">
-              <v-progress-circular indeterminate color="primary" size="24" />
-              <span class="text-body-2 opacity-60">Loading patient data…</span>
-            </div>
-          </v-card>
-
-          <v-alert
-            v-else-if="patientError"
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
-            {{ patientError }}
-          </v-alert>
-
-          <PatientInfoCard
-            v-else-if="currentPatient"
-            :patient="currentPatient"
-          />
-
-          <RecordingCard
-            :key="`recording-${selectedConsultation?.id}`"
-            :consultation-id="activePrescriptionConsultationId"
-            @transcript-ready="onTranscriptReady"
-            @status-change="onRecordingStatusChange"
-          />
-
-          <TranscriptionUploadCard
-            :key="`upload-${selectedConsultation?.id}`"
-            :consultation-id="activePrescriptionConsultationId"
-            @transcript-ready="onUploadTranscript"
-          />
-
-          <!-- PrescriptionCard receives consultationId and polls automatically -->
-          <PrescriptionCard
-            :key="prescriptionKey"
-            :initial-text="currentRxText"
-            :patient-name="currentPatient?.name ?? ''"
-            :patient-email="currentPatient?.email ?? ''"
-            :consultation-id="activePrescriptionConsultationId"
-            @approved="onApproved"
-          />
-
+      <template v-else>
+        <div v-if="!selectedConsultation" class="empty-state">
+          <v-icon size="64" color="primary" opacity="0.2" class="mb-4">mdi-cursor-default-click</v-icon>
+          <p class="empty-title">Select a consultation to begin</p>
+          <p class="empty-sub">Click on a consultation in the left sidebar</p>
         </div>
-      </div>
+
+        <div v-else class="content-scroll">
+          <div class="content-inner pa-6">
+
+            <v-card rounded="lg" elevation="1" class="mb-4 pa-4">
+              <div class="d-flex align-center justify-space-between">
+                <div>
+                  <p class="meta-label mb-1">CONSULTATION ID</p>
+                  <p class="meta-value mono">{{ selectedConsultation.id }}</p>
+                </div>
+                <div>
+                  <p class="meta-label mb-1">APPOINTMENT</p>
+                  <p class="meta-value mono">{{ selectedConsultation.appointment_id }}</p>
+                </div>
+              </div>
+            </v-card>
+
+            <v-card v-if="patientLoading" rounded="lg" elevation="1" class="mb-4 pa-6">
+              <div class="d-flex align-center ga-3">
+                <v-progress-circular indeterminate color="primary" size="24" />
+                <span class="text-body-2 opacity-60">Loading patient data…</span>
+              </div>
+            </v-card>
+
+            <v-alert
+              v-else-if="patientError"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mb-4"
+            >
+              {{ patientError }}
+            </v-alert>
+
+            <PatientInfoCard
+              v-else-if="currentPatient"
+              :patient="currentPatient"
+            />
+
+            <RecordingCard
+              :key="`recording-${selectedConsultation?.id}`"
+              :consultation-id="activePrescriptionConsultationId"
+              @transcript-ready="onTranscriptReady"
+              @status-change="onRecordingStatusChange"
+            />
+
+            <TranscriptionUploadCard
+              :key="`upload-${selectedConsultation?.id}`"
+              :consultation-id="activePrescriptionConsultationId"
+              @transcript-ready="onUploadTranscript"
+            />
+
+            <PrescriptionCard
+              :key="prescriptionKey"
+              :initial-text="currentRxText"
+              :patient-name="currentPatient?.name ?? ''"
+              :patient-email="currentPatient?.email ?? ''"
+              :consultation-id="activePrescriptionConsultationId"
+              @approved="onApproved"
+            />
+
+          </div>
+        </div>
+      </template>
     </main>
   </div>
 </template>

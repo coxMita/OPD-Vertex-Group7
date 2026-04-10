@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
 import { useCalendarDragDrop } from '@/composables/useCalendarDragDrop'
@@ -11,6 +12,7 @@ import AppointmentDetailModal from '@/components/DoctorCalendar/AppointmentDetai
 import ConsultationView from '@/views/ConsultationView.vue'
 import type { Appointment } from '@/models/appointment/appointment.interface'
 
+const authStore = useAuthStore()
 type DoctorSection = 'calendar' | 'consultations'
 const activeSection = ref<DoctorSection>('calendar')
 
@@ -18,7 +20,7 @@ const SLOT_HEIGHT_WEEK = 50
 const SLOT_HEIGHT_DAY = 56
 const SCROLL_START_HOUR = 6
 
-const doctorId = ref('00000000-0000-0000-0000-000000000001')
+const doctorId = computed(() => authStore.doctorId ?? '')
 
 const {
   currentView,
@@ -82,11 +84,25 @@ function scrollTo6am() {
   })
 }
 
-watch(visibleDates, () => fetchAppointments(visibleDates.value))
-watch(currentView, scrollTo6am)
+watch(visibleDates, () => {
+  if (doctorId.value) {
+    fetchAppointments(visibleDates.value)
+  }
+})
+
+watch(
+  () => authStore.doctorId,
+  (newId) => {
+    if (newId) {
+      fetchAppointments(visibleDates.value)
+    }
+  },
+)
 
 onMounted(() => {
-  fetchAppointments(visibleDates.value)
+  if (doctorId.value) {
+    fetchAppointments(visibleDates.value)
+  }
   scrollTo6am()
 })
 </script>
