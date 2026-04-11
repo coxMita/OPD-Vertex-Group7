@@ -154,7 +154,12 @@ function onUploadTranscript(_text: string) {
 function onApproved(text: string) {
   consultationStatus.value = 'done'
 
-  const toEmail = mockPatient.email !== '—' ? mockPatient.email : 'opdvertex00@gmail.com'
+  const toEmail = currentPatient.value?.email && currentPatient.value.email !== '—' ? currentPatient.value.email : null
+  
+  if (!toEmail) {
+    console.error('Patient has no valid email to send prescription to.')
+    return
+  }
 
   fetch('http://localhost:8084/api/send', {
     method: 'POST',
@@ -172,8 +177,8 @@ function onApproved(text: string) {
     if (!res.ok) throw Error('Network response was not ok')
     return res.json()
   })
-  .then(data => console.log('Mock email triggered successfully:', data))
-  .catch(err => console.error('Failed to trigger mock email:', err))
+  .then(data => console.log('Email triggered successfully:', data))
+  .catch(err => console.error('Failed to trigger email:', err))
 }
 </script>
 
