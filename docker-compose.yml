@@ -40,6 +40,13 @@ services:
         restart: unless-stopped
         ports:
             - "8080:8000"
+        environment:
+            APPOINTMENT_SERVICE_URL: http://appointment-service:8000
+            CONSULTATION_SERVICE_URL: http://consultation-service:8000
+            USER_SERVICE_URL: http://user-service:8000
+            PRESCRIPTION_SERVICE_URL: http://prescription-service:8000
+            TRANSCRIPTION_SERVICE_URL: http://transcription-service:8000
+            EMAIL_SERVICE_URL: http://email-service:8000
         networks:
             - frontend
             - internal-api
