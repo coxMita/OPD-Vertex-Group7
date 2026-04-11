@@ -69,3 +69,8 @@ skip-magic-trailing-comma = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths    = ["tests"]
+
+# ── Pyright ───────────────────────────────────────────────────────────────────
+[tool.pyright]
+# Prevent Pyright from inferring `src` as the only root and failing on `src.` imports
+extraPaths = ["."]

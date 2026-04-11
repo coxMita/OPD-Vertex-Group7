@@ -1,18 +1,14 @@
 import asyncio
 import json
-import logging
-
-import aio_pika
-
 import sys
 from pathlib import Path
+
+import aio_pika
 
 # Add the parent directory to sys.path so 'src' can be imported when running as a script
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.config import settings
-
-logging.basicConfig(level=logging.INFO)
 
 
 async def main() -> None:
@@ -49,19 +45,22 @@ async def main() -> None:
 
         message_body = json.dumps(email_event).encode()
 
-        # 4. Publish the message directly to the "email_queue"
+        # 4. Publish the message to the configured email queue
         await channel.default_exchange.publish(
             aio_pika.Message(body=message_body),
-            routing_key="email_queue",
+            routing_key=settings.EMAIL_QUEUE_NAME,
         )
 
-        print("Successfully published test message to RabbitMQ 'email_queue'!")
+        print(
+            "Successfully published test message to RabbitMQ "
+            f"'{settings.EMAIL_QUEUE_NAME}'!"
+        )
         print(
             f"Waiting for the email-service container to pick it up and email "
             f"{settings.SMTP_FROM_EMAIL}..."
         )
-        
-        # Add a short delay to allow the network buffer to flush to RabbitMQ 
+
+        # Add a short delay to allow the network buffer to flush to RabbitMQ
         # before the async with context manager closes the connection immediately.
         await asyncio.sleep(1.0)
 

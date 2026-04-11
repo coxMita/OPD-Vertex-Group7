@@ -7,14 +7,13 @@ import pytest
 with contextlib.suppress(ImportError):
     pass
 
-from src.consumer import process_message
+from src.messaging.email_queue_handler import process_message
 
 
 @pytest.fixture
 def mock_message() -> MagicMock:
     """Mock the aio_pika message."""
     mock_msg = MagicMock()
-    # Mock aio_pika async context manager for message.process()
     mock_process_cm = AsyncMock()
     mock_process_cm.__aenter__.return_value = mock_msg
     mock_msg.process.return_value = mock_process_cm
@@ -36,7 +35,9 @@ async def test_process_message_valid_event(mock_message: MagicMock) -> None:
     }
     mock_message.body = json.dumps(event_data).encode()
 
-    with patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email:
+    with patch(
+        "src.services.email_service.send_email", new_callable=AsyncMock
+    ) as mock_send_email:
         await process_message(mock_message)
 
         mock_send_email.assert_called_once_with(
@@ -55,7 +56,9 @@ async def test_process_message_invalid_json(mock_message: MagicMock) -> None:
     """Test that invalid JSON messages are rejected."""
     mock_message.body = b"not valid json"
 
-    with patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email:
+    with patch(
+        "src.services.email_service.send_email", new_callable=AsyncMock
+    ) as mock_send_email:
         await process_message(mock_message)
 
         mock_send_email.assert_not_called()
@@ -65,10 +68,11 @@ async def test_process_message_invalid_json(mock_message: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_process_message_validation_error(mock_message: MagicMock) -> None:
     """Test that messages failing Pydantic validation are rejected."""
-    # Missing required field 'to_email'
     mock_message.body = json.dumps({"subject": "test", "message": "msg"}).encode()
 
-    with patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email:
+    with patch(
+        "src.services.email_service.send_email", new_callable=AsyncMock
+    ) as mock_send_email:
         await process_message(mock_message)
 
         mock_send_email.assert_not_called()
@@ -86,7 +90,9 @@ async def test_process_message_send_email_failure(mock_message: MagicMock) -> No
     }
     mock_message.body = json.dumps(event_data).encode()
 
-    with patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email:
+    with patch(
+        "src.services.email_service.send_email", new_callable=AsyncMock
+    ) as mock_send_email:
         mock_send_email.side_effect = Exception("SMTP error")
 
         await process_message(mock_message)
@@ -105,14 +111,16 @@ async def test_process_message_with_document(mock_message: MagicMock) -> None:
         "message": "See attached",
         "is_html": False,
         "document_title": "Rx",
-        "document_content": {"medicine": "Paracetamol"}
+        "document_content": {"medicine": "Paracetamol"},
     }
     mock_message.body = json.dumps(event_data).encode()
 
     with (
-        patch("src.consumer.send_email", new_callable=AsyncMock) as mock_send_email,
         patch(
-            "src.consumer.generate_pdf", return_value=b"mockpdf"
+            "src.services.email_service.send_email", new_callable=AsyncMock
+        ) as mock_send_email,
+        patch(
+            "src.services.email_service.generate_pdf", return_value=b"mockpdf"
         ) as mock_generate_pdf,
     ):
         await process_message(mock_message)

@@ -6,39 +6,31 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import json
-import aio_pika
 
-from src.consumer import start_consumer, EmailEvent
+from src.api.routes.email_routes import router as email_router
+from src.config import settings
+from src.messaging.email_queue_facade import EmailQueueFacade
+from src.messaging.messaging_manager import messaging_manager
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Manage the application lifecycle events.
-
-    Handles startup and shutdown operations for the email service.
-    On startup, establishes a RabbitMQ connection and starts the consumer.
-    On shutdown, properly closes the RabbitMQ connection.
-
-    Args:
-        app: The FastAPI application instance
-
-    Yields:
-        None: The context manager yields control to the application during its lifetime
-
-    """
-    # On startup
+    """Start RabbitMQ consumer on startup; close on shutdown."""
+    messaging_manager.add_email_queue(
+        EmailQueueFacade(settings.RABBITMQ_URL, settings.EMAIL_QUEUE_NAME)
+    )
     try:
-        connection = await start_consumer()
-        app.state.rabbitmq_connection = connection
+        logger.info("Starting up messaging manager...")
+        await messaging_manager.start_all()
+        logger.info("Messaging manager started.")
+        app.state.rabbitmq_connection = messaging_manager.rabbitmq_connection
         yield
     finally:
-        # On shutdown
-        if "connection" in locals():
-            await connection.close()
-            logger.info("RabbitMQ connection closed.")
+        logger.info("Shutting down messaging manager...")
+        await messaging_manager.stop_all()
+        logger.info("Messaging manager shut down.")
 
 
 app = FastAPI(title="email-service", lifespan=lifespan)
@@ -51,20 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.post("/api/send", status_code=202)
-async def send_test_email(event: EmailEvent) -> dict[str, str]:
-    """Test endpoint for the UI to trigger an email via RabbitMQ."""
-    connection = app.state.rabbitmq_connection
-    channel = await connection.channel()
-    
-    message_body = json.dumps(event.model_dump()).encode()
-    
-    await channel.default_exchange.publish(
-        aio_pika.Message(body=message_body),
-        routing_key="email_queue",
-    )
-    return {"status": "accepted", "message": "Email event published to queue."}
+app.include_router(email_router)
 
 
 @app.get("/")
