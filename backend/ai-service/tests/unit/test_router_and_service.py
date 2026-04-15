@@ -12,6 +12,7 @@ from src.ai.service import (
     _dynamic_top_k,
     _hierarchical_summarise,
     _summarise_chunk,
+    generate_clinical_alerts,
     process_transcript,
 )
 
@@ -22,12 +23,15 @@ _app.include_router(router)
 _FAKE_VECTOR = [0.1] * 768
 _FAKE_VECTORS = [[0.1] * 768, [0.2] * 768]
 
+# Reusable clinical alerts generate response used across process_transcript tests
+_ALERTS_RESPONSE = "ALL_ADDRESSED"
+
 
 class TestRouter:
     """Unit tests for POST /ai/prompt endpoint."""
 
     def test_returns_200_with_valid_transcript(self) -> None:
-        """Should return 200 with summary and prescription on success."""
+        """Should return 200 with summary, prescription and clinical_alerts."""
         fake_result = {
             "summary": "Patient had fever. Amoxicillin prescribed.",
             "prescription": {
@@ -37,6 +41,7 @@ class TestRouter:
                 "duration": "7 days",
                 "notes": None,
             },
+            "clinical_alerts": ["Headache: Consider neurologist referral."],
         }
         with (
             patch(
@@ -53,7 +58,9 @@ class TestRouter:
         data = response.json()
         assert "summary" in data
         assert "prescription" in data
+        assert "clinical_alerts" in data
         assert data["summary"] == fake_result["summary"]
+        assert data["clinical_alerts"] == fake_result["clinical_alerts"]
 
     def test_returns_422_for_empty_transcript(self) -> None:
         """Should return 422 when transcript is an empty string."""
@@ -88,6 +95,7 @@ class TestRouter:
         fake_result = {
             "summary": "Summary text.",
             "prescription": {"medication_name": "Ibuprofen"},
+            "clinical_alerts": [],
         }
         with (
             patch(
@@ -102,7 +110,27 @@ class TestRouter:
             )
         assert response.status_code == HTTPStatus.OK
         body = response.json()
-        assert set(body.keys()) == {"summary", "prescription"}
+        assert set(body.keys()) == {"summary", "prescription", "clinical_alerts"}
+
+    def test_clinical_alerts_defaults_to_empty_list(self) -> None:
+        """Should return empty clinical_alerts list when result has no alerts key."""
+        fake_result = {
+            "summary": "Summary.",
+            "prescription": {"medication_name": "Aspirin"},
+        }
+        with (
+            patch(
+                "src.ai.router.process_transcript",
+                new=AsyncMock(return_value=fake_result),
+            ),
+            TestClient(_app) as client,
+        ):
+            response = client.post(
+                "/ai/prompt",
+                json={"transcript": "Patient had mild pain."},
+            )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["clinical_alerts"] == []
 
 
 class TestDynamicTopK:
@@ -213,12 +241,148 @@ class TestHierarchicalSummarise:
         assert result == []
 
 
+class TestGenerateClinicalAlerts:
+    """Unit tests for generate_clinical_alerts()."""
+
+    @pytest.mark.asyncio
+    async def test_returns_consider_bullets(self) -> None:
+        """Should return lines containing 'Consider' from bullet output."""
+        raw = (
+            "- Joint pain: Consider referring to a rheumatologist.\n"
+            "- Skin rash: Consider dermatologist evaluation."
+        )
+        with patch("src.ai.service.generate", new=AsyncMock(return_value=raw)):
+            result = await generate_clinical_alerts(
+                summary="Patient has chest pain.",
+                prescription={
+                    "medication_name": "Metoprolol",
+                    "dosage": "25mg",
+                    "frequency": "once daily",
+                    "duration": None,
+                    "notes": None,
+                },
+                transcript_chunks=["chunk with knee pain"],
+            )
+        assert len(result) == 2  # noqa: PLR2004
+        assert "Joint pain: Consider referring to a rheumatologist." in result
+        assert "Skin rash: Consider dermatologist evaluation." in result
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_when_only_all_addressed(self) -> None:
+        """Should return [] when model outputs ALL_ADDRESSED and no bullets."""
+        with patch(
+            "src.ai.service.generate", new=AsyncMock(return_value="ALL_ADDRESSED")
+        ):
+            result = await generate_clinical_alerts(
+                summary="All concerns addressed.",
+                prescription={"medication_name": "Amoxicillin"},
+                transcript_chunks=["chunk"],
+            )
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_bullets_take_priority_over_all_addressed(self) -> None:
+        """Bullets with Consider should be returned even when ALL_ADDRESSED follows."""
+        raw = "- Knee pain: Consider referral to orthopaedics.\nALL_ADDRESSED"
+        with patch("src.ai.service.generate", new=AsyncMock(return_value=raw)):
+            result = await generate_clinical_alerts(
+                summary="Summary.",
+                prescription={"medication_name": "Metoprolol"},
+                transcript_chunks=["knee swollen"],
+            )
+        assert len(result) == 1
+        assert "Knee pain: Consider referral to orthopaedics." in result
+
+    @pytest.mark.asyncio
+    async def test_raw_complaint_bullets_without_consider_are_filtered(self) -> None:
+        """Bullet lines without 'Consider' (raw complaint list) should be dropped."""
+        raw = (
+            "- Chest pain\n"
+            "- Headache\n"
+            "- Sleep problems: Consider referral for sleep evaluation."
+        )
+        with patch("src.ai.service.generate", new=AsyncMock(return_value=raw)):
+            result = await generate_clinical_alerts(
+                summary="Summary.",
+                prescription={"medication_name": "Metoprolol"},
+                transcript_chunks=["chunk"],
+            )
+        assert len(result) == 1
+        assert "Sleep problems: Consider referral for sleep evaluation." in result
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_for_prose_response_without_bullets(self) -> None:
+        """Should return [] when model outputs prose without any bullet lines."""
+        with patch(
+            "src.ai.service.generate",
+            new=AsyncMock(return_value="The doctor addressed all concerns."),
+        ):
+            result = await generate_clinical_alerts(
+                summary="Summary.",
+                prescription={"medication_name": "Metoprolol"},
+                transcript_chunks=["chunk"],
+            )
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_prescription_text_built_from_medication_fields(self) -> None:
+        """Prescription text passed to the prompt should include medication details."""
+        captured: list[str] = []
+
+        async def _capture(prompt: str, **_: object) -> str:
+            captured.append(prompt)
+            return "ALL_ADDRESSED"
+
+        with patch("src.ai.service.generate", side_effect=_capture):
+            await generate_clinical_alerts(
+                summary="Summary.",
+                prescription={
+                    "medication_name": "Metoprolol",
+                    "dosage": "25mg",
+                    "frequency": "once daily",
+                    "duration": None,
+                    "notes": None,
+                },
+                transcript_chunks=["chunk"],
+            )
+
+        assert "Metoprolol" in captured[0]
+        assert "25mg" in captured[0]
+        assert "once daily" in captured[0]
+
+    @pytest.mark.asyncio
+    async def test_prescription_text_falls_back_to_notes_when_no_medication(
+        self,
+    ) -> None:
+        """When medication_name is null, notes should appear in the prompt."""
+        captured: list[str] = []
+
+        async def _capture(prompt: str, **_: object) -> str:
+            captured.append(prompt)
+            return "ALL_ADDRESSED"
+
+        with patch("src.ai.service.generate", side_effect=_capture):
+            await generate_clinical_alerts(
+                summary="Summary.",
+                prescription={
+                    "medication_name": None,
+                    "dosage": None,
+                    "frequency": None,
+                    "duration": None,
+                    "notes": "No prescription indicated.",
+                },
+                transcript_chunks=["chunk"],
+            )
+
+        assert "No prescription indicated." in captured[0]
+
+
 class TestProcessTranscript:
     """Unit tests for process_transcript() with all external deps mocked."""
 
     @pytest.mark.asyncio
     async def test_full_pipeline_returns_summary_and_prescription(self) -> None:
-        """Should return dict with summary and prescription keys."""
+        """Should return dict with summary, prescription, and clinical_alerts keys."""
         fake_chunks = ["chunk one", "chunk two"]
         fake_prescription = {
             "medication_name": "Amoxicillin",
@@ -249,10 +413,10 @@ class TestProcessTranscript:
                 new=AsyncMock(
                     side_effect=[
                         "NO_MEDICAL_CONTENT",  # _summarise_chunk chunk one
-                        # _summarise_chunk chunk two
-                        "Amoxicillin 500mg prescribed.",
+                        "Amoxicillin 500mg prescribed.",  # _summarise_chunk chunk two
                         "Clinical summary of the consultation.",  # summary pass
                         str(fake_prescription).replace("'", '"'),  # prescription pass
+                        _ALERTS_RESPONSE,  # clinical alerts pass
                     ]
                 ),
             ),
@@ -261,7 +425,9 @@ class TestProcessTranscript:
 
         assert "summary" in result
         assert "prescription" in result
+        assert "clinical_alerts" in result
         assert result["summary"] == "Clinical summary of the consultation."
+        assert isinstance(result["clinical_alerts"], list)
 
     @pytest.mark.asyncio
     async def test_delete_session_called_even_on_error(self) -> None:
@@ -337,6 +503,8 @@ class TestProcessTranscript:
                             ' "dosage": null, "frequency": null,'
                             ' "duration": null, "notes": null}'
                         ]
+                        # clinical alerts pass
+                        + [_ALERTS_RESPONSE]
                     )
                 ),
             ),
@@ -374,11 +542,12 @@ class TestProcessTranscript:
                 "src.ai.service.generate",
                 new=AsyncMock(
                     side_effect=[
-                        "NO_MEDICAL_CONTENT",
-                        "Fallback summary.",
+                        "NO_MEDICAL_CONTENT",  # _summarise_chunk
+                        "Fallback summary.",  # summary pass
                         '{"medication_name": null, "dosage": null,'
                         ' "frequency": null, "duration": null,'
-                        ' "notes": "No prescription indicated."}',
+                        ' "notes": "No prescription indicated."}',  # prescription pass
+                        _ALERTS_RESPONSE,  # clinical alerts pass
                     ]
                 ),
             ),
@@ -386,4 +555,45 @@ class TestProcessTranscript:
             result = await process_transcript("short text")
 
         assert "summary" in result
+        assert "clinical_alerts" in result
         mock_delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_clinical_alerts_populated_when_model_returns_suggestions(
+        self,
+    ) -> None:
+        """clinical_alerts list should be populated when model returns bullet lines."""
+        fake_chunks = ["chunk one", "chunk two"]
+
+        with (
+            patch("src.ai.service.chunk_text", return_value=fake_chunks),
+            patch(
+                "src.ai.service.embed_batch",
+                new=AsyncMock(return_value=_FAKE_VECTORS),
+            ),
+            patch("src.ai.service.embed", new=AsyncMock(return_value=_FAKE_VECTOR)),
+            patch("src.ai.service.store_chunks", new=AsyncMock()),
+            patch(
+                "src.ai.service.retrieve_relevant_chunks",
+                new=AsyncMock(return_value=fake_chunks),
+            ),
+            patch("src.ai.service.delete_session", new=AsyncMock()),
+            patch(
+                "src.ai.service.generate",
+                new=AsyncMock(
+                    side_effect=[
+                        "NO_MEDICAL_CONTENT",
+                        "NO_MEDICAL_CONTENT",
+                        "Clinical summary.",
+                        '{"medication_name": "Metoprolol", "dosage": "25mg",'
+                        ' "frequency": "once daily", "duration": null, "notes": null}',
+                        "- Knee pain: Consider orthopaedic referral.",
+                    ]
+                ),
+            ),
+        ):
+            result = await process_transcript("Patient has knee pain.")
+
+        assert result["clinical_alerts"] == [
+            "Knee pain: Consider orthopaedic referral."
+        ]

@@ -420,3 +420,48 @@ class TestParseJsonSafe:
         raw = '```\n{"medication_name": "Ibuprofen"}\n```'
         result = _parse_json_safe(raw)
         assert result["medication_name"] == "Ibuprofen"
+
+    def test_normalises_none_string_to_null(self) -> None:
+        """Should convert bare "None" string values to proper JSON null."""
+        raw = '{"medication_name": "Metoprolol", "notes": "None"}'
+        result = _parse_json_safe(raw)
+        assert result["notes"] is None
+
+    def test_normalises_not_mentioned_string(self) -> None:
+        """Should convert "Not Mentioned" to proper JSON null."""
+        raw = '{"medication_name": "Aspirin", "duration": "Not Mentioned"}'
+        result = _parse_json_safe(raw)
+        assert result["duration"] is None
+
+    def test_repairs_truncated_json_missing_closing_brace(self) -> None:
+        """Should recover from a truncated JSON object missing the closing brace."""
+        raw = (
+            '{"medication_name": "Metoprolol", "dosage": "25mg",'
+            ' "frequency": "once daily", "duration": "four weeks",'
+            ' "notes": null'
+        )
+        result = _parse_json_safe(raw)
+        assert result["medication_name"] == "Metoprolol"
+        assert result["dosage"] == "25mg"
+        assert result["notes"] is None
+
+    def test_repairs_truncated_json_with_multiple_missing_braces(self) -> None:
+        """Should close multiple missing braces for deeply truncated output."""
+        raw = '{"medication_name": "Aspirin", "nested": {"key": "value"'
+        result = _parse_json_safe(raw)
+        assert result["medication_name"] == "Aspirin"
+
+    def test_returns_error_dict_when_repair_still_fails(self) -> None:
+        """Should return error dict when JSON cannot be repaired."""
+        raw = "This is not JSON at all, no braces."
+        result = _parse_json_safe(raw)
+        assert "error" in result
+        assert result["raw"] == raw
+
+    def test_returns_error_dict_when_brace_repair_produces_invalid_json(self) -> None:
+        """Should return error dict when brace repair also yields invalid JSON."""
+        # Has an open brace so brace_depth > 0, but the content is unparseable
+        raw = '{"key": broken content {'
+        result = _parse_json_safe(raw)
+        assert "error" in result
+        assert result["raw"] == raw

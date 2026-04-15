@@ -82,6 +82,7 @@ async def on_transcript_message(body: bytes) -> None:
         summary=result["summary"],  # type: ignore[arg-type]
         prescription=result["prescription"],  # type: ignore[arg-type]
         consultation_id=consultation_id,
+        clinical_alerts=result.get("clinical_alerts", []),
     )
 
     try:

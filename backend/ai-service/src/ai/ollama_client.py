@@ -13,11 +13,12 @@ OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 
-async def generate(prompt: str) -> str:
+async def generate(prompt: str, temperature: float = 0.0) -> str:
     """Send a prompt to Ollama and return the generated text.
 
     Args:
         prompt: The full prompt string to send to the model.
+        temperature: Sampling temperature (0.0 = deterministic).
 
     Returns:
         The model's response text.
@@ -27,7 +28,12 @@ async def generate(prompt: str) -> str:
 
     """
     url = f"{OLLAMA_BASE_URL}/api/generate"
-    payload = {"model": OLLAMA_MODEL, "prompt": prompt, "stream": False}
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"temperature": temperature},
+    }
     logger.info("Sending prompt to Ollama model '%s'...", OLLAMA_MODEL)
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:

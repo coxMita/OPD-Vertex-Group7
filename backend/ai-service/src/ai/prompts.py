@@ -68,8 +68,25 @@ If no medication at all was prescribed, return:
 Transcript excerpts:
 {transcript}
 
-Before writing the JSON, identify the exact sentence(s) where the doctor \
-prescribes medication AND states how often to take it. Extract only from \
-those sentences.
-
 JSON:"""
+
+CLINICAL_ALERTS_PROMPT_TEMPLATE = """\
+You are a clinical assistant reviewing a completed consultation.
+
+The doctor ordered/prescribed: {prescription_text}
+Clinical summary of what was addressed: {summary}
+
+Patient transcript excerpts:
+{transcript_context}
+
+From the transcript, identify every symptom, complaint, or concern the PATIENT personally \
+mentioned — including secondary issues like joint pain, skin changes, sleep problems, \
+thirst, urination changes, etc.
+
+List each complaint the doctor did NOT specifically address with a prescription, \
+referral, or test. Format each as:
+- <Complaint>: Consider <suggestion>.
+
+If every complaint was explicitly addressed, write only: ALL_ADDRESSED
+
+Suggestions:"""

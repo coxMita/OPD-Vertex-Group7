@@ -30,6 +30,10 @@ class AIResponse(BaseModel):
     prescription: dict[str, object] = Field(
         ..., description="Extracted prescription data as structured JSON."
     )
+    clinical_alerts: list[str] = Field(
+        default_factory=list,
+        description="Suggestions for unaddressed patient concerns.",
+    )
 
 
 @router.post(
@@ -64,4 +68,5 @@ async def run_prompt(body: PromptRequest) -> AIResponse:
     return AIResponse(
         summary=result["summary"],
         prescription=result["prescription"],  # type: ignore[arg-type]
+        clinical_alerts=result.get("clinical_alerts", []),
     )
