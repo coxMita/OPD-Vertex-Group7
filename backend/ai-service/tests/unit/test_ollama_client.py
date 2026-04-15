@@ -61,6 +61,40 @@ class TestGenerate:
                 await generate("test prompt")
 
     @pytest.mark.asyncio
+    async def test_generate_sends_temperature_zero_by_default(self) -> None:
+        """Default temperature should be 0.0 for deterministic output."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"response": "ok"}
+        mock_response.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("src.ai.ollama_client.httpx.AsyncClient") as mock_cls:
+            mock_cls.return_value.__aenter__.return_value = mock_client
+            await generate("test prompt")
+
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["options"]["temperature"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_generate_sends_custom_temperature(self) -> None:
+        """Custom temperature value should be forwarded in the options dict."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"response": "ok"}
+        mock_response.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("src.ai.ollama_client.httpx.AsyncClient") as mock_cls:
+            mock_cls.return_value.__aenter__.return_value = mock_client
+            await generate("test prompt", temperature=0.7)
+
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["options"]["temperature"] == 0.7  # noqa: PLR2004
+
+    @pytest.mark.asyncio
     async def test_generate_raises_on_500(self) -> None:
         """Should raise RuntimeError when Ollama returns a 500 status."""
         mock_response = MagicMock()

@@ -9,6 +9,7 @@ import uuid
 from src.ai.ollama_client import embed, embed_batch, generate
 from src.ai.prompts import (
     CHUNK_SUMMARY_PROMPT_TEMPLATE,
+    CLINICAL_ALERTS_PROMPT_TEMPLATE,
     PRESCRIPTION_PROMPT_TEMPLATE,
     SUMMARY_PROMPT_TEMPLATE,
 )
@@ -68,6 +69,21 @@ _PRESCRIPTION_KEYWORDS: frozenset[str] = frozenset(
         "days",
         "weeks",
     }
+)
+
+# KEYWORDS_FOR_CLINICAL_ALERTS = frozenset(  # noqa: E501
+#     word.strip() for word in ALERTS_QUERY.split()
+# )
+ALERTS_QUERY = (
+    "patient complains mentions reports has been having symptoms pain discomfort "
+    "chronic cough headache rash skin problem tooth ache dizzy nausea fatigue "
+    "knee swollen joint stiff swelling painful sleep insomnia trouble sleeping "
+    "thirst thirsty urination urinating frequent bathroom drinking water "
+    "vision blurred eye ear hearing numbness tingling weight loss gain appetite "
+    "specialist dermatologist dentist cardiologist neurologist ophthalmologist "
+    "refer referral visit appointment follow-up check blood test x-ray scan "
+    "worried concerned anxious feels problem issue since weeks months recurring "
+    "also forgot mention wanted to tell"
 )
 
 
@@ -172,6 +188,56 @@ async def _hierarchical_summarise(chunks: list[str]) -> list[str]:
     return filtered
 
 
+async def generate_clinical_alerts(
+    summary: str,
+    prescription: dict[str, object],
+    transcript_chunks: list[str],
+) -> list[str]:
+    """Generate clinical alert suggestions for unaddressed patient concerns."""
+    prescription_text = (
+        f"{prescription.get('medication_name', 'None')} "
+        f"{prescription.get('dosage', '')} "
+        f"{prescription.get('frequency', '')}".strip()
+        if prescription.get("medication_name")
+        else prescription.get("notes", "No prescription given.")
+    )
+
+    transcript_context = "\n\n".join(transcript_chunks)
+    logger.info(
+        "Clinical alerts context (%d chunks):\n%s",
+        len(transcript_chunks),
+        transcript_context,
+    )
+
+    raw = await generate(
+        CLINICAL_ALERTS_PROMPT_TEMPLATE.format(
+            summary=summary,
+            prescription_text=prescription_text,
+            transcript_context=transcript_context,
+        )
+    )
+
+    cleaned = raw.strip()
+    logger.info("Clinical alerts raw LLM output:\n%s", cleaned)
+
+    # Parse bullet lines first — model sometimes appends ALL_ADDRESSED even
+    # after generating valid suggestions, so bullets take priority.
+    # Only keep lines that are actionable suggestions (contain "Consider"),
+    # filtering out raw complaint lists the model emits as intermediate reasoning.
+    lines = [
+        line.lstrip("- ").strip()
+        for line in cleaned.splitlines()
+        if line.strip().startswith("-") and "Consider" in line
+    ]
+    if lines:
+        logger.info("Clinical alerts parsed: %d suggestion(s).", len(lines))
+        return lines
+
+    if "ALL_ADDRESSED" in cleaned:
+        logger.info("Clinical alerts: model returned ALL_ADDRESSED.")
+    return []
+
+
 async def process_transcript(transcript: str) -> dict[str, object]:
     """Run the full RAG pipeline on a (potentially very long) transcript.
 
@@ -218,6 +284,13 @@ async def process_transcript(transcript: str) -> dict[str, object]:
             session_id,
             summary_query_vec,
             top_k=8,
+        )
+        # ── Step 4b: Retrieve chunks relevant to patient complaints / referral gaps ──
+        alerts_query_vec = await embed(ALERTS_QUERY)
+        alerts_chunks = await retrieve_relevant_chunks(
+            session_id,
+            alerts_query_vec,
+            top_k=min(len(chunks), 12),
         )
 
         # ── Step 5: Use raw chunks directly — no double compression ────────
@@ -276,13 +349,25 @@ async def process_transcript(transcript: str) -> dict[str, object]:
         )
         prescription = _parse_json_safe(raw_prescription)
 
+        # ── Step 10: Generate clinical alerts ─────────────────────────────
+        logger.info("Running AI pass 3: clinical alerts...")
+        clinical_alerts = await generate_clinical_alerts(
+            summary=summary.strip(),
+            prescription=prescription,
+            transcript_chunks=alerts_chunks,
+        )
+
     finally:
-        # ── Step 10: Always clean up session chunks ────────────────────────
+        # ── Step 11: Always clean up session chunks ────────────────────────
         logger.info("Cleaning up session %s from pgvector...", session_id)
         await delete_session(session_id)
         logger.info("Session %s cleaned up.", session_id)
 
-    return {"summary": summary.strip(), "prescription": prescription}
+    return {
+        "summary": summary.strip(),
+        "prescription": prescription,
+        "clinical_alerts": clinical_alerts,  # list[str], empty if nothing missed
+    }
 
 
 def _parse_json_safe(raw: str) -> dict[str, object]:
@@ -307,6 +392,7 @@ def _parse_json_safe(raw: str) -> dict[str, object]:
 
     # Normalise all null-equivalent string variants to proper JSON null
     cleaned = re.sub(r':\s*"[Nn]ull"', ": null", cleaned)
+    cleaned = re.sub(r':\s*"[Nn]one"', ": null", cleaned)
     cleaned = re.sub(r':\s*"[Nn]one\s*[Ss]pecified"', ": null", cleaned)
     cleaned = re.sub(r':\s*"[Nn]/[Aa]"', ": null", cleaned)
     cleaned = re.sub(r':\s*"[Nn]ot\s*[Ss]tated"', ": null", cleaned)
@@ -316,5 +402,18 @@ def _parse_json_safe(raw: str) -> dict[str, object]:
         result: dict[str, object] = json.loads(cleaned)
         return result
     except json.JSONDecodeError:
+        # Attempt to recover truncated JSON by closing any open braces
+        brace_depth = cleaned.count("{") - cleaned.count("}")
+        if brace_depth > 0:
+            repaired = cleaned + ("}" * brace_depth)
+            try:
+                result = json.loads(repaired)
+                logger.warning(
+                    "Prescription JSON was truncated; repaired by closing %d brace(s).",
+                    brace_depth,
+                )
+                return result
+            except json.JSONDecodeError:
+                pass
         logger.warning("Could not parse prescription JSON from model output.")
         return {"error": "Could not parse JSON", "raw": raw}

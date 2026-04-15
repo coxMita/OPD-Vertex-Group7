@@ -16,6 +16,10 @@ from src.messaging.pubsub_facade import PubSubFacade
 from src.messaging.subscriber import on_transcript_message
 from src.rag.vector_store import init_db
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 load_dotenv()

@@ -36,6 +36,9 @@ def _make_generate_side_effect(summary: str, prescription_json: str) -> object:
         # Detect the prescription pass by its marker
         if "PRIMARY medication prescribed" in prompt:
             return prescription_json
+        # Detect the clinical alerts pass by its marker
+        if "identify every symptom" in prompt:
+            return "ALL_ADDRESSED"
         # All other calls are _summarise_chunk — return empty (no clinical content)
         return "NO_MEDICAL_CONTENT"
 
@@ -122,6 +125,8 @@ class TestPromptEndpointIntegration:
         assert body["summary"] == _FAKE_SUMMARY
         assert body["prescription"]["medication_name"] == "Amoxicillin"
         assert body["prescription"]["dosage"] == "500mg"
+        assert "clinical_alerts" in body
+        assert isinstance(body["clinical_alerts"], list)
 
     async def test_embed_batch_called_once_for_chunks(
         self, mock_pipeline: dict
