@@ -41,8 +41,19 @@ services:
         networks:
             - frontend
             - internal-api
+        volumes:
+            - ./backend/gateway/main.py:/app/main.py
+            - ./backend/gateway/src:/app/src
         environment:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            USER_SERVICE_URL: http://user-service:8000
+            APPOINTMENT_SERVICE_URL: http://appointment-service:8000
+            CONSULTATION_SERVICE_URL: http://consultation-service:8000
+            PRESCRIPTION_SERVICE_URL: http://prescription-service:8000
+            AI_SERVICE_URL: http://ai-service:8000
+            EMAIL_SERVICE_URL: http://email-service:8000
+            TRANSCRIPTION_SERVICE_URL: http://transcription-service:8000
+            ALLOWED_ORIGINS: http://localhost:5173
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -245,6 +256,9 @@ services:
             - internal-api
             - bus
             - user-net
+        volumes:
+            - ./backend/user-service/main.py:/app/main.py
+            - ./backend/user-service/src:/app/src
         depends_on:
             rabbitmq:
                 condition: service_healthy

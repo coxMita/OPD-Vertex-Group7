@@ -8,7 +8,16 @@ from src.api.dependencies import get_doctor_service
 from src.models.dto.doctor_dto import DoctorDTO
 from src.services.doctor_service import DoctorService
 
-router = APIRouter(prefix="/api/v1/user", tags=["doctors"])
+router = APIRouter(prefix="/api/v1/users", tags=["doctors"])
+
+
+@router.get("/doctors", status_code=status.HTTP_200_OK)
+def list_doctors(
+    service: Annotated[DoctorService, Depends(get_doctor_service)],
+    user_claims: Annotated[dict, Depends(get_current_user)],
+) -> list[DoctorDTO]:
+    """Get all doctors."""
+    return service.list_all_doctors()
 
 
 @router.get("/doctor/{department_name}/doctors", status_code=status.HTTP_200_OK)

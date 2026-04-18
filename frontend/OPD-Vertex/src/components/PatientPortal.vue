@@ -1,7 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
 
+const authStore = useAuthStore()
 const activePanel = ref('book-panel')
+const doctors = ref<any[]>([])
+const isLoadingDoctors = ref(false)
+
+const fetchDoctors = async () => {
+  if (!authStore.isAuthenticated) return
+  
+  isLoadingDoctors.value = true
+  try {
+    const response = await axios.get('http://localhost:8080/api/v1/users/doctors', {
+      headers: {
+        Authorization: `Bearer ${authStore.keycloakManager?.token}`
+      }
+    })
+    doctors.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch doctors:', error)
+  } finally {
+    isLoadingDoctors.value = false
+  }
+}
+
+onMounted(() => {
+  fetchDoctors()
+})
 
 const showPanel = (id: string) => {
   activePanel.value = id
@@ -84,6 +111,16 @@ const doCancelRow = (id: number) => {
                 <option>Orthopedics</option>
               </select>
             </div>
+            <div class="form-group">
+              <label>Doctor</label>
+              <select>
+                <option v-if="isLoadingDoctors">Loading doctors...</option>
+                <option v-else-if="doctors.length === 0">No doctors available</option>
+                <option v-for="doctor in doctors" :key="doctor.doctor_id" :value="doctor.doctor_id">
+                  Dr. {{ doctor.full_name }} ({{ doctor.department_name }})
+                </option>
+              </select>
+            </div>
             <button class="submit-btn book-submit" @click="alert('✅ Appointment booked! Confirmation sent to your email.')">Confirm Booking →</button>
           </div>
         </div>
@@ -120,13 +157,17 @@ const doCancelRow = (id: number) => {
             </div>
             <button class="submit-btn cancel-submit" @click="doLookup('cancel-result')">Find My Appointments →</button>
             <div id="cancel-result" class="lookup-result" :class="{ visible: showLookup['cancel-result'] }">
-              <div class="appt-row" :style="{ opacity: cancelled[1] ? 0.45 : 1, textDecoration: cancelled[1] ? 'line-through' : 'none' }">
-                <div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div>
-                <button class="cancel-row-btn" :disabled="cancelled[1]" @click="doCancelRow(1)">{{ cancelled[1] ? 'Cancelled' : 'Cancel' }}</button>
+              <div v-if="doctors.length > 0">
+                <div v-for="(doctor, i) in doctors.slice(0, 2)" :key="doctor.doctor_id" class="appt-row" :style="{ opacity: cancelled[i] ? 0.45 : 1, textDecoration: cancelled[i] ? 'line-through' : 'none' }">
+                  <div class="appt-info"><strong>Dr. {{ doctor.full_name }} – {{ doctor.department_name }}</strong><span>Mon 24 Feb 2026 · 09:00</span></div>
+                  <button class="cancel-row-btn" :disabled="cancelled[i]" @click="doCancelRow(i)">{{ cancelled[i] ? 'Cancelled' : 'Cancel' }}</button>
+                </div>
               </div>
-              <div class="appt-row" :style="{ opacity: cancelled[2] ? 0.45 : 1, textDecoration: cancelled[2] ? 'line-through' : 'none' }">
-                <div class="appt-info"><strong>Dr. Nielsen – Cardiology</strong><span>Thu 27 Feb 2026 · 14:00</span></div>
-                <button class="cancel-row-btn" :disabled="cancelled[2]" @click="doCancelRow(2)">{{ cancelled[2] ? 'Cancelled' : 'Cancel' }}</button>
+              <div v-else>
+                <div class="appt-row" :style="{ opacity: cancelled[1] ? 0.45 : 1, textDecoration: cancelled[1] ? 'line-through' : 'none' }">
+                  <div class="appt-info"><strong>Dr. Hansen – General Practice</strong><span>Mon 24 Feb 2026 · 09:00</span></div>
+                  <button class="cancel-row-btn" :disabled="cancelled[1]" @click="doCancelRow(1)">{{ cancelled[1] ? 'Cancelled' : 'Cancel' }}</button>
+                </div>
               </div>
             </div>
           </div>

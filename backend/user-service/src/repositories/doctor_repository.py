@@ -16,6 +16,18 @@ class DoctorRepository:
         """Retrieve a doctor by their ID."""
         return self._session.get(Doctor, doctor_id)
 
+    def get_all(self) -> list[Doctor]:
+        """Retrieve all doctors."""
+        statement = select(Doctor)
+        return list(self._session.exec(statement).all())
+
+    def create(self, doctor: Doctor) -> Doctor:
+        """Create a new doctor."""
+        self._session.add(doctor)
+        self._session.commit()
+        self._session.refresh(doctor)
+        return doctor
+
     def get_all_by_department(self, department_name: str) -> list[Doctor]:
         """Retrieve all doctors in a specific department."""
         statement = select(Doctor).where(Doctor.department_name == department_name)

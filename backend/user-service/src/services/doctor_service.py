@@ -12,6 +12,17 @@ class DoctorService:
         """Initialize the DoctorService."""
         self._repo = repo
 
+    def list_all_doctors(self) -> list[DoctorDTO]:
+        """Get all doctors."""
+        doctors = self._repo.get_all()
+        return [self._to_dto(d) for d in doctors]
+
+    def create_doctor(self, doctor_data: dict) -> DoctorDTO:
+        """Create a new doctor."""
+        doctor = Doctor(**doctor_data)
+        created = self._repo.create(doctor)
+        return self._to_dto(created)
+
     def get_doctors_by_department(self, department_name: str) -> list[DoctorDTO]:
         """Get all doctors in a specific department."""
         doctors = self._repo.get_all_by_department(department_name)
