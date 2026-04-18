@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useConsultationList } from '@/composables/useConsultationList'
 import { appointmentApi } from '@/services/appointmentApi'
 import { userApi } from '@/services/userApi'
+import { emailApi } from '@/services/emailApi'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
 import type { ConsultationSidebarItem } from '@/components/Consultation/AppointmentSidebar.vue'
 import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
@@ -143,42 +144,34 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
   else if (status === 'done') consultationStatus.value = 'done'
 }
 
-function onTranscriptReady(_text: string) {
+function onTranscriptReady() {
   // Transcript sent to backend — PrescriptionCard polls DB for the AI result
 }
 
-function onUploadTranscript(_text: string) {
+function onUploadTranscript() {
   // Transcript sent to backend — PrescriptionCard polls DB for the AI result
 }
 
-function onApproved(text: string) {
+async function onApproved(prescriptionText: string) {
   consultationStatus.value = 'done'
 
-  const toEmail = currentPatient.value?.email && currentPatient.value.email !== '—' ? currentPatient.value.email : null
-  
-  if (!toEmail) {
-    console.error('Patient has no valid email to send prescription to.')
+  if (!currentPatient.value?.email) {
+    console.warn('Patient email is missing, cannot send prescription.')
     return
   }
 
-  fetch('http://localhost:8084/api/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to_email: toEmail,
-      subject: 'Consultation Transcript & Prescription',
-      message: 'Hello! Your doctor has approved your prescription. Attached is the PDF document for your records.',
+  try {
+    await emailApi.sendEmail({
+      to_email: currentPatient.value.email,
+      subject: 'Your Prescription Details - OPD Vertex',
+      message: 'Hello, your prescription has been approved by the doctor. Please find the details attached as a PDF.\n\nBest regards,\nOPD Vertex',
       is_html: false,
-      document_title: 'Approved Prescription',
-      document_content: text
+      document_title: 'Prescription',
+      document_content: prescriptionText,
     })
-  })
-  .then(res => {
-    if (!res.ok) throw Error('Network response was not ok')
-    return res.json()
-  })
-  .then(data => console.log('Email triggered successfully:', data))
-  .catch(err => console.error('Failed to trigger email:', err))
+  } catch (err) {
+    console.error('Failed to send prescription email:', err)
+  }
 }
 </script>
 

@@ -12,6 +12,7 @@ from src.config import settings
 from src.messaging.email_queue_facade import EmailQueueFacade
 from src.messaging.messaging_manager import messaging_manager
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
