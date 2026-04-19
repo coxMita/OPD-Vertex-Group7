@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import uuid
 from datetime import date, time
 
 from src.messaging.messaging_manager import MessagingManager
@@ -10,8 +11,9 @@ from src.messaging.pubsub_exchanges import (
     APPOINTMENT_CREATED,
     APPOINTMENT_STATUS_CHANGED,
 )
-from src.models.db.appointment import Appointment, TimePreference
+from src.models.db.appointment import Appointment, AppointmentStatus, TimePreference
 from src.models.dto.appointment_create_request import AppointmentCreateRequest
+from src.models.dto.appointment_reschedule_request import AppointmentRescheduleRequest
 from src.models.dto.appointment_response import AppointmentResponse
 from src.models.dto.appointment_status_update_request import (
     AppointmentStatusUpdateRequest,
@@ -255,6 +257,76 @@ class AppointmentService:
             task.add_done_callback(AppointmentService._log_task_exception)
         except RuntimeError:
             logger.exception("Failed to publish event to exchange '%s'", exchange)
+
+    def cancel_by_patient(
+        self, appointment_id: uuid.UUID, patient_id: uuid.UUID
+    ) -> AppointmentResponse | str | None:
+        """Cancel an appointment on behalf of the patient who owns it.
+
+        Args:
+            appointment_id: The UUID of the appointment to cancel.
+            patient_id: The UUID of the patient requesting the cancellation.
+
+        Returns:
+            AppointmentResponse if cancelled successfully,
+            'forbidden' if the patient doesn't own the appointment,
+            'conflict' if the appointment is not in a cancellable state,
+            or None if the appointment was not found.
+
+        """
+        appointment = self._repo.get_by_id(appointment_id)
+        if appointment is None:
+            return None
+        if appointment.patient_id != patient_id:
+            return "forbidden"
+        if appointment.status != AppointmentStatus.SCHEDULED:
+            return "conflict"
+        updated = self._repo.update_status(appointment, AppointmentStatus.CANCELLED)
+        self._publish(updated, APPOINTMENT_STATUS_CHANGED)
+        return AppointmentResponse.from_entity(updated)
+
+    def reschedule(
+        self,
+        appointment_id: uuid.UUID,
+        request: AppointmentRescheduleRequest,
+    ) -> AppointmentResponse | None:
+        """Move an appointment to a different date and time slot.
+
+        Args:
+            appointment_id: The UUID of the appointment to reschedule.
+            request: The reschedule request containing new date, preference and hour.
+
+        Returns:
+            AppointmentResponse with updated fields, or None if not found.
+
+        Raises:
+            ValueError: If the target slot is already taken.
+
+        """
+        appointment = self._repo.get_by_id(appointment_id)
+        if appointment is None:
+            return None
+
+        desired_slot = time(request.new_hour, 0)
+
+        # Verfifies for conficts on the new date
+        existing = self._repo.get_by_doctor_date_and_preference(
+            appointment.doctor_id,
+            request.new_date,
+            request.new_time_preference,
+        )
+        taken = {a.assigned_time for a in existing if a.id != appointment_id}
+        if desired_slot in taken:
+            raise ValueError(
+                f"Slot {desired_slot} is already taken on {request.new_date}."
+            )
+
+        appointment.appointment_date = request.new_date
+        appointment.time_preference = request.new_time_preference
+        appointment.assigned_time = desired_slot
+        self._repo.save(appointment)
+        self._publish(appointment, APPOINTMENT_STATUS_CHANGED)
+        return AppointmentResponse.from_entity(appointment)
 
     @staticmethod
     def _log_task_exception(task: asyncio.Task) -> None:

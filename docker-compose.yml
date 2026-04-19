@@ -123,7 +123,7 @@ services:
 
     # ── Appointment Service ───────────────────────────────────────────────────
     appointment-service:
-        image: mita28/opdvertex:appointment-service-3.0.0
+        image: mita28/opdvertex:appointment-service-3.0.4
         build: backend/appointment-service/.
         container_name: appointment-service
         restart: unless-stopped

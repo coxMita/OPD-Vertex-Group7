@@ -55,4 +55,27 @@ export const appointmentApi = {
       )
       .then((res) => res.data)
   },
+
+  rescheduleAppointment(
+    appointmentId: string,
+    newDate: string,
+    newTimePreference: 'AM' | 'PM',
+    newHour: number,
+  ): Promise<Appointment> {
+    return apiClient
+      .patch<Appointment>(`/api/v1/appointments/${appointmentId}/reschedule`, {
+        new_date: newDate,
+        new_time_preference: newTimePreference,
+        new_hour: newHour,
+      })
+      .then((res) => res.data)
+  },
+
+  cancelAppointment(appointmentId: string, patientId: string): Promise<Appointment> {
+    return apiClient
+      .patch<Appointment>(`/api/v1/appointments/${appointmentId}/cancel`, null, {
+        params: { patient_id: patientId },
+      })
+      .then((res) => res.data)
+  },
 }
