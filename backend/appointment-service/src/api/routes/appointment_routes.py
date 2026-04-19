@@ -9,6 +9,7 @@ from sqlalchemy import text
 
 from src.api.dependencies import get_appointment_service, get_db_session
 from src.models.dto.appointment_create_request import AppointmentCreateRequest
+from src.models.dto.appointment_reschedule_request import AppointmentRescheduleRequest
 from src.models.dto.appointment_response import AppointmentResponse
 from src.models.dto.appointment_status_update_request import (
     AppointmentStatusUpdateRequest,
@@ -160,6 +161,48 @@ async def reorder_queue(
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {MESSAGE: str(e)}
+
+
+@router.patch("/{appointment_id}/cancel", status_code=status.HTTP_200_OK)
+async def cancel_appointment(
+    appointment_id: uuid.UUID,
+    patient_id: uuid.UUID,  # query param — verificare ownership
+    service: Annotated[AppointmentService, Depends(get_appointment_service)],
+    response: Response,
+) -> AppointmentResponse | dict:
+    """Cancel an appointment by the patient who owns it."""
+    result = service.cancel_by_patient(appointment_id, patient_id)
+    if result is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {MESSAGE: NOT_FOUND_MESSAGE}
+    if result == "forbidden":
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {MESSAGE: "You can only cancel your own appointments."}
+    if result == "conflict":
+        response.status_code = status.HTTP_409_CONFLICT
+        return {MESSAGE: "Only scheduled appointments can be cancelled."}
+    return result
+
+
+@router.patch("/{appointment_id}/reschedule", status_code=status.HTTP_200_OK)
+async def reschedule_appointment(
+    appointment_id: uuid.UUID,
+    request: AppointmentRescheduleRequest,
+    service: Annotated[AppointmentService, Depends(get_appointment_service)],
+    response: Response,
+) -> AppointmentResponse | dict:
+    """Move an appointment to a different date/time slot."""
+    try:
+        result = service.reschedule(appointment_id, request)
+    except ValueError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {MESSAGE: str(e)}
+
+    if result is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {MESSAGE: NOT_FOUND_MESSAGE}
+
+    return result
 
 
 @router.delete("/dev/")

@@ -188,3 +188,16 @@ class AppointmentRepository:
         self._session.add(instance)
         self._session.commit()
         self._session.refresh(instance)
+
+    def save(self, appointment: Appointment) -> Appointment:
+        """Persist changes to an existing appointment.
+
+        Args:
+            appointment: The appointment entity to save.
+
+        Returns:
+            Appointment: The saved and refreshed appointment.
+
+        """
+        self._save_and_refresh(appointment)
+        return appointment
