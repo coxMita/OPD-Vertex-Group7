@@ -1,9 +1,5 @@
-import axios, { type AxiosError } from 'axios'
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_GATEWAY_URL ?? 'http://localhost:8080',
-  timeout: 120_000,
-})
+import apiClient from './apiClient'
+import type { AxiosError } from 'axios'
 
 export interface TranscriptionResult {
   transcript: string
@@ -31,6 +27,7 @@ async function transcribeFile(
     {
       params: { consultation_id: consultationId },
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120_000,
       onUploadProgress(ev) {
         if (onUploadProgress && ev.total) {
           onUploadProgress(Math.round((ev.loaded * 100) / ev.total))

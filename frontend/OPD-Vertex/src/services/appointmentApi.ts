@@ -1,11 +1,5 @@
-import axios from 'axios'
+import apiClient from './apiClient'
 import type { Appointment } from '@/models/appointment/appointment.interface'
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10_000,
-})
 
 export interface CreateAppointmentRequest {
   patient_id: string

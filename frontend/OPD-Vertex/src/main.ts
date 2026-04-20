@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { keycloak } from './services/keycloak'
 
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
@@ -35,4 +36,13 @@ const vuetify = createVuetify({
 
 app.use(vuetify)
 app.use(router)
-app.mount('#app')
+
+keycloak.init({ onLoad: 'login-required', checkLoginIframe: false }).then((authenticated) => {
+  if (authenticated) {
+    app.mount('#app')
+  } else {
+    window.location.reload()
+  }
+}).catch((error) => {
+  console.error('Failed to initialize Keycloak array', error)
+})

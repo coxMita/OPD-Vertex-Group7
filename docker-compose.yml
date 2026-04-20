@@ -15,9 +15,7 @@ networks:
         driver: bridge
     user-net:
         driver: bridge
-    ollama-net:
-        driver: bridge
-    ai-net:
+    keycloak-net:
         driver: bridge
 
 volumes:
@@ -25,16 +23,16 @@ volumes:
     consultation_db_data:
     prescription_db_data:
     user_db_data:
-    ai_db_data:
     pgadmin_data:
-    ollama_data:
+    keycloak_pg_db_data:
+    keycloak_db_data:
 
 
 services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
-        image: mita28/opdvertex:gateway-3.0.0
+        image: mita28/opdvertex:gateway-1.0.0
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -43,87 +41,34 @@ services:
         networks:
             - frontend
             - internal-api
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         depends_on:
             rabbitmq:
                 condition: service_healthy
-
-    # ── Ollama (local LLM runtime) ────────────────────────────────────────────
-    ollama:
-        image: ollama/ollama:latest
-        container_name: ollama
-        restart: unless-stopped
-        ports:
-            - "11434:11434"
-        volumes:
-            - ollama_data:/root/.ollama
-        networks:
-            - ollama-net
-        entrypoint: >
-            sh -c "ollama serve &
-                   sleep 5 &&
-                   ollama pull qwen3.5:0.8b &&
-                   ollama pull nomic-embed-text &&
-                   wait"
-        healthcheck:
-            test: ["CMD-SHELL", "ollama list | grep -q 'qwen3.5:0.8b'"]
-            interval: 10s
-            timeout: 30s
-            retries: 30
-            start_period: 30s
-
-    # ── AI Database (pgvector) ────────────────────────────────────────────────
-    ai-db:
-        image: pgvector/pgvector:pg17
-        container_name: ai-db
-        restart: always
-        environment:
-            POSTGRES_USER: ${AI_DB_USER}
-            POSTGRES_PASSWORD: ${AI_DB_PASS}
-            POSTGRES_DB: ${AI_DB_NAME}
-        ports:
-            - "5436:5432"
-        volumes:
-            - ai_db_data:/var/lib/postgresql/data
-        networks:
-            - ai-net
-        healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${AI_DB_USER} -d ${AI_DB_NAME}"]
-            interval: 5s
-            timeout: 10s
-            retries: 5
-            start_period: 5s
+            keycloak:
+                condition: service_healthy
 
     # ── AI Service ────────────────────────────────────────────────────────────
     ai-service:
-        image: mita28/opdvertex:ai-service-3.1.0
+        image: mita28/opdvertex:ai-service-1.0.0
         build: backend/ai-service/.
         container_name: ai-service
         restart: unless-stopped
         ports:
             - "8081:8000"
-        environment:
-            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
-            OLLAMA_BASE_URL: http://ollama:11434
-            OLLAMA_MODEL: llama3.2:3b
-            OLLAMA_EMBED_MODEL: nomic-embed-text
-            OLLAMA_TIMEOUT: "120"
-            AI_DB_URL: postgresql://${AI_DB_USER}:${AI_DB_PASS}@ai-db:5432/${AI_DB_NAME}
         networks:
             - internal-api
             - bus
-            - ollama-net
-            - ai-net
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         depends_on:
             rabbitmq:
-                condition: service_healthy
-            ollama:
-                condition: service_healthy
-            ai-db:
                 condition: service_healthy
 
     # ── Appointment Service ───────────────────────────────────────────────────
     appointment-service:
-        image: mita28/opdvertex:appointment-service-3.0.5
+        image: mita28/opdvertex:appointment-service-1.0.11
         build: backend/appointment-service/.
         container_name: appointment-service
         restart: unless-stopped
@@ -133,6 +78,9 @@ services:
             - internal-api
             - bus
             - appointment-net
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            DATABASE_URL: postgresql://${APPOINTMENT_DB_USER}:${APPOINTMENT_DB_PASS}@appointment-db:5432/${APPOINTMENT_DB_NAME}
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -154,7 +102,7 @@ services:
         networks:
             - appointment-net
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${APPOINTMENT_DB_USER} -d ${APPOINTMENT_DB_NAME}"]
+            test: [ "CMD-SHELL", "pg_isready -U ${APPOINTMENT_DB_USER} -d ${APPOINTMENT_DB_NAME}" ]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -162,7 +110,7 @@ services:
 
     # ── Consultation Service ──────────────────────────────────────────────────
     consultation-service:
-        image: mita28/opdvertex:consultation-service-3.0.0
+        image: mita28/opdvertex:consultation-service-1.0.0
         build: backend/consultation-service/.
         container_name: consultation-service
         restart: unless-stopped
@@ -172,6 +120,9 @@ services:
             - internal-api
             - bus
             - consultation-net
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            DATABASE_URL: postgresql://${CONSULTATION_DB_USER}:${CONSULTATION_DB_PASS}@consultation-db:5432/${CONSULTATION_DB_NAME}
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -193,7 +144,7 @@ services:
         networks:
             - consultation-net
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${CONSULTATION_DB_USER} -d ${CONSULTATION_DB_NAME}"]
+            test: [ "CMD-SHELL", "pg_isready -U ${CONSULTATION_DB_USER} -d ${CONSULTATION_DB_NAME}" ]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -201,26 +152,24 @@ services:
 
     # ── Email Service ─────────────────────────────────────────────────────────
     email-service:
-        image: mita28/opdvertex:email-service-3.0.0
+        image: mita28/opdvertex:email-service-1.0.0
         build: backend/email-service/.
         container_name: email-service
         restart: unless-stopped
         ports:
             - "8084:8000"
-        env_file:
-            - backend/email-service/.env
-        environment:
-            RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         networks:
             - internal-api
             - bus
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         depends_on:
             rabbitmq:
                 condition: service_healthy
 
     # ── Prescription Service ──────────────────────────────────────────────────
     prescription-service:
-        image: mita28/opdvertex:prescription-service-4.0.0
+        image: mita28/opdvertex:prescription-service-1.0.0
         build: backend/prescription-service/.
         container_name: prescription-service
         restart: unless-stopped
@@ -230,6 +179,9 @@ services:
             - internal-api
             - bus
             - prescription-net
+        environment:
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            DATABASE_URL: postgresql://${PRESCRIPTION_DB_USER}:${PRESCRIPTION_DB_PASS}@prescription-db:5432/${PRESCRIPTION_DB_NAME}
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -251,7 +203,7 @@ services:
         networks:
             - prescription-net
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${PRESCRIPTION_DB_USER} -d ${PRESCRIPTION_DB_NAME}"]
+            test: [ "CMD-SHELL", "pg_isready -U ${PRESCRIPTION_DB_USER} -d ${PRESCRIPTION_DB_NAME}" ]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -259,7 +211,7 @@ services:
 
     # ── Transcription Service ─────────────────────────────────────────────────
     transcription-service:
-        image: mita28/opdvertex:transcription-service-4.0.0
+        image: mita28/opdvertex:transcription-service-1.0.8
         build: backend/transcription-service/.
         container_name: transcription-service
         restart: unless-stopped
@@ -278,12 +230,17 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-3.0.0
+        image: mita28/opdvertex:user-service-1.0.0
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
         ports:
             - "8087:8000"
+        environment:
+            DATABASE_URL: postgresql://${USER_DB_USER}:${USER_DB_PASS}@user-db:5432/${USER_DB_NAME}
+            KEYCLOAK_REALM: opd-vertex
+            KEYCLOAK_EXTERNAL_URL: http://localhost:8089
+            AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
         networks:
             - internal-api
             - bus
@@ -292,6 +249,8 @@ services:
             rabbitmq:
                 condition: service_healthy
             user-db:
+                condition: service_healthy
+            keycloak:
                 condition: service_healthy
 
     user-db:
@@ -309,7 +268,7 @@ services:
         networks:
             - user-net
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
+            test: [ "CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}" ]
             interval: 5s
             timeout: 10s
             retries: 5
@@ -326,22 +285,11 @@ services:
         networks:
             - bus
         healthcheck:
-            test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+            test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
             interval: 5s
             timeout: 10s
             retries: 5
             start_period: 5s
-
-    # ── Mailpit (Local SMTP Testing) ──────────────────────────────────────────
-    mailpit:
-        image: axllent/mailpit
-        container_name: mailpit
-        restart: unless-stopped
-        ports:
-            - "8025:8025"
-            - "1025:1025"
-        networks:
-            - bus
 
     # ── pgAdmin ───────────────────────────────────────────────────────────────
     pgadmin:
@@ -360,4 +308,56 @@ services:
             - consultation-net
             - prescription-net
             - user-net
-            - ai-net
+
+    # ── Keycloak ──────────────────────────────────────────────────────────────
+    keycloak:
+        image: quay.io/keycloak/keycloak:24.0.1
+        container_name: keycloak
+        restart: unless-stopped
+        environment:
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak_db
+            KC_DB_USERNAME: keycloak_user
+            KC_DB_PASSWORD: keycloak_pass
+            KC_DB_SCHEMA: public
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin123
+        command: start-dev --import-realm
+        ports:
+            - "8089:8080"
+        volumes:
+            - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+        networks:
+            - frontend
+            - internal-api
+            - keycloak-net
+        healthcheck:
+            test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
+        depends_on:
+            keycloak-db:
+                condition: service_healthy
+
+    keycloak-db:
+        image: postgres:17
+        container_name: keycloak-db
+        restart: always
+        environment:
+            POSTGRES_USER: keycloak_user
+            POSTGRES_PASSWORD: keycloak_pass
+            POSTGRES_DB: keycloak_db
+        ports:
+            - "5436:5432"
+        volumes:
+            - keycloak_db_data:/var/lib/postgresql/data
+        networks:
+            - keycloak-net
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U keycloak_user -d keycloak_db" ]
+            interval: 5s
+            timeout: 10s
+            retries: 5
+            start_period: 5s
