@@ -131,6 +131,14 @@ function clearText() {
   rxText.value = ''
   approved.value = false
 }
+
+function onManualInput() {
+  if (polling.value) {
+    stopPolling = true
+    polling.value = false
+    pollingFailed.value = true
+  }
+}
 </script>
 
 <template>
@@ -156,7 +164,7 @@ function clearText() {
         <div v-if="polling" class="mb-4">
           <div class="d-flex align-center ga-3 mb-2">
             <v-progress-circular indeterminate color="deep-purple" size="18" width="2" />
-            <span class="polling-text">Waiting for AI to process consultation recording…</span>
+            <span class="polling-text">Waiting for AI to process consultation recording… You can start typing below to override.</span>
           </div>
           <v-progress-linear indeterminate color="deep-purple" rounded height="3" />
         </div>
@@ -184,10 +192,11 @@ function clearText() {
         auto-grow
         hide-details
         class="rx-textarea mb-4"
-        :readonly="approved || polling"
+        :readonly="approved"
+        @input="onManualInput"
         :placeholder="
           polling
-            ? 'Waiting for AI Service to process the consultation recording…'
+            ? 'Waiting for AI Service... Start typing here to write manually.'
             : 'Prescription will be generated automatically once the consultation recording is processed by the AI Service (Llama 3).'
         "
       />
