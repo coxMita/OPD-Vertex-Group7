@@ -43,6 +43,9 @@ services:
             - internal-api
         environment:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+            KEYCLOAK_REALM: opd-vertex
+            KEYCLOAK_EXTERNAL_URL: http://localhost:8089
+            KEYCLOAK_CLIENT_ID: vue-app
         depends_on:
             rabbitmq:
                 condition: service_healthy
