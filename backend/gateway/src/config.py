@@ -25,3 +25,8 @@ if not PRESCRIPTION_SERVICE_URL:
 TRANSCRIPTION_SERVICE_URL = os.getenv("TRANSCRIPTION_SERVICE_URL")
 if not TRANSCRIPTION_SERVICE_URL:
     raise RuntimeError("TRANSCRIPTION_SERVICE_URL is not found.")
+
+# Email service gateway URL. Provide a sensible default for local/testing
+# environments where the email-service container may be reachable via
+# the docker-compose network alias "email-service" on port 8000.
+EMAIL_SERVICE_URL = os.getenv("EMAIL_SERVICE_URL", "http://email-service:8000")

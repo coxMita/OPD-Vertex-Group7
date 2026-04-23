@@ -2,13 +2,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.email_sender import send_email
+from src.services.smtp_delivery import send_email
 
 
 @pytest.mark.asyncio
 async def test_send_email_plain_text() -> None:
     """Test sending plain text emails using mocked aiosmtplib.send."""
-    with patch("src.email_sender.aiosmtplib.send", new_callable=AsyncMock) as mock_send:
+    with patch(
+        "src.services.smtp_delivery.aiosmtplib.send", new_callable=AsyncMock
+    ) as mock_send:
         await send_email(
             to_email="test@example.com",
             subject="Test Subject",
@@ -17,8 +19,7 @@ async def test_send_email_plain_text() -> None:
         )
         mock_send.assert_called_once()
 
-        # Verify the message constructed
-        args, kwargs = mock_send.call_args
+        args, _kwargs = mock_send.call_args
         email_msg = args[0]
         assert email_msg["To"] == "test@example.com"
         assert email_msg["Subject"] == "Test Subject"
@@ -28,7 +29,9 @@ async def test_send_email_plain_text() -> None:
 @pytest.mark.asyncio
 async def test_send_email_html() -> None:
     """Test sending HTML emails using mocked aiosmtplib.send."""
-    with patch("src.email_sender.aiosmtplib.send", new_callable=AsyncMock) as mock_send:
+    with patch(
+        "src.services.smtp_delivery.aiosmtplib.send", new_callable=AsyncMock
+    ) as mock_send:
         await send_email(
             to_email="test@example.com",
             subject="Test HTML Subject",
@@ -37,7 +40,7 @@ async def test_send_email_html() -> None:
         )
         mock_send.assert_called_once()
 
-        args, kwargs = mock_send.call_args
+        args, _kwargs = mock_send.call_args
         email_msg = args[0]
         assert email_msg["To"] == "test@example.com"
         assert email_msg["Subject"] == "Test HTML Subject"

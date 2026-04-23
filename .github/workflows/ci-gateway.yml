@@ -21,6 +21,7 @@ jobs:
       USER_SERVICE_URL: http://user-service:8000
       PRESCRIPTION_SERVICE_URL: http://prescription-service:8000
       TRANSCRIPTION_SERVICE_URL: http://localhost:8000
+      EMAIL_SERVICE_URL: http://email-service:8000
 
     steps:
       - uses: actions/checkout@v4

@@ -8,13 +8,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers.appointment_proxy import router as appointment_router
 from src.routers.consultation_proxy import router as consultation_router
+from src.routers.email_proxy import router as email_router
 from src.routers.prescription_proxy import router as prescription_router
 from src.routers.transcription_proxy import router as transcription_router
 from src.routers.user_proxy import router as user_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="OPD-Vertex API Gateway")
+app = FastAPI(
+    title="OPD-Vertex API Gateway",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +29,7 @@ app.add_middleware(
 
 app.include_router(appointment_router)
 app.include_router(consultation_router)
+app.include_router(email_router)
 app.include_router(prescription_router)
 app.include_router(transcription_router)
 app.include_router(user_router)

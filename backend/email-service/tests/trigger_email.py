@@ -1,16 +1,28 @@
 import asyncio
 import json
-import logging
+import sys
+import argparse
+from pathlib import Path
 
 import aio_pika
 
-from src.config import settings
+# Add the parent directory to sys.path so 'src' can be imported when running as a script
+sys.path.append(str(Path(__file__).parent.parent))
 
-logging.basicConfig(level=logging.INFO)
+from src.config import settings
 
 
 async def main() -> None:
-    """Trigger an email via RabbitMQ."""
+    parser = argparse.ArgumentParser(description="Trigger test emails via RabbitMQ.")
+    parser.add_argument(
+        "--email", 
+        type=str, 
+        help="The destination email address to verify delivery.",
+        required=True
+    )
+    args = parser.parse_args()
+    target_email = args.email
+
     print(f"Connecting to RabbitMQ at {settings.RABBITMQ_URL}...")
 
     # 1. Connect to RabbitMQ
@@ -20,32 +32,57 @@ async def main() -> None:
         # 2. Open a channel
         channel = await connection.channel()
 
-        # 3. Define the event data matching what the other services will send
-        # We'll send it to the FROM email address just to test that it arrives
-        email_event = {
-            "to_email": settings.SMTP_FROM_EMAIL,
-            "subject": "System Test: RabbitMQ Integration works!",
+        # 3. Define the Appointment Booking Email Event
+        appointment_event = {
+            "to_email": target_email,
+            "subject": "Appointment Confirmation",
             "message": (
-                "Hello! If you are reading this, the RabbitMQ message broker "
-                "successfully routed the event to the email-service container, "
-                "which then sent this real email."
+                "Hello!\n\n"
+                "Your appointment has been successfully booked.\n"
+                "This message verifies that the email service processes plain text "
+                "emails correctly after the refactoring."
             ),
             "is_html": False,
         }
 
-        message_body = json.dumps(email_event).encode()
+        # 4. Define the Prescription PDF Email Event
+        prescription_event = {
+            "to_email": target_email,
+            "subject": "Your Prescription Details",
+            "message": (
+                "Hello! If you are reading this and see a PDF attached, "
+                "the RabbitMQ message broker successfully routed the event to "
+                "the email-service container, generated the PDF on the fly, "
+                "and sent it."
+            ),
+            "is_html": False,
+            "document_title": "Mock Prescription",
+            "document_content": {
+                "Patient Name": "Jane Doe",
+                "Medication": "Amoxicillin 500mg",
+                "Dosage": "1 capsule three times a day for 7 days",
+                "Doctor Notes": "Take with food.",
+            },
+        }
 
-        # 4. Publish the message directly to the "email_queue"
+        # 5. Publish the messages to the configured email queue
+        print(f"Publishing Appointment message to {target_email}...")
         await channel.default_exchange.publish(
-            aio_pika.Message(body=message_body),
-            routing_key="email_queue",
+            aio_pika.Message(body=json.dumps(appointment_event).encode()),
+            routing_key=settings.EMAIL_QUEUE_NAME,
         )
 
-        print("✅ Successfully published test message to RabbitMQ 'email_queue'!")
-        print(
-            f"Waiting for the email-service container to pick it up and email "
-            f"{settings.SMTP_FROM_EMAIL}..."
+        print(f"Publishing Prescription (PDF) message to {target_email}...")
+        await channel.default_exchange.publish(
+            aio_pika.Message(body=json.dumps(prescription_event).encode()),
+            routing_key=settings.EMAIL_QUEUE_NAME,
         )
+
+        print("Successfully published both test messages to RabbitMQ!")
+        print("Waiting for the email-service container to process them...")
+
+        # Add a short delay to allow the network buffer to flush to RabbitMQ
+        await asyncio.sleep(1.0)
 
 
 if __name__ == "__main__":

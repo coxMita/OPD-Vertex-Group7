@@ -40,6 +40,13 @@ services:
         restart: unless-stopped
         ports:
             - "8080:8000"
+        environment:
+            APPOINTMENT_SERVICE_URL: http://appointment-service:8000
+            CONSULTATION_SERVICE_URL: http://consultation-service:8000
+            USER_SERVICE_URL: http://user-service:8000
+            PRESCRIPTION_SERVICE_URL: http://prescription-service:8000
+            TRANSCRIPTION_SERVICE_URL: http://transcription-service:8000
+            EMAIL_SERVICE_URL: http://email-service:8000
         networks:
             - frontend
             - internal-api
@@ -104,7 +111,7 @@ services:
         environment:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
             OLLAMA_BASE_URL: http://ollama:11434
-            OLLAMA_MODEL: llama3.2:3b
+            OLLAMA_MODEL: qwen3.5:0.8b
             OLLAMA_EMBED_MODEL: nomic-embed-text
             OLLAMA_TIMEOUT: "120"
             AI_DB_URL: postgresql://${AI_DB_USER}:${AI_DB_PASS}@ai-db:5432/${AI_DB_NAME}
