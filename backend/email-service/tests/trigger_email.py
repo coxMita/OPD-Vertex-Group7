@@ -1,7 +1,7 @@
+import argparse
 import asyncio
 import json
 import sys
-import argparse
 from pathlib import Path
 
 import aio_pika
@@ -13,10 +13,11 @@ from src.config import settings
 
 
 async def main() -> None:
+    """Trigger a test email event via RabbitMQ for manual end-to-end verification."""
     parser = argparse.ArgumentParser(description="Trigger test emails via RabbitMQ.")
     parser.add_argument(
-        "--email", 
-        type=str, 
+        "--email",
+        type=str,
         help="The destination email address to verify delivery.",
         required=True
     )

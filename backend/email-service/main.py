@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes.email_routes import router as email_router
 from src.config import settings
+from src.messaging.appointment_subscriber_facade import AppointmentSubscriberFacade
 from src.messaging.email_queue_facade import EmailQueueFacade
 from src.messaging.messaging_manager import messaging_manager
 
@@ -21,6 +22,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Start RabbitMQ consumer on startup; close on shutdown."""
     messaging_manager.add_email_queue(
         EmailQueueFacade(settings.RABBITMQ_URL, settings.EMAIL_QUEUE_NAME)
+    )
+    # Also add the new appointment subscriber
+    messaging_manager.add_email_queue(
+        AppointmentSubscriberFacade(settings.RABBITMQ_URL)
     )
     try:
         logger.info("Starting up messaging manager...")
