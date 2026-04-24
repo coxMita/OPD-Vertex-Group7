@@ -75,7 +75,15 @@ async def process_appointment_message(
             to_email = patient_data.get("email") or FALLBACK_EMAIL
             first_name = patient_data.get("first_name") or "Patient"
 
-            # 2. Build the notification body
+            # 2. Setup Jinja2 Environment
+            from jinja2 import Environment, FileSystemLoader
+            import os
+            
+            # The path to the templates folder relative to the execution root (where main.py is)
+            templates_dir = os.path.join(os.path.dirname(__file__), "..", "templates")
+            env = Environment(loader=FileSystemLoader(templates_dir))
+
+            # 3. Build the notification body
             if event.assigned_time:
                 assigned_time_str = event.assigned_time.strftime("%H:%M")
             else:
@@ -86,37 +94,29 @@ async def process_appointment_message(
             exchange_name = message.exchange
             if exchange_name == "appointment.created":
                 subject = "Appointment Confirmation - OPD Vertex"
-                body_msg = (
-                    f"Hello {first_name},\n\n"
-                    "Your appointment has been successfully booked.\n\n"
-                    f"Date: {formatted_date}\n"
-                    f"Assigned Time: {assigned_time_str}\n\n"
-                    "Please arrive 10 minutes early.\n\n"
-                    "Best regards,\n"
-                    "OPD Vertex Staff"
+                template = env.get_template("booking.html")
+                body_msg = template.render(
+                    first_name=first_name,
+                    date=formatted_date,
+                    time=assigned_time_str
                 )
                 log_msg = "Booking confirmation"
             else:
                 subject = "Your Appointment Has Been Rescheduled - OPD Vertex"
-                body_msg = (
-                    f"Hello {first_name},\n\n"
-                    "We wanted to let you know that your appointment at OPD Vertex "
-                    "has been rescheduled by your doctor.\n\n"
-                    f"  New date:  {formatted_date}\n"
-                    f"  New time:  {assigned_time_str}\n\n"
-                    "Please make a note of this change. If you have any questions or "
-                    "need to make further changes, don't hesitate to contact us.\n\n"
-                    "Best regards,\n"
-                    "OPD Vertex Team"
+                template = env.get_template("reschedule.html")
+                body_msg = template.render(
+                    first_name=first_name,
+                    date=formatted_date,
+                    time=assigned_time_str
                 )
                 log_msg = "Reschedule"
 
-            # 3. Send the email through the existing service layer
+            # 4. Send the email through the existing service layer
             email_event = EmailEvent(
                 to_email=to_email,
                 subject=subject,
                 message=body_msg,
-                is_html=False,
+                is_html=True,
             )
             await _email_service.handle_event(email_event)
             logger.info("%s email sent to %s", log_msg, to_email)

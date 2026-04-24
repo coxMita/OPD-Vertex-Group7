@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ first_name }}</strong>,</p>
+
+<p>We wanted to let you know that your appointment at OPD Vertex has been rescheduled by your doctor.</p>
+
+<div class="details-box">
+    <p><strong>New Date:</strong> {{ date }}</p>
+    <p><strong>New Time:</strong> {{ time }}</p>
+</div>
+
+<p>Please make a note of this change. If you have any questions or need to make further changes, don't hesitate to contact us.</p>
+
+<p>Best regards,<br>
+OPD Vertex Team</p>
+{% endblock %}

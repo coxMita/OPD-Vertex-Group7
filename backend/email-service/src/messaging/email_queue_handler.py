@@ -27,6 +27,16 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage) -> None
             return
 
         try:
+            # If the email is plain text, wrap it in our branded HTML base template
+            if not event.is_html:
+                from jinja2 import Environment, FileSystemLoader
+                import os
+                templates_dir = os.path.join(os.path.dirname(__file__), "..", "templates")
+                env = Environment(loader=FileSystemLoader(templates_dir))
+                template = env.get_template("generic.html")
+                event.message = template.render(message=event.message)
+                event.is_html = True
+
             await _email_service.handle_event(event)
             await message.ack()
         except Exception as e:
