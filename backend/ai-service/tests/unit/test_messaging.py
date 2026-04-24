@@ -40,7 +40,6 @@ class TestAbstractMessage:
             summary="Patient has fever.",
             prescription={"medication_name": "Amoxicillin"},
             consultation_id=uuid.uuid4(),
-            clinical_alerts=[],
         )
 
     def test_to_bytes_returns_json_encoded_bytes(self) -> None:
