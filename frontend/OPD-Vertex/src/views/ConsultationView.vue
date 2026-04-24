@@ -10,6 +10,8 @@ import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
 import RecordingCard from '@/components/Consultation/RecordingCard.vue'
 import TranscriptionUploadCard from '@/components/Consultation/TranscriptionUploadCard.vue'
 import PrescriptionCard from '@/components/Consultation/PrescriptionCard.vue'
+import SuggestiveModeCard from '@/components/Consultation/SuggestiveModeCard.vue'
+import { useSuggestiveMode } from '@/composables/useSuggestiveMode'
 import type { Consultation } from '@/models/consultation/consultation.interface'
 import type { ConsultationPatient } from '@/composables/useConsultationData'
 
@@ -121,6 +123,11 @@ const currentRxText = ref('')
 const prescriptionKey = ref(0)
 // The consultation ID to pass to PrescriptionCard for polling
 const activePrescriptionConsultationId = ref<string | null>(null)
+const SUGGESTIVE_DELAY_SECONDS = 4
+const { suggestionLoading, suggestionFailed, suggestionText, showPrescription } = useSuggestiveMode(
+  activePrescriptionConsultationId,
+  { delayMs: SUGGESTIVE_DELAY_SECONDS * 1000 },
+)
 
 onMounted(async () => {
   await fetchConsultations(props.doctorId)
@@ -254,8 +261,17 @@ function onApproved(_text: string) {
             @transcript-ready="onUploadTranscript"
           />
 
+          <SuggestiveModeCard
+            v-if="activePrescriptionConsultationId && (!showPrescription || suggestionLoading || !!suggestionText || suggestionFailed)"
+            :loading="suggestionLoading"
+            :suggestion="suggestionText"
+            :failed="suggestionFailed"
+            :delay-seconds="SUGGESTIVE_DELAY_SECONDS"
+          />
+
           <!-- PrescriptionCard receives consultationId and polls automatically -->
           <PrescriptionCard
+            v-if="showPrescription"
             :key="prescriptionKey"
             :initial-text="currentRxText"
             :patient-name="currentPatient?.name ?? ''"
