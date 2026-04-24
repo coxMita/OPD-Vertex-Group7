@@ -64,9 +64,7 @@ async def process_appointment_message(
             await message.reject(requeue=False)
             return
 
-        # Only send an email when an appointment is (re)scheduled.
-        # The appointment-service emits SCHEDULED status for both initial booking
-        # and reschedules — both deserve a notification.
+        # Only send an email when an appointment is (re)scheduled or created.
         if event.status != AppointmentStatus.SCHEDULED:
             await message.ack()
             return
@@ -78,25 +76,40 @@ async def process_appointment_message(
             first_name = patient_data.get("first_name") or "Patient"
 
             # 2. Build the notification body
-            subject = "Your Appointment Has Been Rescheduled - OPD Vertex"
             if event.assigned_time:
                 assigned_time_str = event.assigned_time.strftime("%H:%M")
             else:
                 assigned_time_str = event.time_preference.value
 
             formatted_date = event.appointment_date.strftime("%A, %d %B %Y")
-
-            body_msg = (
-                f"Hello {first_name},\n\n"
-                "We wanted to let you know that your appointment at OPD Vertex "
-                "has been rescheduled by your doctor.\n\n"
-                f"  New date:  {formatted_date}\n"
-                f"  New time:  {assigned_time_str}\n\n"
-                "Please make a note of this change. If you have any questions or "
-                "need to make further changes, don't hesitate to contact us.\n\n"
-                "Best regards,\n"
-                "OPD Vertex Team"
-            )
+            
+            exchange_name = message.exchange
+            if exchange_name == "appointment.created":
+                subject = "Appointment Confirmation - OPD Vertex"
+                body_msg = (
+                    f"Hello {first_name},\n\n"
+                    "Your appointment has been successfully booked.\n\n"
+                    f"Date: {formatted_date}\n"
+                    f"Assigned Time: {assigned_time_str}\n\n"
+                    "Please arrive 10 minutes early.\n\n"
+                    "Best regards,\n"
+                    "OPD Vertex Staff"
+                )
+                log_msg = "Booking confirmation"
+            else:
+                subject = "Your Appointment Has Been Rescheduled - OPD Vertex"
+                body_msg = (
+                    f"Hello {first_name},\n\n"
+                    "We wanted to let you know that your appointment at OPD Vertex "
+                    "has been rescheduled by your doctor.\n\n"
+                    f"  New date:  {formatted_date}\n"
+                    f"  New time:  {assigned_time_str}\n\n"
+                    "Please make a note of this change. If you have any questions or "
+                    "need to make further changes, don't hesitate to contact us.\n\n"
+                    "Best regards,\n"
+                    "OPD Vertex Team"
+                )
+                log_msg = "Reschedule"
 
             # 3. Send the email through the existing service layer
             email_event = EmailEvent(
@@ -106,9 +119,9 @@ async def process_appointment_message(
                 is_html=False,
             )
             await _email_service.handle_event(email_event)
-            logger.info("Reschedule email sent to %s", to_email)
+            logger.info("%s email sent to %s", log_msg, to_email)
             await message.ack()
 
         except Exception as e:
-            logger.error("Error processing appointment reschedule email: %s", e)
+            logger.error("Error processing appointment email: %s", e)
             await message.nack(requeue=True)

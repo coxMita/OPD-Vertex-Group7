@@ -33,12 +33,17 @@ class AppointmentSubscriberFacade:
         exchange = await channel.declare_exchange(
             self._exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
         )
+        created_exchange = await channel.declare_exchange(
+            "appointment.created", aio_pika.ExchangeType.FANOUT, durable=True
+        )
+        
         queue = await channel.declare_queue(self._queue_name, durable=True)
         await queue.bind(exchange)
+        await queue.bind(created_exchange)
 
         await queue.consume(process_appointment_message)
         logger.info(
-            "Started RabbitMQ consumer on exchange '%s' via queue '%s'",
+            "Started RabbitMQ consumer on exchanges '%s' and 'appointment.created' via queue '%s'",
             self._exchange_name,
             self._queue_name,
         )

@@ -5,7 +5,6 @@ import { usePatientForm } from '@/composables/usePatientForm'
 import { useDoctorSelection } from '@/composables/useDoctorSelection'
 import { userApi } from '@/services/userApi'
 import { appointmentApi } from '@/services/appointmentApi'
-import { emailApi } from '@/services/emailApi'
 import ModeSelector from '@/components/PatientForm/ModeSelector.vue'
 import BookingForm from '@/components/PatientForm/BookingForm.vue'
 import LookupForm from '@/components/PatientForm/LookupForm.vue'
@@ -56,25 +55,13 @@ async function handleSubmit() {
     })
 
     // Step 2: create appointment
-    const appointment = await appointmentApi.createAppointment({
+    await appointmentApi.createAppointment({
       patient_id: patient.patient_id,
       doctor_id: form.value.doctorId,
       appointment_date: form.value.date,
       time_preference: form.value.time as 'AM' | 'PM',
       notes: form.value.reason || null,
     })
-
-    // Step 3: Send confirmation email
-    try {
-      await emailApi.sendEmail({
-        to_email: form.value.email,
-        subject: 'Appointment Confirmation - OPD Vertex',
-        message: `Hello ${form.value.firstName},\n\nYour appointment has been successfully booked.\n\nDate: ${form.value.date}\nAssigned Time: ${appointment.assigned_time || form.value.time}\n\nPlease arrive 10 minutes early.\n\nBest regards,\nOPD Vertex Staff`,
-        is_html: false,
-      })
-    } catch (emailErr) {
-      console.warn('Could not dispatch confirmation email:', emailErr)
-    }
 
     submitted.value = true
   } catch (err: unknown) {
