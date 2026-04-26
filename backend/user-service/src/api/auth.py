@@ -1,46 +1,54 @@
 import logging
-import httpx
 import os
+from typing import Any
 
+import httpx
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
-_jwks = None
-_keycloak_certs_url = None
+_jwks_cache: dict[str, dict[str, Any] | None] = {"value": None}
+_keycloak_certs_url_cache: dict[str, str | None] = {"value": None}
+
 
 def get_certs_url() -> str:
-    global _keycloak_certs_url
-    if not _keycloak_certs_url:
+    """Return the Keycloak certs URL derived from the current environment."""
+    if not _keycloak_certs_url_cache["value"]:
         realm = os.getenv("KEYCLOAK_REALM", "opd-vertex")
         external_url = os.getenv("KEYCLOAK_EXTERNAL_URL", "http://localhost:8089")
-        _keycloak_certs_url = f"{external_url}/realms/{realm}/protocol/openid-connect/certs"
-    return _keycloak_certs_url
+        _keycloak_certs_url_cache["value"] = (
+            f"{external_url}/realms/{realm}/protocol/openid-connect/certs"
+        )
+    return _keycloak_certs_url_cache["value"] or ""
+
 
 async def get_jwks() -> dict:
-    global _jwks
-    if _jwks is None:
+    """Return the cached JWKS, fetching it from Keycloak when needed."""
+    if _jwks_cache["value"] is None:
         certs_url = get_certs_url()
         try:
             logger.info("Fetching Keycloak JWKS from %s", certs_url)
             async with httpx.AsyncClient() as client:
                 response = await client.get(certs_url, timeout=5.0)
                 response.raise_for_status()
-                _jwks = response.json()
+                _jwks_cache["value"] = response.json()
         except Exception as e:
             logger.error("Failed to fetch Keycloak JWKS: %s", e)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Could not fetch authentication keys",
-            )
-    return _jwks
+            ) from e
+    return _jwks_cache["value"] or {}
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """Verifies the Keycloak JWT token and returns the parsed payload (user claims)."""
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
+    """Verify the Keycloak JWT token and return the parsed payload."""
     token = credentials.credentials
     try:
         unverified_header = jwt.get_unverified_header(token)
@@ -61,8 +69,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
         if not rsa_key:
             # Force JWKS refresh
-            global _jwks
-            _jwks = None
+            _jwks_cache["value"] = None
             jwks = await get_jwks()
             for key in jwks.get("keys", []):
                 if key["kid"] == unverified_header["kid"]:
@@ -90,4 +97,4 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e

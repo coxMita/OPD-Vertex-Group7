@@ -37,7 +37,7 @@ services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
-        image: mita28/opdvertex:gateway-3.0.14
+        image: mita28/opdvertex:gateway-3.0.15
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -288,7 +288,7 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-3.0.11
+        image: mita28/opdvertex:user-service-3.0.15
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
