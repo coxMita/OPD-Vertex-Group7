@@ -445,7 +445,139 @@
     },
     "notBefore" : 0,
     "groups" : [ ]
-  } ],
+  }, 
+  {
+    "id" : "aaaaaaaa-0000-0000-0000-000000000001",
+    "username" : "a.hansen",
+    "firstName" : "Anders",
+    "lastName" : "Hansen",
+    "email" : "a.hansen@opd-vertex.dk",
+    "emailVerified" : true,
+    "createdTimestamp" : 1776424809361,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "a0000001-0000-0000-0000-000000000001",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1776424838197,
+      "secretData" : "{\"value\":\"1UwbNsLlT/cbHSuwmhqigchY3IBYUhf9TrAhXoIPuLXEIIm/TCxMX5s51y9TPVwZOPoozjTOI5/mth9hzh/iCA==\",\"salt\":\"sYYhnOMglarsrDcHi7JXyw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-opd-vertex" ],
+    "clientRoles" : {
+      "vue-app" : [ "user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "aaaaaaaa-0000-0000-0000-000000000002",
+    "username" : "m.nielsen",
+    "firstName" : "Maria",
+    "lastName" : "Nielsen",
+    "email" : "m.nielsen@opd-vertex.dk",
+    "emailVerified" : true,
+    "createdTimestamp" : 1776424809361,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "a0000002-0000-0000-0000-000000000002",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1776424838197,
+      "secretData" : "{\"value\":\"1UwbNsLlT/cbHSuwmhqigchY3IBYUhf9TrAhXoIPuLXEIIm/TCxMX5s51y9TPVwZOPoozjTOI5/mth9hzh/iCA==\",\"salt\":\"sYYhnOMglarsrDcHi7JXyw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-opd-vertex" ],
+    "clientRoles" : {
+      "vue-app" : [ "user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "aaaaaaaa-0000-0000-0000-000000000003",
+    "username" : "l.christensen",
+    "firstName" : "Lars",
+    "lastName" : "Christensen",
+    "email" : "l.christensen@opd-vertex.dk",
+    "emailVerified" : true,
+    "createdTimestamp" : 1776424809361,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "a0000003-0000-0000-0000-000000000003",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1776424838197,
+      "secretData" : "{\"value\":\"1UwbNsLlT/cbHSuwmhqigchY3IBYUhf9TrAhXoIPuLXEIIm/TCxMX5s51y9TPVwZOPoozjTOI5/mth9hzh/iCA==\",\"salt\":\"sYYhnOMglarsrDcHi7JXyw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-opd-vertex" ],
+    "clientRoles" : {
+      "vue-app" : [ "user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "aaaaaaaa-0000-0000-0000-000000000004",
+    "username" : "s.pedersen",
+    "firstName" : "Sofie",
+    "lastName" : "Pedersen",
+    "email" : "s.pedersen@opd-vertex.dk",
+    "emailVerified" : true,
+    "createdTimestamp" : 1776424809361,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "a0000004-0000-0000-0000-000000000004",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1776424838197,
+      "secretData" : "{\"value\":\"1UwbNsLlT/cbHSuwmhqigchY3IBYUhf9TrAhXoIPuLXEIIm/TCxMX5s51y9TPVwZOPoozjTOI5/mth9hzh/iCA==\",\"salt\":\"sYYhnOMglarsrDcHi7JXyw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-opd-vertex" ],
+    "clientRoles" : {
+      "vue-app" : [ "user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "aaaaaaaa-0000-0000-0000-000000000005",
+    "username" : "m.andersen",
+    "firstName" : "Mikkel",
+    "lastName" : "Andersen",
+    "email" : "m.andersen@opd-vertex.dk",
+    "emailVerified" : true,
+    "createdTimestamp" : 1776424809361,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "a0000005-0000-0000-0000-000000000005",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1776424838197,
+      "secretData" : "{\"value\":\"1UwbNsLlT/cbHSuwmhqigchY3IBYUhf9TrAhXoIPuLXEIIm/TCxMX5s51y9TPVwZOPoozjTOI5/mth9hzh/iCA==\",\"salt\":\"sYYhnOMglarsrDcHi7JXyw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-opd-vertex" ],
+    "clientRoles" : {
+      "vue-app" : [ "user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  } 
+],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
     "roles" : [ "offline_access" ]

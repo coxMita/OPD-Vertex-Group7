@@ -11,13 +11,12 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(async (config) => {
   if (keycloak && keycloak.token) {
     try {
-      // Refresh the token if it expires in the next 30 seconds
       await keycloak.updateToken(30)
-      config.headers.set('Authorization', `Bearer ${keycloak.token}`)
     } catch (error) {
-      console.error('Failed to update Keycloak token', error)
-      // Optionally handle forced logout here
-      // keycloak.login()
+      console.error('Failed to refresh Keycloak token, using existing token', error)
+    }
+    if (keycloak.token) {
+      config.headers.set('Authorization', `Bearer ${keycloak.token}`)
     }
   }
   return config

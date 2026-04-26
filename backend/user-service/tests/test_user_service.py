@@ -160,6 +160,23 @@ class TestDoctorRepository:
         result = self.repo.get_all_by_department("Psychiatry")
         assert result == []
 
+    def test_get_by_keycloak_id_found(self) -> None:
+        """Returns doctor when found by Keycloak ID."""
+        doctor = make_doctor()
+        exec_result = MagicMock()
+        exec_result.first.return_value = doctor
+        self.session.exec.return_value = exec_result
+        result = self.repo.get_by_keycloak_id(KEYCLOAK_ID)
+        assert result == doctor
+
+    def test_get_by_keycloak_id_not_found(self) -> None:
+        """Returns None when doctor Keycloak ID does not exist."""
+        exec_result = MagicMock()
+        exec_result.first.return_value = None
+        self.session.exec.return_value = exec_result
+        result = self.repo.get_by_keycloak_id(uuid4())
+        assert result is None
+
 
 # ─────────────────────────────────────────────
 # PatientRepository
@@ -270,6 +287,19 @@ class TestDoctorService:
         assert result is not None
         assert result.email == "test@opd.dk"
         assert result.keycloak_id == KEYCLOAK_ID
+
+    def test_get_doctor_by_keycloak_id_found(self) -> None:
+        """Returns DoctorDTO when doctor exists by Keycloak ID."""
+        self.repo.get_by_keycloak_id.return_value = make_doctor()
+        result = self.service.get_doctor_by_keycloak_id(KEYCLOAK_ID)
+        assert isinstance(result, DoctorDTO)
+        assert result.keycloak_id == KEYCLOAK_ID
+
+    def test_get_doctor_by_keycloak_id_not_found(self) -> None:
+        """Returns None when Keycloak ID does not match a doctor."""
+        self.repo.get_by_keycloak_id.return_value = None
+        result = self.service.get_doctor_by_keycloak_id(uuid4())
+        assert result is None
 
 
 # ─────────────────────────────────────────────
@@ -427,6 +457,26 @@ class TestDoctorRoutes:
         assert "department_name" in data
         assert "email" in data
         assert "keycloak_id" in data
+
+    def test_get_doctor_by_keycloak_id_200(self) -> None:
+        """Returns 200 with doctor data for valid Keycloak ID."""
+        self.doctor_svc.get_doctor_by_keycloak_id.return_value = make_doctor_dto()
+        resp = self.client.get(f"/api/v1/user/doctors/by-keycloak/{KEYCLOAK_ID}")
+        assert resp.status_code == HTTP_200
+        assert resp.json()["keycloak_id"] == str(KEYCLOAK_ID)
+
+    def test_get_doctor_by_keycloak_id_404(self) -> None:
+        """Returns 404 when doctor Keycloak ID is not found."""
+        self.doctor_svc.get_doctor_by_keycloak_id.return_value = None
+        resp = self.client.get(f"/api/v1/user/doctors/by-keycloak/{uuid4()}")
+        assert resp.status_code == HTTP_404
+        assert resp.json()["message"] == "Doctor not found"
+
+    def test_get_doctor_by_keycloak_id_calls_service(self) -> None:
+        """Passes Keycloak ID correctly to service."""
+        self.doctor_svc.get_doctor_by_keycloak_id.return_value = make_doctor_dto()
+        self.client.get(f"/api/v1/user/doctors/by-keycloak/{KEYCLOAK_ID}")
+        self.doctor_svc.get_doctor_by_keycloak_id.assert_called_once_with(KEYCLOAK_ID)
 
 
 # ─────────────────────────────────────────────

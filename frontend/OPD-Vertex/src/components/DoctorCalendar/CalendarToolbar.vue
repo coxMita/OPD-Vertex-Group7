@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'go-to-today'): void
   (e: 'update:currentView', view: CalendarView): void
   (e: 'toggle-edit-mode'): void
+  (e: 'logout'): void
 }>()
 </script>
 
@@ -33,6 +34,16 @@ const emit = defineEmits<{
     </div>
 
     <div class="toolbar-right">
+      <v-btn
+        variant="outlined"
+        color="default"
+        size="small"
+        prepend-icon="mdi-logout"
+        @click="emit('logout')"
+      >
+        Logout
+      </v-btn>
+
       <!-- Edit Mode toggle -->
       <v-btn
         :color="editMode ? 'warning' : 'default'"

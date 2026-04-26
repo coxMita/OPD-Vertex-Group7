@@ -108,6 +108,13 @@ export function useCalendarAppointments(doctorId: { value: string }) {
   }
 
   async function fetchAppointments(visibleDates: Date[]) {
+    if (!doctorId.value) {
+      appointments.value = []
+      error.value = null
+      loading.value = false
+      return
+    }
+
     loading.value = true
     error.value = null
     try {

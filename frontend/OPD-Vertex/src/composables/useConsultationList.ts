@@ -9,6 +9,14 @@ export function useConsultationList() {
   const selectedConsultation = ref<Consultation | null>(null)
 
   async function fetchConsultations(doctorId: string) {
+    if (!doctorId) {
+      consultations.value = []
+      selectedConsultation.value = null
+      error.value = null
+      loading.value = false
+      return
+    }
+
     loading.value = true
     error.value = null
     try {

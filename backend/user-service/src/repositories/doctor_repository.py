@@ -20,3 +20,9 @@ class DoctorRepository:
         """Retrieve all doctors in a specific department."""
         statement = select(Doctor).where(Doctor.department_name == department_name)
         return list(self._session.exec(statement).all())
+
+    def get_by_keycloak_id(self, keycloak_id: UUID) -> Doctor | None:
+        """Retrieve a doctor by their Keycloak ID."""
+        return self._session.exec(
+            select(Doctor).where(Doctor.keycloak_id == keycloak_id)
+        ).first()

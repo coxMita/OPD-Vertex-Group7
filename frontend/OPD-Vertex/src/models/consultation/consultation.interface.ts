@@ -1,4 +1,4 @@
-export type ConsultationStatus = 'ACTIVE' | 'COMPLETED'
+export type ConsultationStatus = 'active' | 'completed'
 
 export interface Consultation {
   id: string           // uuid

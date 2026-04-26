@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from main import app
 from src.config import TRANSCRIPTION_SERVICE_URL
+from src.dependencies.auth import verify_token
 
 CONSULTATION_ID = str(uuid.UUID("11111111-1111-1111-1111-111111111111"))
 
@@ -19,8 +20,10 @@ _TRANSCRIPT_RESPONSE = b'{"transcript": "Good morning doctor."}'
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
     """Fixture to initialize the FastAPI TestClient."""
+    app.dependency_overrides[verify_token] = lambda: {"sub": "test-user"}
     with TestClient(app) as client:
         yield client
+    app.dependency_overrides.pop(verify_token, None)
 
 
 def _mock_response(

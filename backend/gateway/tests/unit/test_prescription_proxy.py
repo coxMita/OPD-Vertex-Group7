@@ -9,6 +9,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from main import app
+from src.dependencies.auth import verify_token
 
 CONSULTATION_ID = str(uuid.UUID("11111111-1111-1111-1111-111111111111"))
 PRESCRIPTION_ID = str(uuid.UUID("22222222-2222-2222-2222-222222222222"))
@@ -30,8 +31,10 @@ _PRESCRIPTION_JSON = (
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
     """Fixture to initialize the FastAPI TestClient."""
+    app.dependency_overrides[verify_token] = lambda: {"sub": "test-user"}
     with TestClient(app) as client:
         yield client
+    app.dependency_overrides.pop(verify_token, None)
 
 
 def _mock_response(

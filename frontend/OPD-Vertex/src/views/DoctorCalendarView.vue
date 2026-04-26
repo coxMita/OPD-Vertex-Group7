@@ -9,7 +9,9 @@ import CalendarWeekView from '@/components/DoctorCalendar/CalendarWeekView.vue'
 import CalendarMonthView from '@/components/DoctorCalendar/CalendarMonthView.vue'
 import AppointmentDetailModal from '@/components/DoctorCalendar/AppointmentDetailModal.vue'
 import ConsultationView from '@/views/ConsultationView.vue'
+import { initKeycloak, keycloak } from '@/services/keycloak'
 import type { Appointment } from '@/models/appointment/appointment.interface'
+import { userApi } from '@/services/userApi'
 
 type DoctorSection = 'calendar' | 'consultations'
 const activeSection = ref<DoctorSection>('calendar')
@@ -18,7 +20,37 @@ const SLOT_HEIGHT_WEEK = 50
 const SLOT_HEIGHT_DAY = 56
 const SCROLL_START_HOUR = 6
 
-const doctorId = ref('00000000-0000-0000-0000-000000000001')
+const doctorId = ref('')
+
+async function loadDoctorProfile() {
+  await initKeycloak()
+
+  if (!keycloak.authenticated) {
+    await keycloak.login({
+      redirectUri: `${window.location.origin}/doctor`,
+    })
+    return
+  }
+
+  const keycloakSub = keycloak.tokenParsed?.sub
+  if (!keycloakSub) {
+    doctorId.value = ''
+    return
+  }
+
+  try {
+    const doctorResponse = await userApi.getDoctorByKeycloakId(keycloakSub)
+    doctorId.value = doctorResponse.doctor_id
+  } catch (err) {
+    console.error('Could not fetch doctor profile:', err)
+    doctorId.value = ''
+  }
+}
+
+onMounted(async () => {
+  await loadDoctorProfile()
+  scrollTo6am()
+})
 
 const {
   currentView,
@@ -69,6 +101,12 @@ function handleDrop(date: string, hour: number) {
   onDrop(date, hour, doctorId.value)
 }
 
+async function handleLogout() {
+  await keycloak.logout({
+    redirectUri: window.location.origin,
+  })
+}
+
 const dayViewRef = ref<InstanceType<typeof CalendarDayView> | null>(null)
 const weekViewRef = ref<InstanceType<typeof CalendarWeekView> | null>(null)
 
@@ -82,13 +120,14 @@ function scrollTo6am() {
   })
 }
 
-watch(visibleDates, () => fetchAppointments(visibleDates.value))
-watch(currentView, scrollTo6am)
-
-onMounted(() => {
-  fetchAppointments(visibleDates.value)
-  scrollTo6am()
+watch(visibleDates, () => {
+  if (doctorId.value) fetchAppointments(visibleDates.value)
 })
+watch(doctorId, (newDoctorId) => {
+  if (!newDoctorId) return
+  fetchAppointments(visibleDates.value)
+})
+watch(currentView, scrollTo6am)
 </script>
 
 <template>
@@ -147,6 +186,7 @@ onMounted(() => {
         @go-to-today="goToToday"
         @update:currentView="currentView = $event"
         @toggle-edit-mode="toggleEditMode"
+        @logout="handleLogout"
       />
 
       <CalendarDayView

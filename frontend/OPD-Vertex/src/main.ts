@@ -12,9 +12,6 @@ import '@mdi/font/css/materialdesignicons.css'
 import App from './App.vue'
 import router from './router'
 
-const app = createApp(App)
-app.use(createPinia())
-
 const vuetify = createVuetify({
   components,
   directives,
@@ -34,11 +31,18 @@ const vuetify = createVuetify({
   },
 })
 
-app.use(vuetify)
-app.use(router)
+async function bootstrap() {
+  try {
+    await initKeycloak()
+  } catch (error) {
+    console.error('Failed to initialize Keycloak', error)
+  }
 
-initKeycloak().catch((error) => {
-  console.error('Failed to initialize Keycloak', error)
-})
+  const app = createApp(App)
+  app.use(createPinia())
+  app.use(vuetify)
+  app.use(router)
+  app.mount('#app')
+}
 
-app.mount('#app')
+bootstrap()

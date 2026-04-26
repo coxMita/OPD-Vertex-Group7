@@ -12,7 +12,10 @@ let initPromise: Promise<void> | null = null
 
 export const initKeycloak = () => {
   if (initPromise) return initPromise
-  initPromise = keycloak.init({ checkLoginIframe: false }).then(() => {
+  initPromise = keycloak.init({
+    onLoad: 'check-sso',
+    checkLoginIframe: false,
+  }).then(() => {
     keycloakReady = true
   })
   return initPromise

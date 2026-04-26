@@ -25,11 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(appointment_router, dependencies=[Depends(verify_token)])
+# Public routes
+app.include_router(user_router)
+app.include_router(appointment_router)
+
+# Protected routes (require authentication)
 app.include_router(consultation_router, dependencies=[Depends(verify_token)])
 app.include_router(prescription_router, dependencies=[Depends(verify_token)])
 app.include_router(transcription_router, dependencies=[Depends(verify_token)])
-app.include_router(user_router, dependencies=[Depends(verify_token)])
 
 
 @app.get("/")

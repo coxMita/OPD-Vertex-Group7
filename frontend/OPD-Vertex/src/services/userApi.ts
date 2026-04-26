@@ -75,4 +75,10 @@ export const userApi = {
       .get<PatientResponse>(`/api/v1/user/patients/${patientId}`)
       .then((res) => res.data)
   },
+
+  getDoctorByKeycloakId(keycloakId: string): Promise<DoctorResponse> {
+    return apiClient
+      .get<DoctorResponse>(`/api/v1/user/doctors/by-keycloak/${keycloakId}`)
+      .then((res) => res.data)
+  },
 }
