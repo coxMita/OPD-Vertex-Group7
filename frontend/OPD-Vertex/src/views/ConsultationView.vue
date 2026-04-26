@@ -120,14 +120,15 @@ function calculateAge(dateOfBirth: string): number {
 
 // ── Consultation / prescription state ──────────────────────────
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
-const currentRxText = ref('')
-const prescriptionKey = ref(0)
-// The consultation ID to pass to PrescriptionCard for polling
 const activePrescriptionConsultationId = ref<string | null>(null)
-const SUGGESTIVE_DELAY_SECONDS = 4
-const { suggestionLoading, suggestionFailed, suggestionText, showPrescription } = useSuggestiveMode(
+const {
+  prescriptionLoading,
+  prescriptionFailed,
+  prescriptionText,
+  prescriptionReady,
+  suggestionTexts,
+} = useSuggestiveMode(
   activePrescriptionConsultationId,
-  { delayMs: SUGGESTIVE_DELAY_SECONDS * 1000 },
 )
 
 watch(() => props.doctorId, async (doctorId) => {
@@ -137,7 +138,6 @@ watch(() => props.doctorId, async (doctorId) => {
     patientError.value = null
     selectedConsultation.value = null
     consultationStatus.value = 'waiting'
-    currentRxText.value = ''
     activePrescriptionConsultationId.value = null
     return
   }
@@ -152,16 +152,12 @@ watch(selectedConsultation, (consultation) => {
   currentPatient.value = null
   patientError.value = null
   consultationStatus.value = 'waiting'
-  currentRxText.value = ''
   activePrescriptionConsultationId.value = null
 })
 
 async function onSelect(consultation: ConsultationSidebarItem) {
   selectConsultation(consultation)
   consultationStatus.value = consultation.status === 'active' ? 'active' : 'done'
-  currentRxText.value = ''
-  prescriptionKey.value++
-  // Set the consultationId — PrescriptionCard will start polling automatically
   activePrescriptionConsultationId.value = consultation.id
 
   await fetchPatientForConsultation(consultation)
@@ -173,11 +169,11 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
 }
 
 function onTranscriptReady(_text: string) {
-  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
+  // Transcript sent to backend — consultation polling state updates automatically
 }
 
 function onUploadTranscript(_text: string) {
-  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
+  // Transcript sent to backend — consultation polling state updates automatically
 }
 
 function onApproved(_text: string) {
@@ -297,23 +293,21 @@ async function handleLogout() {
             @transcript-ready="onUploadTranscript"
           />
 
-          <SuggestiveModeCard
-            v-if="activePrescriptionConsultationId && (!showPrescription || suggestionLoading || !!suggestionText || suggestionFailed)"
-            :loading="suggestionLoading"
-            :suggestion="suggestionText"
-            :failed="suggestionFailed"
-            :delay-seconds="SUGGESTIVE_DELAY_SECONDS"
-          />
-
-          <!-- PrescriptionCard receives consultationId and polls automatically -->
           <PrescriptionCard
-            v-if="showPrescription"
-            :key="prescriptionKey"
-            :initial-text="currentRxText"
+            v-if="activePrescriptionConsultationId"
+            :key="`prescription-${selectedConsultation?.id}`"
+            :text="prescriptionText"
+            :loading="prescriptionLoading"
+            :failed="prescriptionFailed"
             :patient-name="currentPatient?.name ?? ''"
             :patient-email="currentPatient?.email ?? ''"
-            :consultation-id="activePrescriptionConsultationId"
             @approved="onApproved"
+          />
+
+          <SuggestiveModeCard
+            v-if="activePrescriptionConsultationId && prescriptionReady"
+            :suggestions="suggestionTexts"
+            :failed="prescriptionFailed"
           />
 
         </div>

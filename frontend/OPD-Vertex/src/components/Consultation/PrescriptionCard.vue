@@ -1,126 +1,29 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
-import { pollPrescription, type PrescriptionData } from '@/services/prescriptionApi'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
-  initialText: string
+  text: string
+  loading: boolean
+  failed?: boolean
   patientName: string
   patientEmail: string
-  consultationId?: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'approved', text: string): void
 }>()
 
-// ── State ──────────────────────────────────────────────────────────────────
 const rxText = ref('')
 const approved = ref(false)
-const polling = ref(false)
-const pollingFailed = ref(false)
-const prescriptionData = ref<PrescriptionData | null>(null)
-
-let stopPolling = false
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function buildRxText(data: PrescriptionData): string {
-  const rx = data.prescription_json as Record<string, string | null>
-  const summary = data.summary_json?.summary ?? ''
-
-  const lines: string[] = []
-
-  if (summary) {
-    lines.push('CLINICAL SUMMARY:')
-    lines.push(summary)
-    lines.push('')
-  }
-
-  lines.push('PRESCRIPTION:')
-
-  if (rx.medication_name) {
-    lines.push(`Medication : ${rx.medication_name}`)
-  }
-  if (rx.dosage) {
-    lines.push(`Dosage     : ${rx.dosage}`)
-  }
-  if (rx.frequency) {
-    lines.push(`Frequency  : ${rx.frequency}`)
-  }
-  if (rx.duration) {
-    lines.push(`Duration   : ${rx.duration}`)
-  }
-  if (rx.notes) {
-    lines.push('')
-    lines.push(`Notes      : ${rx.notes}`)
-  }
-
-  return lines.join('\n')
-}
-
-// ── Polling trigger ────────────────────────────────────────────────────────
-async function startPolling(consultationId: string) {
-  polling.value = true
-  pollingFailed.value = false
-  stopPolling = false
-
-  try {
-    // Small initial delay — give RabbitMQ + AI pipeline time to save
-    await new Promise((r) => setTimeout(r, 3000))
-
-    if (stopPolling) return
-
-    const data = await pollPrescription(consultationId, {
-      intervalMs: 5000,
-      maxAttempts: 120,
-    })
-
-    if (stopPolling) return
-
-    if (data) {
-      prescriptionData.value = data
-      rxText.value = buildRxText(data)
-      approved.value = false
-    } else {
-      pollingFailed.value = true
-    }
-  } catch {
-    if (!stopPolling) pollingFailed.value = true
-  } finally {
-    if (!stopPolling) polling.value = false
-  }
-}
-
-// Watch consultationId — start polling whenever a new consultation is selected
 watch(
-  () => props.consultationId,
-  (newId) => {
-    stopPolling = true // cancel any in-flight poll
-    prescriptionData.value = null
-    approved.value = false
-    pollingFailed.value = false
-
-    if (newId) {
-      startPolling(newId)
-    } else {
-      polling.value = false
+  () => props.text,
+  (newText) => {
+    if (!approved.value) {
+      rxText.value = newText
     }
   },
   { immediate: true },
 )
-
-// initialText is intentionally ignored — prescription content comes only from DB polling
-
-onUnmounted(() => {
-  stopPolling = true
-})
-
-// ── Actions ────────────────────────────────────────────────────────────────
-function regenerate() {
-  if (prescriptionData.value) {
-    rxText.value = buildRxText(prescriptionData.value)
-    approved.value = false
-  }
-}
 
 function approve() {
   approved.value = true
@@ -151,30 +54,16 @@ function clearText() {
     <div class="pa-5">
       <p class="helper-text mb-3">Review and edit the AI-generated prescription before approving.</p>
 
-      <!-- Polling indicator -->
-      <v-expand-transition>
-        <div v-if="polling" class="mb-4">
-          <div class="d-flex align-center ga-3 mb-2">
-            <v-progress-circular indeterminate color="deep-purple" size="18" width="2" />
-            <span class="polling-text">Waiting for AI to process consultation recording…</span>
-          </div>
-          <v-progress-linear indeterminate color="deep-purple" rounded height="3" />
-        </div>
-      </v-expand-transition>
-
-      <!-- Polling failed -->
-      <v-expand-transition>
-        <v-alert
-          v-if="pollingFailed"
-          type="warning"
-          variant="tonal"
-          density="compact"
-          rounded="lg"
-          class="mb-3"
-        >
-          AI prescription not received yet. You can edit the field manually.
-        </v-alert>
-      </v-expand-transition>
+      <v-alert
+        v-if="props.failed"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        rounded="lg"
+        class="mb-3"
+      >
+        AI prescription not received yet. You can edit the field manually.
+      </v-alert>
 
       <v-textarea
         v-model="rxText"
@@ -184,51 +73,39 @@ function clearText() {
         auto-grow
         hide-details
         class="rx-textarea mb-4"
-        :readonly="approved || polling"
+        :readonly="approved || props.loading"
         :placeholder="
-          polling
-            ? 'Waiting for AI Service to process the consultation recording…'
-            : 'Prescription will be generated automatically once the consultation recording is processed by the AI Service (Llama 3).'
+          props.loading
+            ? 'Waiting for AI service answer...'
+            : 'Prescription will be generated automatically once the consultation recording is processed by the AI service.'
         "
       />
 
-      <v-expand-transition>
-        <v-alert
-          v-if="approved"
-          type="success"
-          variant="tonal"
-          rounded="lg"
-          density="compact"
-          class="mb-4"
-        >
-          Prescription approved and dispatched to <strong>{{ patientEmail }}</strong>.
-        </v-alert>
-      </v-expand-transition>
+      <v-alert
+        v-if="approved"
+        type="success"
+        variant="tonal"
+        rounded="lg"
+        density="compact"
+        class="mb-4"
+      >
+        Prescription approved and dispatched to <strong>{{ patientEmail }}</strong>.
+      </v-alert>
 
       <div class="d-flex justify-end ga-2">
         <v-btn
           variant="tonal"
           color="default"
           size="small"
-          :disabled="approved || polling"
+          :disabled="approved || props.loading"
           @click="clearText"
         >
           Clear
         </v-btn>
         <v-btn
-          variant="tonal"
-          color="deep-purple"
-          size="small"
-          :disabled="approved || polling"
-          @click="regenerate"
-        >
-          <v-icon start size="14">mdi-creation</v-icon>
-          Regenerate with AI
-        </v-btn>
-        <v-btn
           color="teal"
           size="small"
-          :disabled="!rxText || approved || polling"
+          :disabled="!rxText || approved || props.loading"
           @click="approve"
         >
           <v-icon start size="14">mdi-check</v-icon>
@@ -252,10 +129,6 @@ function clearText() {
 .helper-text {
   font-size: 0.78rem;
   opacity: 0.55;
-}
-.polling-text {
-  font-size: 0.78rem;
-  opacity: 0.65;
 }
 .rx-textarea :deep(textarea) {
   font-family: 'DM Mono', 'Fira Code', monospace !important;

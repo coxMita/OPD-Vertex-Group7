@@ -1,9 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
-  loading: boolean
-  suggestion: string | null
+  suggestions: string[]
   failed?: boolean
-  delaySeconds: number
 }>()
 </script>
 
@@ -14,29 +12,25 @@ const props = defineProps<{
         <v-icon size="14" color="warning" class="mr-1">mdi-alert-circle-outline</v-icon>
         SUGGESTIVE MODE
       </div>
-      <v-chip color="warning" size="x-small" variant="tonal" class="font-weight-bold">
-        Symptom Guard
-      </v-chip>
     </div>
 
     <v-divider />
 
     <div class="pa-5">
-      <div v-if="props.loading" class="d-flex align-center ga-3">
-        <v-progress-circular indeterminate color="warning" size="18" width="2" />
-        <span class="status-text">Checking if patient symptoms were left unaddressed…</span>
-      </div>
-
       <v-alert
-        v-else-if="props.suggestion"
+        v-if="props.suggestions.length"
         type="warning"
         variant="tonal"
         rounded="lg"
         density="compact"
       >
-        <strong>Clinical Alert:</strong> {{ props.suggestion }}
-        <div class="status-text mt-1">
-          Prescription box will appear in about {{ props.delaySeconds }}s.
+        <strong>Clinical Alerts:</strong>
+        <div
+          v-for="(suggestion, index) in props.suggestions"
+          :key="`${index}-${suggestion}`"
+          class="status-text mt-1"
+        >
+          {{ index + 1 }}. {{ suggestion }}
         </div>
       </v-alert>
 
@@ -47,7 +41,7 @@ const props = defineProps<{
         rounded="lg"
         density="compact"
       >
-        Suggestive mode is unavailable right now. Loading prescription directly.
+        Suggestive mode is unavailable right now.
       </v-alert>
 
       <v-alert
@@ -57,7 +51,7 @@ const props = defineProps<{
         rounded="lg"
         density="compact"
       >
-        No clinical alerts detected. Loading prescription box…
+        No suggestions were generated for this consultation.
       </v-alert>
     </div>
   </v-card>

@@ -215,15 +215,6 @@ function formatSize(bytes: number) {
               <v-icon size="14" color="success" class="mr-1">mdi-check-circle</v-icon>
               Transcription Result
             </span>
-            <div class="d-flex ga-2">
-              <v-chip color="teal" size="x-small" variant="tonal">
-                <v-icon start size="12">mdi-rabbit</v-icon>
-                Event published to RabbitMQ
-              </v-chip>
-              <v-btn size="x-small" variant="tonal" color="success" @click="$emit('transcriptReady', result)">
-                Use in Prescription
-              </v-btn>
-            </div>
           </div>
           <div class="result-box">
             <p class="result-text">{{ result }}</p>

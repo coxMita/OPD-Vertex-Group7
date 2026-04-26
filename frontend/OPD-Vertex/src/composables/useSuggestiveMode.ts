@@ -2,57 +2,84 @@ import { onUnmounted, ref, type Ref, watch } from 'vue'
 import { pollPrescription, type PrescriptionData } from '@/services/prescriptionApi'
 
 type UseSuggestiveModeOptions = {
-  delayMs?: number
   intervalMs?: number
   maxAttempts?: number
 }
 
-function extractClinicalAlert(data: PrescriptionData): string | null {
-  const topLevelSingle = typeof data.clinical_alert === 'string' ? data.clinical_alert : ''
-  if (topLevelSingle.trim()) return topLevelSingle.trim()
+function extractClinicalAlerts(data: PrescriptionData): string[] {
+  const alerts: string[] = []
 
-  const topLevelList = Array.isArray(data.clinical_alerts)
-    ? data.clinical_alerts.find((item) => typeof item === 'string' && item.trim())
-    : null
-  if (topLevelList) return topLevelList.trim()
+  const topLevelSingle = typeof data.clinical_alert === 'string' ? data.clinical_alert : ''
+  if (topLevelSingle.trim()) alerts.push(topLevelSingle.trim())
+
+  if (Array.isArray(data.clinical_alerts)) {
+    data.clinical_alerts.forEach((item) => {
+      if (typeof item === 'string' && item.trim()) alerts.push(item.trim())
+    })
+  }
 
   const rx = data.prescription_json as Record<string, unknown>
 
   const nestedSingle = typeof rx.clinical_alert === 'string' ? rx.clinical_alert : ''
-  if (nestedSingle.trim()) return nestedSingle.trim()
+  if (nestedSingle.trim()) alerts.push(nestedSingle.trim())
 
   if (Array.isArray(rx.clinical_alerts)) {
-    const nestedListItem = rx.clinical_alerts.find(
-      (item) => typeof item === 'string' && item.trim(),
-    ) as string | undefined
-    if (nestedListItem) return nestedListItem.trim()
+    rx.clinical_alerts.forEach((item) => {
+      if (typeof item === 'string' && item.trim()) alerts.push(item.trim())
+    })
   }
 
-  return null
+  return [...new Set(alerts)]
+}
+
+function buildPrescriptionText(data: PrescriptionData): string {
+  const rx = data.prescription_json as Record<string, string | null>
+  const summary = data.summary_json?.summary ?? ''
+
+  const lines: string[] = []
+
+  if (summary) {
+    lines.push('CLINICAL SUMMARY:')
+    lines.push(summary)
+    lines.push('')
+  }
+
+  lines.push('PRESCRIPTION:')
+
+  if (rx.medication_name) {
+    lines.push(`Medication : ${rx.medication_name}`)
+  }
+  if (rx.dosage) {
+    lines.push(`Dosage     : ${rx.dosage}`)
+  }
+  if (rx.frequency) {
+    lines.push(`Frequency  : ${rx.frequency}`)
+  }
+  if (rx.duration) {
+    lines.push(`Duration   : ${rx.duration}`)
+  }
+  if (rx.notes) {
+    lines.push('')
+    lines.push(`Notes      : ${rx.notes}`)
+  }
+
+  return lines.join('\n')
 }
 
 export function useSuggestiveMode(
   consultationId: Ref<string | null>,
   options: UseSuggestiveModeOptions = {},
 ) {
-  const delayMs = options.delayMs ?? 4000
   const intervalMs = options.intervalMs ?? 5000
   const maxAttempts = options.maxAttempts ?? 120
 
-  const suggestionLoading = ref(false)
-  const suggestionFailed = ref(false)
-  const suggestionText = ref<string | null>(null)
-  const showPrescription = ref(false)
+  const prescriptionLoading = ref(false)
+  const prescriptionFailed = ref(false)
+  const prescriptionText = ref('')
+  const prescriptionReady = ref(false)
+  const suggestionTexts = ref<string[]>([])
 
   let runToken = 0
-  let revealTimer: ReturnType<typeof setTimeout> | null = null
-
-  function clearRevealTimer() {
-    if (revealTimer) {
-      clearTimeout(revealTimer)
-      revealTimer = null
-    }
-  }
 
   watch(
     consultationId,
@@ -60,15 +87,15 @@ export function useSuggestiveMode(
       runToken += 1
       const localToken = runToken
 
-      clearRevealTimer()
-      suggestionLoading.value = false
-      suggestionFailed.value = false
-      suggestionText.value = null
-      showPrescription.value = false
+      prescriptionLoading.value = false
+      prescriptionFailed.value = false
+      prescriptionText.value = ''
+      prescriptionReady.value = false
+      suggestionTexts.value = []
 
       if (!newId) return
 
-      suggestionLoading.value = true
+      prescriptionLoading.value = true
 
       try {
         const data = await pollPrescription(newId, {
@@ -79,24 +106,21 @@ export function useSuggestiveMode(
         if (localToken !== runToken) return
 
         if (!data) {
-          suggestionFailed.value = true
-          showPrescription.value = true
+          prescriptionFailed.value = true
+          prescriptionReady.value = true
           return
         }
 
-        suggestionText.value = extractClinicalAlert(data)
-
-        revealTimer = setTimeout(() => {
-          if (localToken !== runToken) return
-          showPrescription.value = true
-        }, delayMs)
+        prescriptionText.value = buildPrescriptionText(data)
+        suggestionTexts.value = extractClinicalAlerts(data)
+        prescriptionReady.value = true
       } catch {
         if (localToken !== runToken) return
-        suggestionFailed.value = true
-        showPrescription.value = true
+        prescriptionFailed.value = true
+        prescriptionReady.value = true
       } finally {
         if (localToken === runToken) {
-          suggestionLoading.value = false
+          prescriptionLoading.value = false
         }
       }
     },
@@ -105,13 +129,13 @@ export function useSuggestiveMode(
 
   onUnmounted(() => {
     runToken += 1
-    clearRevealTimer()
   })
 
   return {
-    suggestionLoading,
-    suggestionFailed,
-    suggestionText,
-    showPrescription,
+    prescriptionLoading,
+    prescriptionFailed,
+    prescriptionText,
+    prescriptionReady,
+    suggestionTexts,
   }
 }

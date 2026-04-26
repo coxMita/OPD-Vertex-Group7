@@ -105,7 +105,7 @@ services:
 
     # ── AI Service ────────────────────────────────────────────────────────────
     ai-service:
-        image: mita28/opdvertex:ai-service-3.2.0
+        image: mita28/opdvertex:ai-service-4.0.0
         build: backend/ai-service/.
         container_name: ai-service
         restart: unless-stopped
