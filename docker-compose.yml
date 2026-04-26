@@ -37,7 +37,7 @@ services:
 
     # ── Gateway ───────────────────────────────────────────────────────────────
     gateway:
-        image: mita28/opdvertex:gateway-3.0.15
+        image: mita28/opdvertex:gateway-3.0.18
         build: backend/gateway/.
         container_name: gateway
         restart: unless-stopped
@@ -47,6 +47,7 @@ services:
             - frontend
             - internal-api
         environment:
+            AI_SERVICE_URL: http://ai-service:8000
             KEYCLOAK_REALM: opd-vertex
             KEYCLOAK_EXTERNAL_URL: http://localhost:8089
             KEYCLOAK_INTERNAL_URL: http://keycloak:8080

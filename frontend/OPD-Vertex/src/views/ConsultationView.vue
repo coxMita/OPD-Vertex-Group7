@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConsultationList } from '@/composables/useConsultationList'
 import { appointmentApi } from '@/services/appointmentApi'
+import { processTranscriptWithAi } from '@/services/aiApi'
 import { keycloak } from '@/services/keycloak'
 import { userApi } from '@/services/userApi'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
@@ -121,6 +122,10 @@ function calculateAge(dateOfBirth: string): number {
 // ── Consultation / prescription state ──────────────────────────
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
 const activePrescriptionConsultationId = ref<string | null>(null)
+const liveSuggestionTexts = ref<string[]>([])
+const liveSuggestionFailed = ref(false)
+let suggestionRunToken = 0
+
 const {
   prescriptionLoading,
   prescriptionFailed,
@@ -139,6 +144,9 @@ watch(() => props.doctorId, async (doctorId) => {
     selectedConsultation.value = null
     consultationStatus.value = 'waiting'
     activePrescriptionConsultationId.value = null
+    liveSuggestionTexts.value = []
+    liveSuggestionFailed.value = false
+    suggestionRunToken += 1
     return
   }
 
@@ -153,12 +161,18 @@ watch(selectedConsultation, (consultation) => {
   patientError.value = null
   consultationStatus.value = 'waiting'
   activePrescriptionConsultationId.value = null
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+  suggestionRunToken += 1
 })
 
 async function onSelect(consultation: ConsultationSidebarItem) {
   selectConsultation(consultation)
   consultationStatus.value = consultation.status === 'active' ? 'active' : 'done'
   activePrescriptionConsultationId.value = consultation.id
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+  suggestionRunToken += 1
 
   await fetchPatientForConsultation(consultation)
 }
@@ -168,12 +182,32 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
   else if (status === 'done') consultationStatus.value = 'done'
 }
 
-function onTranscriptReady(_text: string) {
-  // Transcript sent to backend — consultation polling state updates automatically
+async function updateLiveSuggestions(transcript: string) {
+  const consultationId = activePrescriptionConsultationId.value
+  if (!consultationId || !transcript.trim()) return
+
+  suggestionRunToken += 1
+  const localToken = suggestionRunToken
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+
+  try {
+    const response = await processTranscriptWithAi(transcript)
+    if (localToken !== suggestionRunToken) return
+    liveSuggestionTexts.value = response.clinical_alerts ?? []
+  } catch (err) {
+    if (localToken !== suggestionRunToken) return
+    liveSuggestionFailed.value = true
+    console.error('Failed to fetch live AI suggestions:', err)
+  }
 }
 
-function onUploadTranscript(_text: string) {
-  // Transcript sent to backend — consultation polling state updates automatically
+function onTranscriptReady(text: string) {
+  void updateLiveSuggestions(text)
+}
+
+function onUploadTranscript(text: string) {
+  void updateLiveSuggestions(text)
 }
 
 function onApproved(_text: string) {
@@ -185,6 +219,14 @@ async function handleLogout() {
     redirectUri: window.location.origin,
   })
 }
+
+const displayedSuggestions = computed(() =>
+  liveSuggestionTexts.value.length ? liveSuggestionTexts.value : suggestionTexts.value,
+)
+
+const displayedSuggestionFailed = computed(
+  () => liveSuggestionFailed.value || prescriptionFailed.value,
+)
 </script>
 
 <template>
@@ -306,8 +348,8 @@ async function handleLogout() {
 
           <SuggestiveModeCard
             v-if="activePrescriptionConsultationId && prescriptionReady"
-            :suggestions="suggestionTexts"
-            :failed="prescriptionFailed"
+            :suggestions="displayedSuggestions"
+            :failed="displayedSuggestionFailed"
           />
 
         </div>
