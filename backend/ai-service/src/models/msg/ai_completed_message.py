@@ -15,7 +15,6 @@ class AICompletedMessage(AbstractMessage):
         prescription: Extracted prescription data as a JSON-serialisable dict.
         processed_at: UTC timestamp of when AI processing completed.
         consultation_id: ID of the consultation this result belongs to.
-        clinical_alerts: list[str] = []
 
     """
 
@@ -24,7 +23,6 @@ class AICompletedMessage(AbstractMessage):
     prescription: dict[str, object]
     processed_at: datetime = None  # type: ignore[assignment]
     consultation_id: uuid.UUID
-    clinical_alerts: list[str] = []
 
     def model_post_init(self, __context: object) -> None:
         """Set processed_at to current UTC time if not provided."""
