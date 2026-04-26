@@ -23,11 +23,11 @@ EXPECTED_JWKS_FETCHES = 2
 @pytest.fixture(autouse=True)
 def reset_auth_cache() -> Generator[None, None, None]:
     """Reset cached auth state between tests."""
-    auth._jwks = None
-    auth._keycloak_certs_url = None
+    auth._jwks_cache["value"] = None
+    auth._keycloak_certs_url_cache["value"] = None
     yield
-    auth._jwks = None
-    auth._keycloak_certs_url = None
+    auth._jwks_cache["value"] = None
+    auth._keycloak_certs_url_cache["value"] = None
 
 
 def test_get_certs_url_uses_environment_and_caches(
