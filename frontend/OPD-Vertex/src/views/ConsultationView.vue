@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConsultationList } from '@/composables/useConsultationList'
 import { appointmentApi } from '@/services/appointmentApi'
+import { keycloak } from '@/services/keycloak'
 import { userApi } from '@/services/userApi'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
 import type { ConsultationSidebarItem } from '@/components/Consultation/AppointmentSidebar.vue'
@@ -74,7 +75,7 @@ async function fetchPatientForConsultation(consultation: Consultation) {
       name: `${patient.first_name} ${capitalize(patient.last_name)}`,
       time: appointment.assigned_time?.slice(0, 5) ?? '—',
       department: '—',
-      status: consultation.status === 'ACTIVE' ? 'active' : 'done',
+      status: consultation.status === 'active' ? 'active' : 'done',
       tag: 'new',
       phone: String(patient.phone_number ?? '—'),
       email: patient.email,
@@ -122,14 +123,35 @@ const prescriptionKey = ref(0)
 // The consultation ID to pass to PrescriptionCard for polling
 const activePrescriptionConsultationId = ref<string | null>(null)
 
-onMounted(async () => {
-  await fetchConsultations(props.doctorId)
+watch(() => props.doctorId, async (doctorId) => {
+  if (!doctorId) {
+    sidebarItems.value = []
+    currentPatient.value = null
+    patientError.value = null
+    selectedConsultation.value = null
+    consultationStatus.value = 'waiting'
+    currentRxText.value = ''
+    activePrescriptionConsultationId.value = null
+    return
+  }
+
+  await fetchConsultations(doctorId)
   await enrichConsultationsForSidebar(consultations.value)
+}, { immediate: true })
+
+watch(selectedConsultation, (consultation) => {
+  if (consultation) return
+
+  currentPatient.value = null
+  patientError.value = null
+  consultationStatus.value = 'waiting'
+  currentRxText.value = ''
+  activePrescriptionConsultationId.value = null
 })
 
 async function onSelect(consultation: ConsultationSidebarItem) {
   selectConsultation(consultation)
-  consultationStatus.value = consultation.status === 'ACTIVE' ? 'active' : 'done'
+  consultationStatus.value = consultation.status === 'active' ? 'active' : 'done'
   currentRxText.value = ''
   prescriptionKey.value++
   // Set the consultationId — PrescriptionCard will start polling automatically
@@ -153,6 +175,12 @@ function onUploadTranscript(_text: string) {
 
 function onApproved(_text: string) {
   consultationStatus.value = 'done'
+}
+
+async function handleLogout() {
+  await keycloak.logout({
+    redirectUri: window.location.origin,
+  })
 }
 </script>
 
@@ -182,6 +210,14 @@ function onApproved(_text: string) {
           <v-icon start size="12">mdi-stethoscope</v-icon>
           Dr. Hansen
         </v-chip>
+        <v-btn
+          variant="outlined"
+          size="small"
+          prepend-icon="mdi-logout"
+          @click="handleLogout"
+        >
+          Logout
+        </v-btn>
       </div>
 
       <v-divider />

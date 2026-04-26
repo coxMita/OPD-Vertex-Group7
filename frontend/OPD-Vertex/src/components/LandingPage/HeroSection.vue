@@ -2,6 +2,7 @@
 import { useTheme } from 'vuetify'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { keycloak, initKeycloak } from '@/services/keycloak'
 
 const router = useRouter()
 
@@ -9,6 +10,20 @@ const theme = useTheme()
 const cardColor = computed(() =>
   theme.current.value.dark ? '#121212' : '#fefdf5'
 )
+
+const handleDoctorLogin = async () => {
+  // Ensure Keycloak is initialized
+  await initKeycloak()
+
+  if (keycloak.authenticated) {
+    router.push('/doctor')
+  } else {
+    // Explicitly redirect to doctor dashboard after login
+    keycloak.login({
+      redirectUri: window.location.origin + '/doctor'
+    })
+  }
+}
 </script>
 
 <template>
@@ -36,7 +51,7 @@ const cardColor = computed(() =>
               <v-icon start>mdi-account</v-icon>
               I'm a Patient
             </v-btn>
-            <v-btn size="large" rounded variant="outlined" @click="router.push('/doctor')">
+            <v-btn size="large" rounded variant="outlined" @click="handleDoctorLogin">
               <v-icon start>mdi-stethoscope</v-icon>
               I'm a Doctor
             </v-btn>

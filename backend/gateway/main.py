@@ -3,9 +3,10 @@
 import src.logger_config  # noqa: F401, I001
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.dependencies.auth import verify_token
 from src.routers.appointment_proxy import router as appointment_router
 from src.routers.consultation_proxy import router as consultation_router
 from src.routers.prescription_proxy import router as prescription_router
@@ -24,11 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(appointment_router)
-app.include_router(consultation_router)
-app.include_router(prescription_router)
-app.include_router(transcription_router)
+# Public routes
 app.include_router(user_router)
+app.include_router(appointment_router)
+
+# Protected routes (require authentication)
+app.include_router(consultation_router, dependencies=[Depends(verify_token)])
+app.include_router(prescription_router, dependencies=[Depends(verify_token)])
+app.include_router(transcription_router, dependencies=[Depends(verify_token)])
 
 
 @app.get("/")

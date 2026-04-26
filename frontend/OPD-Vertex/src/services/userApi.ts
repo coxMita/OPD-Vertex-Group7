@@ -1,10 +1,4 @@
-import axios from 'axios'
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10_000,
-})
+import apiClient from './apiClient'
 
 export interface DoctorResponse {
   doctor_id: string
@@ -79,6 +73,12 @@ export const userApi = {
   getPatient(patientId: string): Promise<PatientResponse> {
     return apiClient
       .get<PatientResponse>(`/api/v1/user/patients/${patientId}`)
+      .then((res) => res.data)
+  },
+
+  getDoctorByKeycloakId(keycloakId: string): Promise<DoctorResponse> {
+    return apiClient
+      .get<DoctorResponse>(`/api/v1/user/doctors/by-keycloak/${keycloakId}`)
       .then((res) => res.data)
   },
 }

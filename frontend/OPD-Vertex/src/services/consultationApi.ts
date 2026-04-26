@@ -1,11 +1,5 @@
-import axios from 'axios'
+import apiClient from './apiClient'
 import type { Consultation } from '@/models/consultation/consultation.interface'
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10_000,
-})
 
 export const consultationApi = {
   /**
