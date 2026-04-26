@@ -7,6 +7,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.dependencies.auth import verify_token
+from src.routers.ai_proxy import router as ai_router
 from src.routers.appointment_proxy import router as appointment_router
 from src.routers.consultation_proxy import router as consultation_router
 from src.routers.prescription_proxy import router as prescription_router
@@ -30,6 +31,7 @@ app.include_router(user_router)
 app.include_router(appointment_router)
 
 # Protected routes (require authentication)
+app.include_router(ai_router, dependencies=[Depends(verify_token)])
 app.include_router(consultation_router, dependencies=[Depends(verify_token)])
 app.include_router(prescription_router, dependencies=[Depends(verify_token)])
 app.include_router(transcription_router, dependencies=[Depends(verify_token)])

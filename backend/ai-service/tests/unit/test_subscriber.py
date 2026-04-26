@@ -155,7 +155,7 @@ class TestOnTranscriptMessageHappyPath:
 
     @pytest.mark.asyncio
     async def test_published_message_contains_correct_fields(self) -> None:
-        """Published AICompletedMessage should carry summary, prescription, alerts."""
+        """Published AICompletedMessage should carry summary and prescription."""
         body = _make_body()
         mock_mgr = _mock_messaging_manager()
 
@@ -171,31 +171,8 @@ class TestOnTranscriptMessageHappyPath:
         published_msg = mock_mgr.get_pubsub.return_value.publish.call_args.args[0]
         assert published_msg.summary == _AI_RESULT["summary"]
         assert published_msg.prescription == _AI_RESULT["prescription"]
-        assert published_msg.clinical_alerts == _AI_RESULT["clinical_alerts"]
         assert published_msg.filename == _VALID_FILENAME
         assert published_msg.consultation_id == uuid.UUID(_VALID_CONSULTATION_ID)
-
-    @pytest.mark.asyncio
-    async def test_published_message_clinical_alerts_defaults_to_empty(self) -> None:
-        """Should default clinical_alerts to [] when not present in result."""
-        body = _make_body()
-        mock_mgr = _mock_messaging_manager()
-        result_without_alerts = {
-            "summary": "Summary.",
-            "prescription": {"medication_name": "Aspirin"},
-        }
-
-        with (
-            patch(
-                "src.messaging.subscriber.process_transcript",
-                new=AsyncMock(return_value=result_without_alerts),
-            ),
-            patch("src.messaging.subscriber.messaging_manager", mock_mgr),
-        ):
-            await on_transcript_message(body)
-
-        published_msg = mock_mgr.get_pubsub.return_value.publish.call_args.args[0]
-        assert published_msg.clinical_alerts == []
 
     @pytest.mark.asyncio
     async def test_handles_publish_failure_gracefully(self) -> None:

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConsultationList } from '@/composables/useConsultationList'
 import { appointmentApi } from '@/services/appointmentApi'
+import { processTranscriptWithAi } from '@/services/aiApi'
 import { keycloak } from '@/services/keycloak'
 import { userApi } from '@/services/userApi'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
@@ -11,6 +12,8 @@ import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
 import RecordingCard from '@/components/Consultation/RecordingCard.vue'
 import TranscriptionUploadCard from '@/components/Consultation/TranscriptionUploadCard.vue'
 import PrescriptionCard from '@/components/Consultation/PrescriptionCard.vue'
+import SuggestiveModeCard from '@/components/Consultation/SuggestiveModeCard.vue'
+import { useSuggestiveMode } from '@/composables/useSuggestiveMode'
 import type { Consultation } from '@/models/consultation/consultation.interface'
 import type { ConsultationPatient } from '@/composables/useConsultationData'
 
@@ -118,10 +121,20 @@ function calculateAge(dateOfBirth: string): number {
 
 // ── Consultation / prescription state ──────────────────────────
 const consultationStatus = ref<'waiting' | 'active' | 'done'>('waiting')
-const currentRxText = ref('')
-const prescriptionKey = ref(0)
-// The consultation ID to pass to PrescriptionCard for polling
 const activePrescriptionConsultationId = ref<string | null>(null)
+const liveSuggestionTexts = ref<string[]>([])
+const liveSuggestionFailed = ref(false)
+let suggestionRunToken = 0
+
+const {
+  prescriptionLoading,
+  prescriptionFailed,
+  prescriptionText,
+  prescriptionReady,
+  suggestionTexts,
+} = useSuggestiveMode(
+  activePrescriptionConsultationId,
+)
 
 watch(() => props.doctorId, async (doctorId) => {
   if (!doctorId) {
@@ -130,8 +143,10 @@ watch(() => props.doctorId, async (doctorId) => {
     patientError.value = null
     selectedConsultation.value = null
     consultationStatus.value = 'waiting'
-    currentRxText.value = ''
     activePrescriptionConsultationId.value = null
+    liveSuggestionTexts.value = []
+    liveSuggestionFailed.value = false
+    suggestionRunToken += 1
     return
   }
 
@@ -145,17 +160,19 @@ watch(selectedConsultation, (consultation) => {
   currentPatient.value = null
   patientError.value = null
   consultationStatus.value = 'waiting'
-  currentRxText.value = ''
   activePrescriptionConsultationId.value = null
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+  suggestionRunToken += 1
 })
 
 async function onSelect(consultation: ConsultationSidebarItem) {
   selectConsultation(consultation)
   consultationStatus.value = consultation.status === 'active' ? 'active' : 'done'
-  currentRxText.value = ''
-  prescriptionKey.value++
-  // Set the consultationId — PrescriptionCard will start polling automatically
   activePrescriptionConsultationId.value = consultation.id
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+  suggestionRunToken += 1
 
   await fetchPatientForConsultation(consultation)
 }
@@ -165,12 +182,32 @@ function onRecordingStatusChange(status: 'idle' | 'recording' | 'processing' | '
   else if (status === 'done') consultationStatus.value = 'done'
 }
 
-function onTranscriptReady(_text: string) {
-  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
+async function updateLiveSuggestions(transcript: string) {
+  const consultationId = activePrescriptionConsultationId.value
+  if (!consultationId || !transcript.trim()) return
+
+  suggestionRunToken += 1
+  const localToken = suggestionRunToken
+  liveSuggestionTexts.value = []
+  liveSuggestionFailed.value = false
+
+  try {
+    const response = await processTranscriptWithAi(transcript)
+    if (localToken !== suggestionRunToken) return
+    liveSuggestionTexts.value = response.clinical_alerts ?? []
+  } catch (err) {
+    if (localToken !== suggestionRunToken) return
+    liveSuggestionFailed.value = true
+    console.error('Failed to fetch live AI suggestions:', err)
+  }
 }
 
-function onUploadTranscript(_text: string) {
-  // Transcript sent to backend — PrescriptionCard polls DB for the AI result
+function onTranscriptReady(text: string) {
+  void updateLiveSuggestions(text)
+}
+
+function onUploadTranscript(text: string) {
+  void updateLiveSuggestions(text)
 }
 
 function onApproved(_text: string) {
@@ -182,6 +219,14 @@ async function handleLogout() {
     redirectUri: window.location.origin,
   })
 }
+
+const displayedSuggestions = computed(() =>
+  liveSuggestionTexts.value.length ? liveSuggestionTexts.value : suggestionTexts.value,
+)
+
+const displayedSuggestionFailed = computed(
+  () => liveSuggestionFailed.value || prescriptionFailed.value,
+)
 </script>
 
 <template>
@@ -290,14 +335,21 @@ async function handleLogout() {
             @transcript-ready="onUploadTranscript"
           />
 
-          <!-- PrescriptionCard receives consultationId and polls automatically -->
           <PrescriptionCard
-            :key="prescriptionKey"
-            :initial-text="currentRxText"
+            v-if="activePrescriptionConsultationId"
+            :key="`prescription-${selectedConsultation?.id}`"
+            :text="prescriptionText"
+            :loading="prescriptionLoading"
+            :failed="prescriptionFailed"
             :patient-name="currentPatient?.name ?? ''"
             :patient-email="currentPatient?.email ?? ''"
-            :consultation-id="activePrescriptionConsultationId"
             @approved="onApproved"
+          />
+
+          <SuggestiveModeCard
+            v-if="activePrescriptionConsultationId && prescriptionReady"
+            :suggestions="displayedSuggestions"
+            :failed="displayedSuggestionFailed"
           />
 
         </div>

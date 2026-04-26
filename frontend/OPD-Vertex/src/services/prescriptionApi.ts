@@ -8,6 +8,8 @@ export interface PrescriptionData {
   status: 'draft' | 'approved' | 'sent'
   prescription_json: Record<string, unknown>
   summary_json: { summary?: string }
+  clinical_alert?: string | null
+  clinical_alerts?: string[]
   approved_at: string | null
 }
 
