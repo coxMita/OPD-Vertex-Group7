@@ -146,3 +146,49 @@ def test_get_by_patient_id_returns_list(
 
     result = repo.get_by_patient_id(uuid.uuid4())
     assert len(result) == EXPECTED_TWO_APPOINTMENTS
+
+
+def test_get_by_doctor_date_and_preference_returns_list(
+    repo: AppointmentRepository, session: MagicMock
+) -> None:
+    """Should return appointments for a date and time preference."""
+    appointments = [_make_appointment(), _make_appointment()]
+    mock_result = MagicMock()
+    mock_result.__iter__ = MagicMock(return_value=iter(appointments))
+    session.exec.return_value = mock_result
+
+    result = repo.get_by_doctor_date_and_preference(
+        DOCTOR_ID, date(2026, 3, 10), TimePreference.AM
+    )
+
+    assert len(result) == EXPECTED_TWO_APPOINTMENTS
+    session.exec.assert_called_once()
+
+
+def test_get_by_date_and_preference_returns_list(
+    repo: AppointmentRepository, session: MagicMock
+) -> None:
+    """Should return appointments across doctors for a date and preference."""
+    appointments = [_make_appointment(), _make_appointment()]
+    mock_result = MagicMock()
+    mock_result.__iter__ = MagicMock(return_value=iter(appointments))
+    session.exec.return_value = mock_result
+
+    result = repo.get_by_date_and_preference(date(2026, 3, 10), TimePreference.AM)
+
+    assert len(result) == EXPECTED_TWO_APPOINTMENTS
+    session.exec.assert_called_once()
+
+
+def test_save_persists_and_returns_appointment(
+    repo: AppointmentRepository, session: MagicMock
+) -> None:
+    """Save should persist and return an existing appointment."""
+    appointment = _make_appointment()
+
+    result = repo.save(appointment)
+
+    assert result == appointment
+    session.add.assert_called_once_with(appointment)
+    session.commit.assert_called_once()
+    session.refresh.assert_called_once_with(appointment)
