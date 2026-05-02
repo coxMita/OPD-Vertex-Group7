@@ -56,14 +56,6 @@ def _make_msg(
     return msg
 
 
-def _patch_http_client(
-    mock_client: AsyncMock,
-) -> patch:  # type: ignore[type-arg]
-    """Return a context-manager patch for httpx.AsyncClient in appointment_handler."""
-    p = patch("src.messaging.appointment_handler.httpx.AsyncClient")
-    return p
-
-
 # ── _fetch_patient ────────────────────────────────────────────────────────────
 
 
