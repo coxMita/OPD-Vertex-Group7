@@ -6,6 +6,7 @@ import { appointmentApi } from '@/services/appointmentApi'
 import { processTranscriptWithAi } from '@/services/aiApi'
 import { keycloak } from '@/services/keycloak'
 import { userApi } from '@/services/userApi'
+import { emailApi } from '@/services/emailApi'
 import AppointmentSidebar from '@/components/Consultation/AppointmentSidebar.vue'
 import type { ConsultationSidebarItem } from '@/components/Consultation/AppointmentSidebar.vue'
 import PatientInfoCard from '@/components/Consultation/PatientInfoCard.vue'
@@ -210,8 +211,26 @@ function onUploadTranscript(text: string) {
   void updateLiveSuggestions(text)
 }
 
-function onApproved(_text: string) {
+async function onApproved(prescriptionText: string) {
   consultationStatus.value = 'done'
+
+  if (!currentPatient.value?.email) {
+    console.warn('Patient email is missing, cannot send prescription.')
+    return
+  }
+
+  try {
+    await emailApi.sendEmail({
+      to_email: currentPatient.value.email,
+      subject: 'Your Prescription Details - OPD Vertex',
+      message: 'Hello, your prescription has been approved by the doctor. Please find the details attached as a PDF.\n\nBest regards,\nOPD Vertex',
+      is_html: false,
+      document_title: 'Prescription',
+      document_content: prescriptionText,
+    })
+  } catch (err) {
+    console.error('Failed to send prescription email:', err)
+  }
 }
 
 async function handleLogout() {

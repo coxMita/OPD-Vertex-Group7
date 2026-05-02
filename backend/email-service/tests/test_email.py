@@ -2,7 +2,7 @@ import asyncio
 import sys
 
 from src.config import settings
-from src.email_sender import send_email
+from src.services.smtp_delivery import send_email
 
 
 async def main() -> None:
