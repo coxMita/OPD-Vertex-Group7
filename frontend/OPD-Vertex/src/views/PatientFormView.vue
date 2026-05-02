@@ -8,6 +8,7 @@ import { appointmentApi } from '@/services/appointmentApi'
 import ModeSelector from '@/components/PatientForm/ModeSelector.vue'
 import BookingForm from '@/components/PatientForm/BookingForm.vue'
 import LookupForm from '@/components/PatientForm/LookupForm.vue'
+import OtpForm from '@/components/PatientForm/OtpForm.vue'
 import SuccessState from '@/components/PatientForm/SuccessState.vue'
 
 const router = useRouter()
@@ -23,12 +24,17 @@ const {
   submitting,
   submitError,
   form,
-  lookupLoading,
-  lookupError,
   lookedUpPatient,
   lookedUpAppointments,
   lookup,
-  handleLookup,
+  otpStep,
+  otpSending,
+  otpSendError,
+  otpVerifying,
+  otpVerifyError,
+  handleSendOtp,
+  handleResendOtp,
+  handleVerifyOtp,
   switchMode,
 } = usePatientForm()
 
@@ -113,15 +119,27 @@ async function handleSubmit() {
       />
 
       <LookupForm
-        v-if="(mode === 'check' || mode === 'cancel') && !submitted"
+        v-if="(mode === 'check' || mode === 'cancel') && !otpStep && !submitted"
         :mode="mode"
         :contact="lookup.contact"
         :card-color="cardColor"
         :teal-color="tealColor"
-        :loading="lookupLoading"
-        :error="lookupError"
+        :loading="otpSending"
+        :error="otpSendError"
         @update:contact="lookup.contact = $event"
-        @submit="handleLookup"
+        @submit="handleSendOtp"
+      />
+
+      <OtpForm
+        v-if="(mode === 'check' || mode === 'cancel') && otpStep && !submitted"
+        :email="lookup.contact"
+        :card-color="cardColor"
+        :teal-color="tealColor"
+        :verifying="otpVerifying"
+        :resending="otpSending"
+        :error="otpVerifyError"
+        @verify="handleVerifyOtp"
+        @resend="handleResendOtp"
       />
 
       <SuccessState

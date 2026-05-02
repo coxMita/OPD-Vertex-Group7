@@ -10,13 +10,16 @@ from src.dependencies.auth import verify_token
 from src.routers.ai_proxy import router as ai_router
 from src.routers.appointment_proxy import router as appointment_router
 from src.routers.consultation_proxy import router as consultation_router
+from src.routers.email_proxy import router as email_router
 from src.routers.prescription_proxy import router as prescription_router
 from src.routers.transcription_proxy import router as transcription_router
 from src.routers.user_proxy import router as user_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="OPD-Vertex API Gateway")
+app = FastAPI(
+    title="OPD-Vertex API Gateway",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +32,7 @@ app.add_middleware(
 # Public routes
 app.include_router(user_router)
 app.include_router(appointment_router)
+app.include_router(email_router)
 
 # Protected routes (require authentication)
 app.include_router(ai_router, dependencies=[Depends(verify_token)])

@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { useTheme } from 'vuetify'
 import { usePatientLookup } from '@/composables/usePatientLookup'
+import { userApi } from '@/services/userApi'
+import { emailApi } from '@/services/emailApi'
 
 export type Mode = 'book' | 'check' | 'cancel'
 
@@ -62,11 +64,63 @@ export function usePatientForm() {
     lookupByEmail,
   } = usePatientLookup()
 
-  async function handleLookup() {
+  // OTP state
+  const otpStep = ref(false)
+  const otpSending = ref(false)
+  const otpSendError = ref<string | null>(null)
+  const otpVerifying = ref(false)
+  const otpVerifyError = ref<string | null>(null)
+
+  async function handleSendOtp() {
     if (!lookup.value.contact) return
-    await lookupByEmail(lookup.value.contact)
-    if (lookedUpPatient.value) {
-      submitted.value = true
+    otpSending.value = true
+    otpSendError.value = null
+    try {
+      await userApi.lookupPatientByEmail(lookup.value.contact)
+      await emailApi.sendOtp(lookup.value.contact)
+      otpStep.value = true
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } }
+      if (axiosErr.response?.status === 404) {
+        otpSendError.value = 'No account found with this email address.'
+      } else {
+        otpSendError.value = 'Could not send verification code. Please try again.'
+      }
+    } finally {
+      otpSending.value = false
+    }
+  }
+
+  async function handleResendOtp() {
+    otpSending.value = true
+    otpVerifyError.value = null
+    try {
+      await emailApi.sendOtp(lookup.value.contact)
+    } catch {
+      otpVerifyError.value = 'Could not resend code. Please try again.'
+    } finally {
+      otpSending.value = false
+    }
+  }
+
+  async function handleVerifyOtp(code: string) {
+    otpVerifying.value = true
+    otpVerifyError.value = null
+    try {
+      const valid = await emailApi.verifyOtp(lookup.value.contact, code)
+      if (!valid) {
+        otpVerifyError.value = 'Invalid or expired code. Please try again.'
+        return
+      }
+      await lookupByEmail(lookup.value.contact)
+      if (lookedUpPatient.value) {
+        otpStep.value = false
+        submitted.value = true
+      }
+    } catch {
+      otpVerifyError.value = 'Verification failed. Please try again.'
+    } finally {
+      otpVerifying.value = false
     }
   }
 
@@ -74,6 +128,9 @@ export function usePatientForm() {
     mode.value = m
     submitted.value = false
     submitError.value = null
+    otpStep.value = false
+    otpSendError.value = null
+    otpVerifyError.value = null
   }
 
   return {
@@ -92,7 +149,14 @@ export function usePatientForm() {
     submitError,
     form,
     lookup,
-    handleLookup,
+    otpStep,
+    otpSending,
+    otpSendError,
+    otpVerifying,
+    otpVerifyError,
+    handleSendOtp,
+    handleResendOtp,
+    handleVerifyOtp,
     switchMode,
   }
 }

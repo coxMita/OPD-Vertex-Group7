@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p>Hello <strong>{{ first_name }}</strong>,</p>
+
+<p>Your appointment has been successfully booked with our clinic.</p>
+
+<div class="details-box">
+    <p><strong>Date:</strong> {{ date }}</p>
+    <p><strong>Time:</strong> {{ time }}</p>
+</div>
+
+<p>Please arrive 10 minutes early to complete any necessary paperwork. If you need to cancel or reschedule, please contact us as soon as possible.</p>
+
+<p>Best regards,<br>
+OPD Vertex Staff</p>
+{% endblock %}

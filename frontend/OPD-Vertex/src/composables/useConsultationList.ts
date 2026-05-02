@@ -24,7 +24,6 @@ export function useConsultationList() {
     } catch (err) {
       console.error('Failed to fetch consultations:', err)
       error.value = 'Could not load consultations. Is the backend running?'
-      consultations.value = []
     } finally {
       loading.value = false
     }
