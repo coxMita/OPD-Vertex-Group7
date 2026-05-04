@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" modified="2026-05-04T00:00:00.000Z" agent="Claude Code" version="21.0.0">
   <diagram id="deployment" name="Deployment Diagram">
-    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2800" pageHeight="1300" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
         <!-- ============================================================ -->
-        <!-- DEVICE / OS / DOCKER NESTING                                  -->
+        <!-- OUTER SHELLS: device > OS > Docker                           -->
         <!-- ============================================================ -->
 
         <mxCell id="10" value="&lt;&lt;device&gt;&gt;&lt;br&gt;&lt;b&gt;Personal Computer&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;verticalAlign=top;fontSize=13;arcSize=3;" vertex="1" parent="1">
-          <mxGeometry x="200" y="20" width="1970" height="970" as="geometry" />
+          <mxGeometry x="160" y="20" width="2450" height="1230" as="geometry" />
         </mxCell>
 
         <mxCell id="11" value="&lt;&lt;OS&gt;&gt;&lt;br&gt;&lt;b&gt;Linux&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontSize=12;arcSize=3;" vertex="1" parent="1">
-          <mxGeometry x="220" y="75" width="1930" height="890" as="geometry" />
+          <mxGeometry x="185" y="80" width="2400" height="1145" as="geometry" />
         </mxCell>
 
         <mxCell id="12" value="&lt;&lt;executionEnvironment&gt;&gt;&lt;br&gt;&lt;b&gt;Docker Engine&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontSize=12;arcSize=3;" vertex="1" parent="1">
-          <mxGeometry x="240" y="145" width="1890" height="810" as="geometry" />
+          <mxGeometry x="210" y="155" width="2350" height="1060" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
@@ -27,176 +27,184 @@
         <!-- ============================================================ -->
 
         <mxCell id="70" value="&lt;&lt;device&gt;&gt;&lt;br&gt;&lt;b&gt;Web Browser&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="20" y="680" width="140" height="80" as="geometry" />
+          <mxGeometry x="20" y="780" width="140" height="80" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- GATEWAY                                                       -->
+        <!-- GATEWAY  (centred above business services cols 1-4)          -->
         <!-- ============================================================ -->
 
         <mxCell id="20" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Gateway&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="450" y="185" width="230" height="130" as="geometry" />
+          <mxGeometry x="745" y="200" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="21" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;gateway:6.0.0&lt;/b&gt;&lt;br&gt;:8080" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="460" y="245" width="210" height="62" as="geometry" />
+          <mxGeometry x="755" y="262" width="250" height="75" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- KEYCLOAK CLUSTER                                              -->
+        <!-- KEYCLOAK CLUSTER  (far right, top)                           -->
         <!-- ============================================================ -->
 
         <mxCell id="22" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Keycloak&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1860" y="185" width="250" height="130" as="geometry" />
+          <mxGeometry x="2200" y="200" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="23" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;keycloak:24.0.1&lt;/b&gt;&lt;br&gt;:8089" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1870" y="245" width="230" height="62" as="geometry" />
+          <mxGeometry x="2210" y="262" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="24" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Keycloak Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1860" y="333" width="250" height="120" as="geometry" />
+          <mxGeometry x="2200" y="380" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="25" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;postgres:17&lt;/b&gt;&lt;br&gt;:5437" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1870" y="388" width="230" height="57" as="geometry" />
+          <mxGeometry x="2210" y="437" width="250" height="65" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- APPOINTMENT                                                   -->
+        <!-- APPOINTMENT SERVICE + DB  (col 1, x=280)                     -->
         <!-- ============================================================ -->
 
         <mxCell id="30" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Appointment Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="260" y="370" width="230" height="130" as="geometry" />
+          <mxGeometry x="280" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="31" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;appointment-service:3.0.5&lt;/b&gt;&lt;br&gt;:8082" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="270" y="430" width="210" height="62" as="geometry" />
+          <mxGeometry x="290" y="492" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="32" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Appointment Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="260" y="518" width="230" height="120" as="geometry" />
+          <mxGeometry x="280" y="620" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="33" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;postgres:17&lt;/b&gt;&lt;br&gt;:5432" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="270" y="573" width="210" height="57" as="geometry" />
+          <mxGeometry x="290" y="677" width="250" height="65" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- CONSULTATION                                                  -->
+        <!-- CONSULTATION SERVICE + DB  (col 2, x=600)                    -->
         <!-- ============================================================ -->
 
         <mxCell id="34" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Consultation Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="508" y="370" width="250" height="130" as="geometry" />
+          <mxGeometry x="600" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="35" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;consultation-service:3.0.0&lt;/b&gt;&lt;br&gt;:8083" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="518" y="430" width="230" height="62" as="geometry" />
+          <mxGeometry x="610" y="492" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="36" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Consultation Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="508" y="518" width="250" height="120" as="geometry" />
+          <mxGeometry x="600" y="620" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="37" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;postgres:17&lt;/b&gt;&lt;br&gt;:5433" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="518" y="573" width="230" height="57" as="geometry" />
+          <mxGeometry x="610" y="677" width="250" height="65" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- PRESCRIPTION                                                  -->
+        <!-- PRESCRIPTION SERVICE + DB  (col 3, x=920)                    -->
         <!-- ============================================================ -->
 
         <mxCell id="38" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Prescription Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="776" y="370" width="250" height="130" as="geometry" />
+          <mxGeometry x="920" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="39" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;prescription-service:4.0.0&lt;/b&gt;&lt;br&gt;:8085" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="786" y="430" width="230" height="62" as="geometry" />
+          <mxGeometry x="930" y="492" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="40" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Prescription Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="776" y="518" width="250" height="120" as="geometry" />
+          <mxGeometry x="920" y="620" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="41" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;postgres:17&lt;/b&gt;&lt;br&gt;:5434" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="786" y="573" width="230" height="57" as="geometry" />
+          <mxGeometry x="930" y="677" width="250" height="65" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- USER                                                          -->
+        <!-- USER SERVICE + DB  (col 4, x=1240)                           -->
         <!-- ============================================================ -->
 
         <mxCell id="42" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;User Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1044" y="370" width="230" height="130" as="geometry" />
+          <mxGeometry x="1240" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="43" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;user-service:3.0.15&lt;/b&gt;&lt;br&gt;:8087" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1054" y="430" width="210" height="62" as="geometry" />
+          <mxGeometry x="1250" y="492" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="44" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;User Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1044" y="518" width="230" height="120" as="geometry" />
+          <mxGeometry x="1240" y="620" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="45" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;postgres:17&lt;/b&gt;&lt;br&gt;:5435" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1054" y="573" width="210" height="57" as="geometry" />
+          <mxGeometry x="1250" y="677" width="250" height="65" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- AI CLUSTER                                                    -->
+        <!-- AI CLUSTER  (col 5, x=1600)                                  -->
+        <!-- ai-service / ai-db / ollama stacked                          -->
         <!-- ============================================================ -->
 
         <mxCell id="46" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;AI Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1302" y="370" width="230" height="130" as="geometry" />
+          <mxGeometry x="1600" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="47" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;ai-service:4.0.0&lt;/b&gt;&lt;br&gt;:8081" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1312" y="430" width="210" height="62" as="geometry" />
+          <mxGeometry x="1610" y="492" width="250" height="75" as="geometry" />
         </mxCell>
 
         <mxCell id="48" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;AI Database&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1302" y="518" width="230" height="120" as="geometry" />
+          <mxGeometry x="1600" y="620" width="270" height="135" as="geometry" />
         </mxCell>
         <mxCell id="49" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;pgvector/pgvector:pg17&lt;/b&gt;&lt;br&gt;:5436" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1312" y="573" width="210" height="57" as="geometry" />
+          <mxGeometry x="1610" y="677" width="250" height="65" as="geometry" />
         </mxCell>
 
         <mxCell id="50" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Ollama&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1302" y="656" width="230" height="130" as="geometry" />
+          <mxGeometry x="1600" y="800" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="51" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;ollama/ollama:latest&lt;/b&gt;&lt;br&gt;:11434" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1312" y="716" width="210" height="62" as="geometry" />
+          <mxGeometry x="1610" y="862" width="250" height="75" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- EMAIL + TRANSCRIPTION                                         -->
+        <!-- EMAIL SERVICE  (col 6, x=1920)                               -->
         <!-- ============================================================ -->
 
         <mxCell id="52" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Email Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1550" y="370" width="240" height="130" as="geometry" />
+          <mxGeometry x="1930" y="430" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="53" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;email-service:7.0.0&lt;/b&gt;&lt;br&gt;:8084" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1560" y="430" width="220" height="62" as="geometry" />
+          <mxGeometry x="1940" y="492" width="250" height="75" as="geometry" />
         </mxCell>
+
+        <!-- ============================================================ -->
+        <!-- TRANSCRIPTION SERVICE  (col 6, below email)                  -->
+        <!-- ============================================================ -->
 
         <mxCell id="54" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Transcription Service&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1550" y="518" width="260" height="130" as="geometry" />
+          <mxGeometry x="1930" y="620" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="55" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;transcription-service:4.0.0&lt;/b&gt;&lt;br&gt;:8086" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="1560" y="578" width="240" height="62" as="geometry" />
+          <mxGeometry x="1940" y="682" width="250" height="75" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
-        <!-- INFRASTRUCTURE (bottom row)                                   -->
+        <!-- INFRASTRUCTURE ROW  (bottom, y=1000)                         -->
         <!-- ============================================================ -->
 
+        <!-- RabbitMQ centred beneath services -->
         <mxCell id="56" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;RabbitMQ&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="260" y="810" width="240" height="130" as="geometry" />
+          <mxGeometry x="680" y="1000" width="300" height="150" as="geometry" />
         </mxCell>
         <mxCell id="57" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;rabbitmq:4.1.4-management&lt;/b&gt;&lt;br&gt;:5672 (AMQP) / :9000 (UI)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="270" y="870" width="220" height="62" as="geometry" />
+          <mxGeometry x="690" y="1062" width="280" height="75" as="geometry" />
         </mxCell>
 
+        <!-- Mailpit -->
         <mxCell id="58" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;Mailpit&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="518" y="810" width="220" height="130" as="geometry" />
+          <mxGeometry x="1040" y="1000" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="59" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;axllent/mailpit&lt;/b&gt;&lt;br&gt;:8025 (UI) / :1025 (SMTP)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="528" y="870" width="200" height="62" as="geometry" />
+          <mxGeometry x="1050" y="1062" width="250" height="75" as="geometry" />
         </mxCell>
 
+        <!-- pgAdmin -->
         <mxCell id="60" value="&lt;&lt;container&gt;&gt;&lt;br&gt;&lt;b&gt;pgAdmin&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="756" y="810" width="220" height="130" as="geometry" />
+          <mxGeometry x="1370" y="1000" width="270" height="150" as="geometry" />
         </mxCell>
         <mxCell id="61" value="&lt;&lt;artifact&gt;&gt;&lt;br&gt;&lt;b&gt;dpage/pgadmin4:9.9.0&lt;/b&gt;&lt;br&gt;:5050" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="766" y="870" width="200" height="62" as="geometry" />
+          <mxGeometry x="1380" y="1062" width="250" height="75" as="geometry" />
         </mxCell>
 
         <!-- ============================================================ -->
@@ -204,12 +212,12 @@
         <!-- ============================================================ -->
 
         <!-- Browser -> Gateway -->
-        <mxCell id="100" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP :8080" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="70" target="20" parent="1">
+        <mxCell id="100" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP :8080" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" source="70" target="20" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- Browser -> Keycloak -->
-        <mxCell id="101" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP :8089" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="70" target="22" parent="1">
+        <mxCell id="101" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP :8089" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" source="70" target="22" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
@@ -249,102 +257,102 @@
         </mxCell>
 
         <!-- appointment-service -> appointment-db -->
-        <mxCell id="109" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="30" target="32" parent="1">
+        <mxCell id="109" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="30" target="32" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- consultation-service -> consultation-db -->
-        <mxCell id="110" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="34" target="36" parent="1">
+        <mxCell id="110" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="34" target="36" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- prescription-service -> prescription-db -->
-        <mxCell id="111" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="38" target="40" parent="1">
+        <mxCell id="111" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="38" target="40" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- user-service -> user-db -->
-        <mxCell id="112" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="44" parent="1">
+        <mxCell id="112" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="44" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- ai-service -> ai-db -->
-        <mxCell id="113" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="48" parent="1">
+        <mxCell id="113" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="48" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- ai-service -> ollama -->
-        <mxCell id="114" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="50" parent="1">
+        <mxCell id="114" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="50" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- appointment-service -> rabbitmq -->
-        <mxCell id="115" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="30" target="56" parent="1">
+        <mxCell id="115" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="30" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- consultation-service -> rabbitmq -->
-        <mxCell id="116" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="34" target="56" parent="1">
+        <mxCell id="116" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="34" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- prescription-service -> rabbitmq -->
-        <mxCell id="117" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="38" target="56" parent="1">
+        <mxCell id="117" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="38" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- user-service -> rabbitmq -->
-        <mxCell id="118" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="56" parent="1">
+        <mxCell id="118" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- ai-service -> rabbitmq -->
-        <mxCell id="119" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="56" parent="1">
+        <mxCell id="119" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="46" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- email-service -> rabbitmq -->
-        <mxCell id="120" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="52" target="56" parent="1">
+        <mxCell id="120" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="52" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- transcription-service -> rabbitmq -->
-        <mxCell id="121" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="54" target="56" parent="1">
+        <mxCell id="121" value="AMQP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="54" target="56" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- email-service -> mailpit (SMTP) -->
-        <mxCell id="122" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;SMTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="52" target="58" parent="1">
+        <mxCell id="122" value="SMTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="52" target="58" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- user-service -> keycloak -->
-        <mxCell id="123" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="22" parent="1">
+        <mxCell id="123" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="42" target="22" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
-        <!-- pgadmin -> appointment-db (dashed = admin/tooling) -->
-        <mxCell id="124" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="32" parent="1">
+        <!-- pgadmin -> appointment-db (dashed = admin tooling) -->
+        <mxCell id="124" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="32" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- pgadmin -> consultation-db -->
-        <mxCell id="125" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="36" parent="1">
+        <mxCell id="125" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="36" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- pgadmin -> prescription-db -->
-        <mxCell id="126" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="40" parent="1">
+        <mxCell id="126" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="40" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- pgadmin -> user-db -->
-        <mxCell id="127" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="44" parent="1">
+        <mxCell id="127" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="44" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
         <!-- pgadmin -> ai-db -->
-        <mxCell id="128" value="&lt;&lt;protocol&gt;&gt;&lt;br&gt;TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="48" parent="1">
+        <mxCell id="128" value="TCP/IP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;" edge="1" source="60" target="48" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
