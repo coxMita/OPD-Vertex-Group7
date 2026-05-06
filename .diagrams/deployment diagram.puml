@@ -1,0 +1,214 @@
+@startuml Deployment_Diagram_Horizontal
+title Deployment Diagram - Horizontal
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+
+skinparam node {
+  BackgroundColor #f5f5f5
+  BorderColor #666666
+  FontColor #333333
+}
+
+skinparam node<<OS>> {
+  BackgroundColor #d5e8d4
+  BorderColor #82b366
+}
+
+skinparam node<<executionEnvironment>> {
+  BackgroundColor #dae8fc
+  BorderColor #6c8ebf
+}
+
+skinparam package {
+  BackgroundColor #fffef6
+  BorderColor #ded6ad
+  FontColor #222222
+}
+
+skinparam package<<container>> {
+  BackgroundColor #ffffff
+  BorderColor #000000
+  FontColor #111111
+}
+
+skinparam package<<network>> {
+  BackgroundColor #eef4fb
+  BorderColor #4a90d9
+  FontColor #1a5276
+}
+
+skinparam database {
+  BackgroundColor #ffffff
+  BorderColor #000000
+  FontColor #111111
+}
+
+skinparam artifact {
+  BackgroundColor #ffffff
+  BorderColor #000000
+  FontColor #111111
+}
+
+left to right direction
+
+' ── External client (leftmost) ───────────────────────────────────────────────
+node "Web Browser\n(runs Vue 3 SPA)" as WebBrowser <<device>>
+
+' ── Host machine ─────────────────────────────────────────────────────────────
+node "Personal Computer" as PC <<device>> {
+  node "Fedora Linux 43" as Linux <<OS>> {
+    node "Docker Engine" as Docker <<executionEnvironment>> {
+
+      ' frontend-net: SPA dev/preview server + Keycloak identity provider
+      ' (gateway is also on this network but acts as bridge – shown separately)
+      package "frontend-net" as FrontendNet <<network>> {
+        package "Frontend App" as FrontendApp <<container>> {
+          artifact "opd-vertex-frontend:latest\nVue 3 + Vite preview" as frontend_artifact
+        }
+        package "Keycloak Cluster" as KeycloakCluster {
+          package "Keycloak" as Keycloak <<container>> {
+            artifact "keycloak:24.0.1\n:8089" as keycloak_artifact
+          }
+          database "Keycloak DB\npostgres:17\n:5437\n[vol: keycloak-db]" as KeycloakDb <<container>>
+        }
+      }
+
+      ' Gateway bridges frontend-net ↔ internal-api-net (member of both)
+      package "Gateway" as Gateway <<container>> {
+        artifact "gateway:6.0.0\n:8080\nnetworks: frontend + internal-api" as gateway_artifact
+      }
+
+      ' internal-api-net: all backend microservices
+      package "internal-api-net" as InternalApiNet <<network>> {
+        package "Business Services" as BusinessServices {
+          package "Appointment Service" as AppointmentService <<container>> {
+            artifact "appointment-service:3.0.5\n:8082" as appointment_artifact
+          }
+          package "Consultation Service" as ConsultationService <<container>> {
+            artifact "consultation-service:3.0.0\n:8083" as consultation_artifact
+          }
+          package "Prescription Service" as PrescriptionService <<container>> {
+            artifact "prescription-service:4.0.0\n:8085" as prescription_artifact
+          }
+          package "User Service" as UserService <<container>> {
+            artifact "user-service:3.0.15\n:8087" as user_artifact
+          }
+        }
+        package "Supporting Services" as SupportingServices {
+          package "Transcription Service" as TranscriptionService <<container>> {
+            artifact "transcription-service:4.0.0\n:8086" as transcription_artifact
+          }
+          package "Email Service" as EmailService <<container>> {
+            artifact "email-service:7.0.0\n:8084" as email_artifact
+          }
+        }
+      }
+
+      ' service-specific DB networks + pgAdmin (spans all DB networks)
+      package "service-db-networks" as ServiceDbNets <<network>> {
+        database "Appointment DB\npostgres:17\n:5432\n[vol: appointment-db]" as AppointmentDb <<container>>
+        database "Consultation DB\npostgres:17\n:5433\n[vol: consultation-db]" as ConsultationDb <<container>>
+        database "Prescription DB\npostgres:17\n:5434\n[vol: prescription-db]" as PrescriptionDb <<container>>
+        database "User DB\npostgres:17\n:5435\n[vol: user-db]" as UserDb <<container>>
+        package "pgAdmin" as PgAdmin <<container>> {
+          artifact "dpage/pgadmin4:9.9.0\n:5050\n[vol: pgadmin]" as pgadmin_artifact
+        }
+      }
+
+      ' ai-net + ollama-net
+      package "ai-net / ollama-net" as AiNet <<network>> {
+        package "AI Service" as AiService <<container>> {
+          artifact "ai-service:4.0.0\n:8081" as ai_artifact
+        }
+        database "AI DB\npgvector/pgvector:pg17\n:5436\n[vol: ai-db]" as AiDb <<container>>
+        package "Ollama" as Ollama <<container>> {
+          artifact "ollama/ollama:latest\n:11434\n[vol: ollama]" as ollama_artifact
+        }
+      }
+
+      ' bus-net: async messaging (RabbitMQ + Mailpit only)
+      package "bus-net" as BusNet <<network>> {
+        package "RabbitMQ" as RabbitMq <<container>> {
+          artifact "rabbitmq:4.1.4-management\n:5672 AMQP\n:9000 UI" as rabbitmq_artifact
+        }
+        package "Mailpit" as Mailpit <<container>> {
+          artifact "axllent/mailpit\n:8025 UI\n:1025 SMTP" as mailpit_artifact
+        }
+      }
+
+    }
+  }
+}
+
+' ── Layout hints ─────────────────────────────────────────────────────────────
+WebBrowser -[hidden]right-> PC
+
+FrontendNet -[hidden]right-> Gateway
+Gateway -[hidden]right-> InternalApiNet
+InternalApiNet -[hidden]right-> ServiceDbNets
+ServiceDbNets -[hidden]right-> AiNet
+AiNet -[hidden]right-> BusNet
+
+FrontendApp -[hidden]down-> KeycloakCluster
+Keycloak -[hidden]down-> KeycloakDb
+
+AppointmentService -[hidden]down-> ConsultationService
+ConsultationService -[hidden]down-> PrescriptionService
+PrescriptionService -[hidden]down-> UserService
+
+BusinessServices -[hidden]down-> SupportingServices
+TranscriptionService -[hidden]down-> EmailService
+
+AppointmentDb -[hidden]down-> ConsultationDb
+ConsultationDb -[hidden]down-> PrescriptionDb
+PrescriptionDb -[hidden]down-> UserDb
+UserDb -[hidden]down-> PgAdmin
+
+AiService -[hidden]down-> AiDb
+AiDb -[hidden]down-> Ollama
+
+RabbitMq -[hidden]down-> Mailpit
+
+' ── Connections ───────────────────────────────────────────────────────────────
+' Browser fetches SPA static files from Nginx container
+WebBrowser --> FrontendApp : HTTP :4173\n(SPA static files)
+' SPA JavaScript running in the browser calls Gateway and Keycloak directly
+WebBrowser --> Gateway : HTTP :8080\n(API calls)
+WebBrowser --> Keycloak : HTTP :8089\n(auth / token flow)
+
+' Gateway routes to backend services (bridges frontend-net + internal-api-net)
+Gateway --> BusinessServices : TCP/IP routes
+Gateway --> AiService : TCP/IP
+Gateway --> Keycloak : HTTP\n(token validation)
+UserService --> Keycloak : HTTP
+
+AppointmentService --> AppointmentDb : TCP/IP
+ConsultationService --> ConsultationDb : TCP/IP
+PrescriptionService --> PrescriptionDb : TCP/IP
+UserService --> UserDb : TCP/IP
+
+AiService --> AiDb : TCP/IP
+AiService --> Ollama : HTTP
+
+BusinessServices --> RabbitMq : AMQP
+AiService --> RabbitMq : AMQP
+SupportingServices --> RabbitMq : AMQP
+EmailService --> Mailpit : SMTP
+
+Keycloak --> KeycloakDb : TCP/IP
+
+PgAdmin ..> AppointmentDb : TCP/IP admin
+PgAdmin ..> ConsultationDb : TCP/IP admin
+PgAdmin ..> PrescriptionDb : TCP/IP admin
+PgAdmin ..> UserDb : TCP/IP admin
+PgAdmin ..> AiDb : TCP/IP admin
+
+@enduml
