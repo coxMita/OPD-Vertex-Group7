@@ -1,0 +1,338 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="6ON6wswIr61m52B6BuhV">
+    <mxGraphModel dx="852" dy="452" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ZzvValRyz206GRLqivr1-2" parent="1" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;horizontal=0;" value="Patient (Browser)" vertex="1">
+          <mxGeometry height="1440" width="200" x="40" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-8" parent="ZzvValRyz206GRLqivr1-2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="95" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-41" edge="1" parent="ZzvValRyz206GRLqivr1-2" style="endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="109.49000000000001" y="80" as="sourcePoint" />
+            <mxPoint x="109.49000000000001" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-42" edge="1" parent="ZzvValRyz206GRLqivr1-2" style="endArrow=block;endFill=1;strokeColor=#6c8ebf;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="109.74000000000001" y="150" as="sourcePoint" />
+            <mxPoint x="109.74000000000001" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-74" edge="1" parent="ZzvValRyz206GRLqivr1-2" style="endArrow=block;endFill=1;strokeColor=#000000;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="109.62" y="1300" as="sourcePoint" />
+            <mxPoint x="109.62" y="1340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-40" parent="ZzvValRyz206GRLqivr1-2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#000000;strokeColor=#000000;double=1;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="95" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-50" edge="1" parent="ZzvValRyz206GRLqivr1-2" style="endArrow=block;endFill=1;strokeColor=#6c8ebf;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="109.69999999999999" y="480" as="sourcePoint" />
+            <mxPoint x="109.69999999999999" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-3" parent="1" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;horizontal=0;" value="Vue App (Frontend)" vertex="1">
+          <mxGeometry height="1440" width="200" x="240" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-4" parent="1" style="swimlane;startSize=30;fillColor=#ffe6cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;horizontal=0;" value="API Gateway" vertex="1">
+          <mxGeometry height="1440" width="200" x="440" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-5" parent="1" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;horizontal=0;" value="User Service" vertex="1">
+          <mxGeometry height="1440" width="200" x="640" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-55" edge="1" parent="ZzvValRyz206GRLqivr1-5" source="ZzvValRyz206GRLqivr1-21" style="endArrow=block;endFill=1;strokeColor=#9673a6;fontSize=9;exitX=0.501;exitY=0.976;exitDx=0;exitDy=0;exitPerimeter=0;" value="No">
+          <mxGeometry relative="1" x="-0.6119" y="3" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="190" y="573" />
+              <mxPoint x="190" y="650" />
+              <mxPoint x="110" y="650" />
+            </Array>
+            <mxPoint x="109.90999999999997" y="650" as="sourcePoint" />
+            <mxPoint x="109.90999999999997" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-6" parent="1" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;horizontal=0;" value="Appointment Service" vertex="1">
+          <mxGeometry height="1440" width="201" x="840" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-29" parent="ZzvValRyz206GRLqivr1-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Return 409 Conflict&#xa;(no slots available)" vertex="1">
+          <mxGeometry height="40" width="150" x="38" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-27" parent="ZzvValRyz206GRLqivr1-6" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="Slot available&#xa;for doctor/date/time?" vertex="1">
+          <mxGeometry height="80" width="176" x="25" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-62" edge="1" parent="ZzvValRyz206GRLqivr1-6" source="ZzvValRyz206GRLqivr1-27" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=9;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="ZzvValRyz206GRLqivr1-29" value="No">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="12" y="855" as="sourcePoint" />
+            <mxPoint x="18" y="810" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-28" parent="ZzvValRyz206GRLqivr1-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="Assign next available&#xa;time slot in queue" vertex="1">
+          <mxGeometry height="50" width="150" x="38" y="930" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-61" edge="1" parent="ZzvValRyz206GRLqivr1-6" style="endArrow=block;endFill=1;strokeColor=#d6b656;fontSize=9;" value="Yes">
+          <mxGeometry relative="1" x="0.0057" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="112.79999999999995" y="895" as="sourcePoint" />
+            <mxPoint x="112.79999999999995" y="930" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-30" parent="ZzvValRyz206GRLqivr1-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="INSERT Appointment&#xa;(status=scheduled)" vertex="1">
+          <mxGeometry height="50" width="150" x="38" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-64" edge="1" parent="ZzvValRyz206GRLqivr1-6" style="endArrow=block;endFill=1;strokeColor=#d6b656;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="112.79999999999995" y="980" as="sourcePoint" />
+            <mxPoint x="112.79999999999995" y="1010" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-65" edge="1" parent="ZzvValRyz206GRLqivr1-6" style="endArrow=block;endFill=1;strokeColor=#d6b656;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="112.79999999999995" y="1060" as="sourcePoint" />
+            <mxPoint x="112.79999999999995" y="1090" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-31" parent="ZzvValRyz206GRLqivr1-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="Publish AppointmentMessage&lt;br&gt;- appointment.created&lt;br&gt;- appointment.status_changed" vertex="1">
+          <mxGeometry height="60" width="150" x="38" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-7" parent="1" style="swimlane;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;horizontal=0;" value="Email Service" vertex="1">
+          <mxGeometry height="1440" width="200" x="1040" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-32" parent="ZzvValRyz206GRLqivr1-7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Consume appointment.created&#xa;event from RabbitMQ" vertex="1">
+          <mxGeometry height="60" width="150" x="40" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-33" parent="ZzvValRyz206GRLqivr1-7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Fetch patient email&#xa;from User Service" vertex="1">
+          <mxGeometry height="40" width="150" x="40" y="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-34" parent="ZzvValRyz206GRLqivr1-7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Render booking.html&#xa;template (Jinja2)" vertex="1">
+          <mxGeometry height="40" width="150" x="40" y="1250" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-35" parent="ZzvValRyz206GRLqivr1-7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Send confirmation email&#xa;to patient (SMTP)" vertex="1">
+          <mxGeometry height="40" width="150" x="40" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-70" edge="1" parent="ZzvValRyz206GRLqivr1-7" style="endArrow=block;endFill=1;strokeColor=#b85450;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="114.79999999999995" y="1290" as="sourcePoint" />
+            <mxPoint x="114.79999999999995" y="1320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-69" edge="1" parent="ZzvValRyz206GRLqivr1-7" style="endArrow=block;endFill=1;strokeColor=#b85450;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="114.79999999999995" y="1220" as="sourcePoint" />
+            <mxPoint x="114.79999999999995" y="1250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-68" edge="1" parent="ZzvValRyz206GRLqivr1-7" style="endArrow=block;endFill=1;strokeColor=#b85450;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="114.79999999999995" y="1150" as="sourcePoint" />
+            <mxPoint x="114.79999999999995" y="1180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Visit Landing Page" vertex="1">
+          <mxGeometry height="40" width="150" x="75" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Click &#39;I&#39;m a Patient&#39;" vertex="1">
+          <mxGeometry height="40" width="150" x="75" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Load Patient Form&#xa;(ModeSelector = &#39;book&#39;)" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Select Department" vertex="1">
+          <mxGeometry height="40" width="150" x="75" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="GET /api/v1/user/doctor/{dept}/doctors" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" value="Forward request" vertex="1">
+          <mxGeometry height="40" width="150" x="475" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="Return list of doctors" vertex="1">
+          <mxGeometry height="40" width="150" x="675" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Display DoctorPicker" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-17" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Fill booking form&#xa;(name, DOB, email, date, time, doctor)" vertex="1">
+          <mxGeometry height="50" width="150" x="75" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-18" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Click &#39;Confirm Booking&#39;" vertex="1">
+          <mxGeometry height="40" width="150" x="75" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-19" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="POST /api/v1/user/patients&#xa;(find-or-create)" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-20" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" value="Forward request&#xa;(no JWT required)" vertex="1">
+          <mxGeometry height="40" width="150" x="475" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-21" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="Patient exists&#xa;by email?" vertex="1">
+          <mxGeometry height="70" width="176" x="662" y="565" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="Return existing patient" vertex="1">
+          <mxGeometry height="40" width="150" x="675" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="INSERT new patient&#xa;(name, DOB, gender, email, phone)" vertex="1">
+          <mxGeometry height="50" width="150" x="675" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-24" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Return PatientDTO&#xa;(with patient_id)" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="POST /api/v1/appointments&#xa;(patient_id, doctor_id, date, AM/PM)" vertex="1">
+          <mxGeometry height="50" width="150" x="275" y="890" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-26" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" value="Forward request" vertex="1">
+          <mxGeometry height="50" width="150" x="475" y="890" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-36" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Return 201 AppointmentResponse" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="1250" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-37" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Show error message&#xa;&#39;No available slots&#39;" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="1170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-38" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Show &#39;Booking Confirmed!&#39;&#xa;success state" vertex="1">
+          <mxGeometry height="40" width="150" x="275" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-39" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="See booking confirmation&#xa;screen" vertex="1">
+          <mxGeometry height="40" width="150" x="75" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-43" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="225" y="270" as="sourcePoint" />
+            <mxPoint x="275" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-44" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#6c8ebf;fontSize=9;" value="router.push(&#39;/patient&#39;)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="310" as="sourcePoint" />
+            <mxPoint x="225" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-45" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;" value="watch(department)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="225" y="350" as="sourcePoint" />
+            <mxPoint x="275" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-46" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#d6b656;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="350" as="sourcePoint" />
+            <mxPoint x="475" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-47" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#9673a6;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="625" y="350" as="sourcePoint" />
+            <mxPoint x="675" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-48" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;" value="200 DoctorDTO[]">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="675" y="390" as="sourcePoint" />
+            <mxPoint x="425" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-49" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#6c8ebf;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="450" as="sourcePoint" />
+            <mxPoint x="225" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-51" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;" value="Submit()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="225" y="600" as="sourcePoint" />
+            <mxPoint x="275" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-52" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#d6b656;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="600" as="sourcePoint" />
+            <mxPoint x="475" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-53" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#9673a6;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="625" y="600" as="sourcePoint" />
+            <mxPoint x="662" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-54" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#9673a6;fontSize=9;" value="Yes">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="750" y="635" as="sourcePoint" />
+            <mxPoint x="750" y="665" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-56" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;" value="return PatientDTO">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="675" y="705" as="sourcePoint" />
+            <mxPoint x="425" y="810" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-57" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;" value="return PatientDTO">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="675" y="780" as="sourcePoint" />
+            <mxPoint x="425" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-58" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="850" as="sourcePoint" />
+            <mxPoint x="350" y="890" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-59" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#d6b656;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="915" as="sourcePoint" />
+            <mxPoint x="475" y="915" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-60" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#d6b656;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ZzvValRyz206GRLqivr1-27" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="625" y="915" as="sourcePoint" />
+            <mxPoint x="852" y="915" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-63" edge="1" parent="1" source="ZzvValRyz206GRLqivr1-29" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=9;exitX=0.104;exitY=1.05;exitDx=0;exitDy=0;exitPerimeter=0;" value="409 Conflict">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="858" y="890" as="sourcePoint" />
+            <mxPoint x="425" y="1170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-66" edge="1" parent="1" source="ZzvValRyz206GRLqivr1-31" style="endArrow=block;endFill=1;strokeColor=#b85450;fontSize=9;dashed=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="ZzvValRyz206GRLqivr1-32" value="">
+          <mxGeometry relative="1" x="1" y="12" as="geometry">
+            <mxPoint x="12" y="12" as="offset" />
+            <mxPoint x="1008" y="1180" as="sourcePoint" />
+            <mxPoint x="1058" y="1180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-76" connectable="0" parent="ZzvValRyz206GRLqivr1-66" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;font style=&quot;font-size: 7px;&quot;&gt;RabbitMQ&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1385" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-67" edge="1" parent="1" source="ZzvValRyz206GRLqivr1-31" style="endArrow=block;endFill=1;strokeColor=#82b366;fontSize=9;exitX=0.008;exitY=0.927;exitDx=0;exitDy=0;exitPerimeter=0;" value="201 AppointmentResponse">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="858" y="1210" as="sourcePoint" />
+            <mxPoint x="425" y="1250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-71" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#82b366;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="1290" as="sourcePoint" />
+            <mxPoint x="350" y="1320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZzvValRyz206GRLqivr1-73" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#6c8ebf;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="275" y="1340" as="sourcePoint" />
+            <mxPoint x="225" y="1340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
