@@ -6,6 +6,7 @@ from typing import Any, AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.messaging.messaging_manager import messaging_manager
 from src.messaging.pubsub_exchanges import TRANSCRIPTION_COMPLETED
@@ -43,6 +44,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
 
 
 app = FastAPI(title="transcription-service", lifespan=lifespan)
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
 app.include_router(router)
 
 
