@@ -101,4 +101,7 @@ async def _subscribe_to_exchange(
     facade = PubSubFacade(amqp_url, EXCHANGE_NAME)
     await facade.connect()
     facade.subscribe(QUEUE_NAME, on_message_callback, DummyMessage)
+    await asyncio.sleep(
+        1
+    )  # allow _consume task to declare queue and bind before publishing
     return facade

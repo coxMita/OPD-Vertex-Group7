@@ -1,0 +1,1 @@
+[33mWARNING [0m src.messaging.subscriber:subscriber.py:43 Missing consultation_id in message from file 'consultation_001.mp3'; skipping.

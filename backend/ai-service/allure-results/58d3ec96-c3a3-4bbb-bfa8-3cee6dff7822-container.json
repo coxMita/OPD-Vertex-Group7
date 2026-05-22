@@ -1,0 +1,1 @@
+{"uuid": "59e3990d-8b0d-45a8-9c22-4f0efc7df110", "children": ["911b3e1a-d902-4065-9fe1-e59745cd14f9"], "befores": [{"name": "mock_pipeline", "status": "passed", "start": 1779388569334, "stop": 1779388569335}], "afters": [{"name": "mock_pipeline::0", "status": "passed", "start": 1779388569341, "stop": 1779388569341}], "start": 1779388569334, "stop": 1779388569341}

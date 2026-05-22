@@ -1,0 +1,1 @@
+[33mWARNING [0m src.ai.service:service.py:418 Could not parse prescription JSON from model output.

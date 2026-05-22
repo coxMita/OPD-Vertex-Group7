@@ -15,10 +15,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "allure-pytest>=2.16.0",
     "pre-commit>=4.3",
     "pytest>=8.4",
     "pytest-asyncio>=1.2",
     "pytest-cov>=7.0",
+    "pytest-html>=4.2.0",
     "ruff>=0.14",
 ]
 

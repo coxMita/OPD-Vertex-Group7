@@ -1,0 +1,7 @@
+[31m[1mERROR   [0m src.messaging.subscriber:subscriber.py:96 Failed to publish AICompletedMessage for file 'consultation_001.mp3'.
+Traceback (most recent call last):
+  File "/home/mihai/Documents/GitHub/OPD-Vertex-Group7/backend/ai-service/src/messaging/subscriber.py", line 88, in on_transcript_message
+    await messaging_manager.get_pubsub(AI_COMPLETED).publish(message)
+  File "/home/mihai/.local/share/uv/python/cpython-3.13.12-linux-x86_64-gnu/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+RuntimeError: RabbitMQ unavailable

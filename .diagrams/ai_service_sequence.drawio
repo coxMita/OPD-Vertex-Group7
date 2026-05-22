@@ -1,0 +1,317 @@
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <!-- Title -->
+    <mxCell id="title" value="AI Service — RAG Pipeline Sequence Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+      <mxGeometry x="60" y="20" width="1100" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- ═══════════════════════════ LIFELINE HEADERS ═══════════════════════════ -->
+
+    <mxCell id="h_rmq" value="RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078d4;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="72" width="110" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_sub" value="subscriber.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#106ebe;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="72" width="120" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_svc" value="service.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#106ebe;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="72" width="120" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_vs" value="vector_store.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5c2d91;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="580" y="72" width="130" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_ollama" value="Ollama&#xa;(nomic-embed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#107c10;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="770" y="72" width="120" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_llm" value="Ollama&#xa;(LLM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d83b01;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="950" y="72" width="110" height="36" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="h_pg" value="pgvector DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5c2d91;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="72" width="110" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- ═══════════════════════════ LIFELINES (dashed vertical) ═══════════════════════════ -->
+
+    <mxCell id="ll_rmq"    style="endArrow=none;dashed=1;strokeColor=#0078d4;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><Array as="points"/></mxGeometry>
+      <mxCell as="sourcePoint" x="115" y="108"/>
+      <mxCell as="targetPoint" x="115" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_sub"    style="endArrow=none;dashed=1;strokeColor=#106ebe;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="280" y="108"/>
+      <mxCell as="targetPoint" x="280" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_svc"    style="endArrow=none;dashed=1;strokeColor=#106ebe;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="108"/>
+      <mxCell as="targetPoint" x="460" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_vs"     style="endArrow=none;dashed=1;strokeColor=#5c2d91;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="645" y="108"/>
+      <mxCell as="targetPoint" x="645" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_ollama" style="endArrow=none;dashed=1;strokeColor=#107c10;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="830" y="108"/>
+      <mxCell as="targetPoint" x="830" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_llm"    style="endArrow=none;dashed=1;strokeColor=#d83b01;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="1005" y="108"/>
+      <mxCell as="targetPoint" x="1005" y="1060"/>
+    </mxCell>
+
+    <mxCell id="ll_pg"     style="endArrow=none;dashed=1;strokeColor=#5c2d91;strokeWidth=1.5;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="1175" y="108"/>
+      <mxCell as="targetPoint" x="1175" y="1060"/>
+    </mxCell>
+
+    <!-- ════════════════════ SECTION BANDS ════════════════════ -->
+
+    <!-- Band: Receive Message -->
+    <mxCell id="band1" value="① Receive &amp; Validate" style="rounded=0;fillColor=#e6f2fb;strokeColor=#0078d4;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#0078d4;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="136" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Band: Chunk + Embed + Store -->
+    <mxCell id="band2" value="② Chunk → Embed (batch) → Store" style="rounded=0;fillColor=#f0f9f0;strokeColor=#107c10;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#107c10;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="286" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Band: Retrieve -->
+    <mxCell id="band3" value="③ Retrieve — Summary &amp; Alerts queries" style="rounded=0;fillColor=#f5f0fa;strokeColor=#5c2d91;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#5c2d91;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="436" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Band: Prescription filter -->
+    <mxCell id="band4" value="④ Prescription — keyword filter → dynamic top-k → (optional sub-session)" style="rounded=0;fillColor=#fffbf0;strokeColor=#d83b01;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#b7791f;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="566" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Band: LLM passes -->
+    <mxCell id="band5" value="⑤ Three sequential LLM passes" style="rounded=0;fillColor=#fdf2f2;strokeColor=#d83b01;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#d83b01;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="756" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Band: Publish -->
+    <mxCell id="band6" value="⑥ Publish result &amp; clean up" style="rounded=0;fillColor=#e6f2fb;strokeColor=#0078d4;strokeWidth=1;fontSize=10;fontStyle=1;fontColor=#0078d4;align=left;spacingLeft=6;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="976" width="1170" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- ════════════════════ ① RECEIVE & VALIDATE ════════════════════ -->
+
+    <!-- RabbitMQ → subscriber: transcription.completed -->
+    <mxCell id="m01" value="transcription.completed (raw bytes)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0078d4;strokeWidth=2;fillColor=#0078d4;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="115" y="172"/>
+      <mxCell as="targetPoint" x="280" y="172"/>
+    </mxCell>
+
+    <!-- subscriber: json.loads + validate consultation_id UUID -->
+    <mxCell id="n01" value="json.loads(body)&#xa;validate consultation_id UUID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f2fb;strokeColor=#0078d4;strokeWidth=1;fontSize=9;fontColor=#0078d4;align=center;" vertex="1" parent="1">
+      <mxGeometry x="196" y="192" width="168" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- subscriber → service: process_transcript(transcript) -->
+    <mxCell id="m02" value="process_transcript(transcript)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#106ebe;strokeWidth=2;fillColor=#106ebe;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="280" y="248"/>
+      <mxCell as="targetPoint" x="460" y="248"/>
+    </mxCell>
+
+    <!-- service: session_id = uuid4() -->
+    <mxCell id="n02" value="session_id = uuid4()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f2fb;strokeColor=#106ebe;strokeWidth=1;fontSize=9;fontColor=#106ebe;" vertex="1" parent="1">
+      <mxGeometry x="376" y="256" width="168" height="24" as="geometry"/>
+    </mxCell>
+
+    <!-- ════════════════════ ② CHUNK + EMBED + STORE ════════════════════ -->
+
+    <!-- service: chunk_text() -->
+    <mxCell id="n03" value="chunk_text(transcript, size=200, overlap=30)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f9f0;strokeColor=#107c10;strokeWidth=1;fontSize=9;fontColor=#107c10;" vertex="1" parent="1">
+      <mxGeometry x="376" y="308" width="220" height="26" as="geometry"/>
+    </mxCell>
+
+    <!-- service → Ollama embed: embed_batch(chunks) -->
+    <mxCell id="m03" value="POST /api/embed  input=[all chunks]" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#107c10;strokeWidth=2;fillColor=#107c10;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="352"/>
+      <mxCell as="targetPoint" x="830" y="352"/>
+    </mxCell>
+
+    <!-- Ollama → service: vectors[] 768-dim -->
+    <mxCell id="m04" value="vectors[ ]  768-dim per chunk" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#107c10;strokeWidth=1.5;dashed=1;fillColor=#107c10;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="830" y="374"/>
+      <mxCell as="targetPoint" x="460" y="374"/>
+    </mxCell>
+
+    <!-- service → vector_store: store_chunks() -->
+    <mxCell id="m05" value="store_chunks(session_id, chunks, vectors)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=2;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="402"/>
+      <mxCell as="targetPoint" x="645" y="402"/>
+    </mxCell>
+
+    <!-- vector_store → pgvector: INSERT executemany -->
+    <mxCell id="m06" value="INSERT INTO transcript_chunks (executemany)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=2;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="645" y="420"/>
+      <mxCell as="targetPoint" x="1175" y="420"/>
+    </mxCell>
+
+    <!-- ════════════════════ ③ RETRIEVE SUMMARY + ALERTS ════════════════════ -->
+
+    <!-- service → Ollama: embed(SUMMARY_QUERY) -->
+    <mxCell id="m07" value="embed(SUMMARY_QUERY)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#107c10;strokeWidth=2;fillColor=#107c10;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="472"/>
+      <mxCell as="targetPoint" x="830" y="472"/>
+    </mxCell>
+
+    <!-- service → vector_store: retrieve top-8 summary -->
+    <mxCell id="m08" value="retrieve_relevant_chunks(session, vec, top_k=8)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=2;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="494"/>
+      <mxCell as="targetPoint" x="645" y="494"/>
+    </mxCell>
+
+    <!-- vector_store → pgvector: SELECT ORDER BY embedding <=> vec LIMIT 8 -->
+    <mxCell id="m09" value="SELECT … ORDER BY embedding &lt;=&gt; vec LIMIT 8" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=1.5;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="645" y="512"/>
+      <mxCell as="targetPoint" x="1175" y="512"/>
+    </mxCell>
+
+    <!-- embed(ALERTS_QUERY) + retrieve top-12 -->
+    <mxCell id="m10" value="embed(ALERTS_QUERY) → retrieve top-12 alert chunks" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#107c10;strokeWidth=1.5;dashed=1;fillColor=#107c10;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="538"/>
+      <mxCell as="targetPoint" x="830" y="538"/>
+    </mxCell>
+
+    <!-- ════════════════════ ④ PRESCRIPTION FILTER ════════════════════ -->
+
+    <!-- service: _filter_prescription_chunks() -->
+    <mxCell id="n04" value="_filter_prescription_chunks()&#xa;keyword frozenset match → candidates" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffbf0;strokeColor=#d83b01;strokeWidth=1;fontSize=9;fontColor=#b7791f;" vertex="1" parent="1">
+      <mxGeometry x="376" y="596" width="200" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- service: _dynamic_top_k() -->
+    <mxCell id="n05" value="_dynamic_top_k(candidates) → cap at 8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffbf0;strokeColor=#d83b01;strokeWidth=1;fontSize=9;fontColor=#b7791f;" vertex="1" parent="1">
+      <mxGeometry x="376" y="642" width="200" height="26" as="geometry"/>
+    </mxCell>
+
+    <!-- [if candidates > top_k] sub-session embed → store → retrieve → delete -->
+    <mxCell id="n06" value="[if candidates &gt; top_k]&#xa;sub-session: embed_batch → store → retrieve → delete" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf2f2;strokeColor=#d83b01;strokeWidth=1;dashed=1;fontSize=9;fontColor=#c0392b;" vertex="1" parent="1">
+      <mxGeometry x="376" y="678" width="260" height="36" as="geometry"/>
+    </mxCell>
+
+    <!-- _hierarchical_summarise() concurrent -->
+    <mxCell id="n07" value="_hierarchical_summarise() — asyncio.gather&#xa;CHUNK_SUMMARY_PROMPT × N  →  mini_summaries[ ]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf7f0;strokeColor=#d35400;strokeWidth=1;fontSize=9;fontColor=#d35400;" vertex="1" parent="1">
+      <mxGeometry x="376" y="724" width="280" height="26" as="geometry"/>
+    </mxCell>
+
+    <!-- ════════════════════ ⑤ THREE LLM PASSES ════════════════════ -->
+
+    <!-- Pass 1: Summary -->
+    <mxCell id="lbl_p1" value="Pass 1 — Summary" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#d83b01;" vertex="1" parent="1">
+      <mxGeometry x="376" y="784" width="130" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="m11" value="generate(SUMMARY_PROMPT_TEMPLATE)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d83b01;strokeWidth=2;fillColor=#d83b01;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="808"/>
+      <mxCell as="targetPoint" x="1005" y="808"/>
+    </mxCell>
+
+    <mxCell id="m12" value="summary (str)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#107c10;strokeWidth=2;dashed=1;fillColor=#107c10;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="1005" y="826"/>
+      <mxCell as="targetPoint" x="460" y="826"/>
+    </mxCell>
+
+    <!-- Pass 2: Prescription -->
+    <mxCell id="lbl_p2" value="Pass 2 — Prescription" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#d83b01;" vertex="1" parent="1">
+      <mxGeometry x="376" y="848" width="140" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="m13" value="generate(PRESCRIPTION_PROMPT_TEMPLATE)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d83b01;strokeWidth=2;fillColor=#d83b01;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="872"/>
+      <mxCell as="targetPoint" x="1005" y="872"/>
+    </mxCell>
+
+    <mxCell id="m14" value="raw JSON" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d83b01;strokeWidth=1.5;dashed=1;fillColor=#d83b01;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="1005" y="890"/>
+      <mxCell as="targetPoint" x="460" y="890"/>
+    </mxCell>
+
+    <mxCell id="n08" value="_parse_json_safe() — strip fences · fix nulls · repair braces" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf2f2;strokeColor=#d83b01;strokeWidth=1;fontSize=9;fontColor=#c0392b;" vertex="1" parent="1">
+      <mxGeometry x="376" y="898" width="290" height="22" as="geometry"/>
+    </mxCell>
+
+    <!-- Pass 3: Alerts -->
+    <mxCell id="lbl_p3" value="Pass 3 — Clinical Alerts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#d83b01;" vertex="1" parent="1">
+      <mxGeometry x="376" y="930" width="150" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="m15" value="generate(CLINICAL_ALERTS_PROMPT_TEMPLATE)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d83b01;strokeWidth=2;fillColor=#d83b01;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="954"/>
+      <mxCell as="targetPoint" x="1005" y="954"/>
+    </mxCell>
+
+    <mxCell id="m16" value="list[str]  (Consider bullets only)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0078d4;strokeWidth=2;dashed=1;fillColor=#0078d4;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="1005" y="972"/>
+      <mxCell as="targetPoint" x="460" y="972"/>
+    </mxCell>
+
+    <!-- ════════════════════ ⑥ PUBLISH + CLEANUP ════════════════════ -->
+
+    <!-- finally: delete_session -->
+    <mxCell id="m17" value="finally: delete_session(session_id)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=2;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="1006"/>
+      <mxCell as="targetPoint" x="645" y="1006"/>
+    </mxCell>
+
+    <mxCell id="m18" value="DELETE FROM transcript_chunks WHERE session_id=$1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#5c2d91;strokeWidth=1.5;fillColor=#5c2d91;fontSize=10;fontColor=#000;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="645" y="1022"/>
+      <mxCell as="targetPoint" x="1175" y="1022"/>
+    </mxCell>
+
+    <!-- service → subscriber: {summary, prescription, clinical_alerts} -->
+    <mxCell id="m19" value="{summary, prescription, clinical_alerts}" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#106ebe;strokeWidth=2;dashed=1;fillColor=#106ebe;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="460" y="1042"/>
+      <mxCell as="targetPoint" x="280" y="1042"/>
+    </mxCell>
+
+    <!-- subscriber → RabbitMQ: publish AICompletedMessage → ai.completed -->
+    <mxCell id="m20" value="publish AICompletedMessage → ai.completed" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0078d4;strokeWidth=2;fillColor=#0078d4;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+      <mxCell as="sourcePoint" x="280" y="1058"/>
+      <mxCell as="targetPoint" x="115" y="1058"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
