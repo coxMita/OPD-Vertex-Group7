@@ -18,6 +18,7 @@ defineEmits<{
       :model-value="modelValue"
       :placeholder="placeholder"
       :type="type ?? 'text'"
+      :aria-label="label"
       variant="outlined"
       rounded="lg"
       density="comfortable"
