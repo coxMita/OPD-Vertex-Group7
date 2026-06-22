@@ -5,6 +5,7 @@ import logging
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.dependencies.auth import verify_token
 from src.routers.ai_proxy import router as ai_router
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="OPD-Vertex API Gateway",
 )
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
 
 app.add_middleware(
     CORSMiddleware,

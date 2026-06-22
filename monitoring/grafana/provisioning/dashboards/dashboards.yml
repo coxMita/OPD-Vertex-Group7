@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: OPD Vertex
+    orgId: 1
+    folder: OPD Vertex
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

@@ -11,6 +11,7 @@ from typing import Any, AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 import src.logger_config  # noqa: F401, I001
 from src.api.routes.doctor_routes import router as doctor_router
@@ -43,6 +44,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
 
 
 app = FastAPI(title="user-service", lifespan=lifespan)
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
 app.include_router(patient_router)
 app.include_router(doctor_router)
 

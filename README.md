@@ -26,4 +26,29 @@ uploaded to Codecov for analysis. The code coverage only includes all microservi
 
 [![codecov](https://codecov.io/github/coxMita/OPD-Vertex-Group7/graph/badge.svg)](https://codecov.io/github/coxMita/OPD-Vertex-Group7)
 
+## Monitoring
+
+The Docker Compose stack includes Prometheus and Grafana for observability dashboards.
+
+Start the stack:
+
+```bash
+docker compose up --build
+```
+
+Open the monitoring tools:
+
+| Tool | URL | Credentials |
+|---|---|---|
+| Grafana | http://localhost:3000 | `admin` / `admin` |
+| Prometheus | http://localhost:9090 | n/a |
+
+Grafana is provisioned automatically with the `OPD Vertex Observability Overview` dashboard. It uses Prometheus metrics from:
+
+- FastAPI services via `/metrics`
+- RabbitMQ via its built-in Prometheus plugin
+- Postgres databases via dedicated `postgres-exporter` containers
+- Prometheus target health via `up`
+
+Useful dashboard panels for the report include service availability, API request rate, p95 API latency, 5xx errors, database connections, and RabbitMQ queue depth.
 
