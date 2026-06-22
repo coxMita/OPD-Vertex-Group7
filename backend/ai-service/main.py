@@ -8,7 +8,6 @@ from typing import Any, AsyncGenerator
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.ai.router import router
 from src.messaging.messaging_manager import messaging_manager
@@ -95,7 +94,6 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
 
 
 app = FastAPI(title="ai-service", lifespan=lifespan)
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
 app.include_router(router)
 
 

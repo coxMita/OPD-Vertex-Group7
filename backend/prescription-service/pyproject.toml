@@ -10,7 +10,6 @@ dependencies = [
     "psycopg2-binary>=2.9",
     "alembic>=1.17",
     "aio-pika>=9.5",
-    "prometheus-fastapi-instrumentator>=7.1",
     "python-dotenv>=1.1",]
 
 [dependency-groups]
