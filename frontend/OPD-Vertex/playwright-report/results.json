@@ -1,0 +1,491 @@
+{
+  "config": {
+    "configFile": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/playwright.config.ts",
+    "rootDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5173",
+      "reuseExistingServer": true,
+      "timeout": 60000
+    }
+  },
+  "suites": [
+    {
+      "title": "consultation-ai-transcription.spec.ts",
+      "file": "consultation-ai-transcription.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Consultation Panel — Tab structure",
+          "file": "consultation-ai-transcription.spec.ts",
+          "line": 246,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Consultations tab button is visible at /doctor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3428,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:25.252Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-1a64e-button-is-visible-at-doctor-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-3eb465a6fa8adf3e481b",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 254,
+              "column": 3
+            },
+            {
+              "title": "clicking the Consultations tab renders the sidebar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3465,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:25.250Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-9a98a-ons-tab-renders-the-sidebar-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-6de9bab5fe1aba6110fb",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "main panel shows \"Select a consultation to begin\" when none is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3246,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:25.218Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-abbb8-begin-when-none-is-selected-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-ad5e3cd8ff9468757a93",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 270,
+              "column": 3
+            },
+            {
+              "title": "Consultations tab button is visible at /doctor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3639,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:25.226Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-1a64e-button-is-visible-at-doctor-firefox/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-bfae8e7264c2da5566b7",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 254,
+              "column": 3
+            },
+            {
+              "title": "clicking the Consultations tab renders the sidebar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4649,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:29.827Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-9a98a-ons-tab-renders-the-sidebar-firefox/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-ffb46a9209189cd10001",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "main panel shows \"Select a consultation to begin\" when none is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4464,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:30.032Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-abbb8-begin-when-none-is-selected-firefox/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-6b63adde9e68a1249f46",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 270,
+              "column": 3
+            },
+            {
+              "title": "Consultations tab button is visible at /doctor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome",
+                  "projectName": "mobile-chrome",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3002,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:30.059Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-1a64e-button-is-visible-at-doctor-mobile-chrome/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-2cbcdb5ad375b0208a67",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 254,
+              "column": 3
+            },
+            {
+              "title": "clicking the Consultations tab renders the sidebar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome",
+                  "projectName": "mobile-chrome",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3013,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:31.358Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-9a98a-ons-tab-renders-the-sidebar-mobile-chrome/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-62e0c15dd8946a640ef6",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "main panel shows \"Select a consultation to begin\" when none is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome",
+                  "projectName": "mobile-chrome",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1757,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-05-30T13:25:33.895Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/mihai/Documents/Github/OPD-Vertex-Group7/frontend/OPD-Vertex/test-results/consultation-ai-transcript-abbb8-begin-when-none-is-selected-mobile-chrome/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaa1035d0ba3cb9c99d6-af21dba7c8ba439ad616",
+              "file": "consultation-ai-transcription.spec.ts",
+              "line": 270,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-30T13:25:24.162Z",
+    "duration": 11766.125,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
