@@ -307,6 +307,12 @@ git push origin <branch-name>
 
 ### Apply Migrations
 
+The **user-service** applies its own migrations on startup via `entrypoint.sh`, so a
+fresh `docker compose up -d` needs no manual step. It also runs `seed.py` when
+`SEED_ON_STARTUP=true` (set for local development in `docker-compose.yml`); the seed
+skips doctors that already exist. The other services still need the commands below
+after their volumes are recreated.
+
 ```bash
 # Inside the container
 uv run alembic upgrade head

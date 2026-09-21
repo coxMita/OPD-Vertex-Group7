@@ -290,12 +290,14 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-3.0.15
+        image: mita28/opdvertex:user-service-3.0.16
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
         ports:
             - "8087:8000"
+        environment:
+            SEED_ON_STARTUP: "true"
         networks:
             - internal-api
             - bus
