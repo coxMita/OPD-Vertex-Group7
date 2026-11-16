@@ -27,7 +27,8 @@ EMBED_SERVED_NAME="${EMBED_SERVED_NAME:-opd-embed}"
 EMBED_GPU_UTIL="${EMBED_GPU_UTIL:-0.12}"
 
 VLLM_SPEC="${VLLM_SPEC:-vllm}"                         # e.g. "vllm==0.11.0" to pin
-INSTALL_CUDA_TOOLKIT="${INSTALL_CUDA_TOOLKIT:-0}"     # 1 = apt install CUDA toolkit (only if vLLM complains about nvcc)
+INSTALL_CUDA_TOOLKIT="${INSTALL_CUDA_TOOLKIT:-1}"     # vLLM/FlashInfer compile GPU kernels at start-up -> need nvcc
+CUDA_TOOLKIT_PKG="${CUDA_TOOLKIT_PKG:-cuda-toolkit-13-0}"  # matches the CUDA 13.0 build of torch/vLLM
 
 LOG_DIR="$BASE_DIR/logs"
 SECRETS_DIR="$BASE_DIR/secrets"
@@ -77,20 +78,30 @@ else
   echo "==> [2/6] Done: nginx started in background."
 fi
 
-# ── [3/6] (optional) CUDA toolkit ────────────────────────────────────────────
-if [ "$INSTALL_CUDA_TOOLKIT" = "1" ] && [ ! -x /usr/local/cuda/bin/nvcc ]; then
-  echo "==> [3/6] Installing CUDA toolkit (this takes a while)..."
-  DISTRO=$(. /etc/os-release && echo "ubuntu${VERSION_ID//./}")
-  wget -q "https://developer.download.nvidia.com/compute/cuda/repos/${DISTRO}/x86_64/cuda-keyring_1.1-1_all.deb" -O /tmp/cuda-keyring.deb
-  sudo dpkg -i /tmp/cuda-keyring.deb
-  sudo apt-get update
-  sudo apt-get install -y cuda-toolkit
-  export CUDA_HOME=/usr/local/cuda
-  export PATH="${CUDA_HOME}/bin:$PATH"
-  export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
-  echo "==> [3/6] Done."
+# ── [3/6] CUDA toolkit (nvcc) ────────────────────────────────────────────────
+# FlashInfer (attention) compiles kernels on first use and needs nvcc.
+# The toolkit is installed into the (non-persistent) system each start, but the
+# .deb downloads are cached in $BASE_DIR/apt-cache so later starts are faster.
+if [ "$INSTALL_CUDA_TOOLKIT" = "1" ]; then
+  if [ ! -x /usr/local/cuda/bin/nvcc ]; then
+    echo "==> [3/6] Installing $CUDA_TOOLKIT_PKG (a few minutes)..."
+    mkdir -p "$BASE_DIR/apt-cache/partial"
+    DISTRO=$(. /etc/os-release && echo "ubuntu${VERSION_ID//./}")
+    wget -q "https://developer.download.nvidia.com/compute/cuda/repos/${DISTRO}/x86_64/cuda-keyring_1.1-1_all.deb" -O /tmp/cuda-keyring.deb
+    sudo dpkg -i /tmp/cuda-keyring.deb > /dev/null
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq -o dir::cache::archives="$BASE_DIR/apt-cache" "$CUDA_TOOLKIT_PKG" > "$LOG_DIR/cuda-install.log" 2>&1 \
+      || { echo "    CUDA install failed:"; tail -n 20 "$LOG_DIR/cuda-install.log"; }
+  fi
+  if [ -x /usr/local/cuda/bin/nvcc ]; then
+    export CUDA_HOME=/usr/local/cuda
+    export PATH="${CUDA_HOME}/bin:$PATH"
+    echo "==> [3/6] Done: $(nvcc --version | tail -n 1)"
+  else
+    echo "    WARNING: nvcc still missing — vLLM may fail to compile kernels."
+  fi
 else
-  echo "==> [3/6] Skipping CUDA toolkit (vLLM wheels ship their own CUDA runtime)."
+  echo "==> [3/6] Skipping CUDA toolkit (INSTALL_CUDA_TOOLKIT=0)."
 fi
 nvidia-smi || echo "    WARNING: nvidia-smi failed — did you pick a GPU machine type?"
 
@@ -115,6 +126,9 @@ fi
 
 # ── [5/6] Hugging Face cache (+ optional token for gated models) ─────────────
 export HF_HOME="$BASE_DIR/hf-cache"
+# Keep compiled-kernel caches in /work so restarts don't recompile everything
+export VLLM_CACHE_ROOT="$BASE_DIR/cache/vllm"
+export FLASHINFER_WORKSPACE_BASE="$BASE_DIR/cache"
 
 # DeepGEMM (used for FP8 models) JIT-compiles kernels and needs a full CUDA
 # toolkit, which these nodes don't have -> use vLLM's precompiled FP8 kernels.
