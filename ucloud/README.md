@@ -161,6 +161,7 @@ and `docker compose --profile local-llm up -d`. Whisper then runs on the local C
 | `502 Bad Gateway` | nginx is up but the model server is not (still loading, or crashed). Check the job log and `logs/*.log` in the folder. |
 | `CUDA out of memory` at vLLM start | Smaller `LLM_MAX_LEN` (e.g. 8192), lower `LLM_GPU_UTIL`, or choose a bigger machine type. |
 | `deep_jit ... find_cuda_toolkit ... home_path` | DeepGEMM needs a CUDA toolkit. `init.sh` sets `VLLM_USE_DEEP_GEMM=0`; if FP8 still fails, use `LLM_MODEL=Qwen/Qwen3-8B-AWQ` (4-bit, no FP8 kernels). |
+| `Could not find nvcc and default cuda_home='/usr/local/cuda'` (flashinfer) | `init.sh` sets `VLLM_USE_FLASHINFER_SAMPLER=0`. If another flashinfer JIT error appears, set `INSTALL_CUDA_TOOLKIT=1` (what the course demo did). |
 | vLLM complains about `nvcc` / CUDA toolkit | Set `INSTALL_CUDA_TOOLKIT=1` at the top of `ucloud/llm/init.sh` (slower start, it re-installs each job). |
 | Embedding server does not start | See `opd-llm/logs/embed.log`. With newer vLLM versions you may need `EMBED_EXTRA_ARGS="--runner pooling"` (older: `--task embed`). |
 | Whisper: `TypeError: expected str ... not NoneType` at step 3/4 | Old `init.sh`; upload the current one (finds the cuBLAS/cuDNN folders itself). |

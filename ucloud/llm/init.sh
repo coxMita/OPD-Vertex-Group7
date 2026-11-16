@@ -119,6 +119,8 @@ export HF_HOME="$BASE_DIR/hf-cache"
 # DeepGEMM (used for FP8 models) JIT-compiles kernels and needs a full CUDA
 # toolkit, which these nodes don't have -> use vLLM's precompiled FP8 kernels.
 export VLLM_USE_DEEP_GEMM="${VLLM_USE_DEEP_GEMM:-0}"
+# Same for FlashInfer's top-k/top-p sampler (JIT needs nvcc) -> PyTorch sampler.
+export VLLM_USE_FLASHINFER_SAMPLER="${VLLM_USE_FLASHINFER_SAMPLER:-0}"
 if [ -s "$SECRETS_DIR/hf_token" ]; then
   HF_TOKEN="$(tr -d '[:space:]' < "$SECRETS_DIR/hf_token")"
   export HF_TOKEN
