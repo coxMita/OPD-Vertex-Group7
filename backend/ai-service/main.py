@@ -5,10 +5,10 @@ import os
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
-import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from src.ai.llm_client import check_connection
 from src.ai.router import router
 from src.messaging.messaging_manager import messaging_manager
 from src.messaging.pubsub_exchanges import AI_COMPLETED, TRANSCRIPTION_COMPLETED
@@ -29,32 +29,6 @@ if not AMQP_URL:
     logger.error("AMQP_URL is not set.")
     raise ValueError("AMQP_URL is not set.")
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-
-
-async def _ensure_embed_model_pulled() -> None:
-    """Pull nomic-embed-text if not already present in Ollama."""
-    logger.info("Checking if '%s' is available in Ollama...", OLLAMA_EMBED_MODEL)
-    try:
-        async with httpx.AsyncClient(timeout=300) as client:
-            resp = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
-            resp.raise_for_status()
-            models = [m["name"] for m in resp.json().get("models", [])]
-            if any(OLLAMA_EMBED_MODEL in m for m in models):
-                logger.info("'%s' already present.", OLLAMA_EMBED_MODEL)
-                return
-            logger.info("Pulling '%s' from Ollama...", OLLAMA_EMBED_MODEL)
-            pull_resp = await client.post(
-                f"{OLLAMA_BASE_URL}/api/pull",
-                json={"name": OLLAMA_EMBED_MODEL, "stream": False},
-                timeout=300,
-            )
-            pull_resp.raise_for_status()
-            logger.info("'%s' pulled successfully.", OLLAMA_EMBED_MODEL)
-    except httpx.HTTPError as exc:
-        logger.warning("Could not pull embed model: %s", exc)
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
@@ -64,8 +38,8 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
     await init_db()
     logger.info("pgvector database ready.")
 
-    # 2. Ensure nomic-embed-text is available
-    await _ensure_embed_model_pulled()
+    # 2. Check that the LLM endpoint (UCloud vLLM or local Ollama) is reachable
+    await check_connection()
 
     # 3. Start RabbitMQ messaging — subscribe side (transcription.completed)
     transcription_pubsub = PubSubFacade(AMQP_URL, TRANSCRIPTION_COMPLETED)

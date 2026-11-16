@@ -181,3 +181,70 @@ class TestSaveTranscript:
         out = tmp_path / "transcript.txt"
         save_transcript("", filename=str(out))
         assert out.exists()
+
+
+# ── remote mode (UCloud) ──────────────────────────────────────────────────────
+
+
+class TestRemoteTranscription:
+    """Tests for transcribe_audio() when WHISPER_API_URL is set."""
+
+    @pytest.fixture(autouse=True)
+    def remote_env(self) -> None:
+        """Configure a fake remote endpoint for every test in this class."""
+        with (
+            patch.object(whisper_module, "WHISPER_API_URL", "https://w.example/v1"),
+            patch.object(whisper_module, "WHISPER_API_KEY", "tok"),
+        ):
+            yield
+
+    def _response(self, body: dict) -> MagicMock:
+        resp = MagicMock()
+        resp.json.return_value = body
+        resp.raise_for_status = MagicMock()
+        return resp
+
+    @patch("src.transcription.whisper.WhisperModel")
+    @patch("src.transcription.whisper.httpx.post")
+    def test_posts_to_remote_and_parses(
+        self, mock_post: MagicMock, mock_cls: MagicMock, tmp_path: pytest.fixture
+    ) -> None:
+        """Audio goes to /audio/transcriptions; the local model is not loaded."""
+        audio = tmp_path / "a.wav"
+        audio.write_bytes(b"RIFF")
+        mock_post.return_value = self._response(
+            {"text": " Hello there ", "language": "en", "language_probability": 0.97}
+        )
+
+        result = transcribe_audio(str(audio), language="en")
+
+        assert result == ("Hello there", "en", pytest.approx(0.97))
+        mock_cls.assert_not_called()
+        call = mock_post.call_args
+        assert call.args[0] == "https://w.example/v1/audio/transcriptions"
+        assert call.kwargs["headers"] == {"Authorization": "Bearer tok"}
+        assert call.kwargs["data"]["language"] == "en"
+        assert call.kwargs["data"]["response_format"] == "verbose_json"
+
+    @patch("src.transcription.whisper.httpx.post")
+    def test_missing_language_fields_fall_back(
+        self, mock_post: MagicMock, tmp_path: pytest.fixture
+    ) -> None:
+        """Plain {"text": ...} responses still work."""
+        audio = tmp_path / "a.wav"
+        audio.write_bytes(b"RIFF")
+        mock_post.return_value = self._response({"text": "Hi"})
+        assert transcribe_audio(str(audio), language="ro") == ("Hi", "ro", 1.0)
+
+    @patch("src.transcription.whisper.httpx.post")
+    def test_http_error_propagates(
+        self, mock_post: MagicMock, tmp_path: pytest.fixture
+    ) -> None:
+        """A 401 from nginx surfaces as an exception (router turns it into 500)."""
+        audio = tmp_path / "a.wav"
+        audio.write_bytes(b"RIFF")
+        resp = MagicMock()
+        resp.raise_for_status.side_effect = RuntimeError("401")
+        mock_post.return_value = resp
+        with pytest.raises(RuntimeError):
+            transcribe_audio(str(audio))
