@@ -10,5 +10,5 @@ class PatientCreateRequest(BaseModel):
     last_name: str
     date_of_birth: date
     gender: str
-    phone_number: int
+    phone_number: str
     email: str

@@ -14,7 +14,7 @@ export interface PatientResponse {
   last_name: string
   date_of_birth: string   // "YYYY-MM-DD"
   gender: string
-  phone_number: number
+  phone_number: string
   email: string
 }
 
@@ -23,7 +23,7 @@ export interface PatientFindOrCreateRequest {
   last_name: string
   date_of_birth: string   // "YYYY-MM-DD"
   gender: string
-  phone_number: number
+  phone_number: string
   email: string
 }
 

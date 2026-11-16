@@ -9,7 +9,7 @@ export type Mode = 'book' | 'check' | 'cancel'
 export interface PatientFormData {
   firstName: string
   lastName: string
-  phone_number: string      // kept as string in form, converted to number on submit
+  phone_number: string      // sent as string (keeps +, leading zeros)
   email: string
   dateOfBirth: string       // "YYYY-MM-DD"
   gender: string            // "male" | "female" | "other"

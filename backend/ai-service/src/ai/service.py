@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 
-from src.ai.ollama_client import embed, embed_batch, generate
+from src.ai.llm_client import embed, embed_batch, generate
 from src.ai.prompts import (
     CHUNK_SUMMARY_PROMPT_TEMPLATE,
     CLINICAL_ALERTS_PROMPT_TEMPLATE,

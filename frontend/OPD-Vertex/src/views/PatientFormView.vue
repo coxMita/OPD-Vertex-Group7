@@ -55,7 +55,7 @@ async function handleSubmit() {
       first_name: form.value.firstName,
       last_name: form.value.lastName,
       email: form.value.email,
-      phone_number: Number(form.value.phone_number),
+      phone_number: form.value.phone_number.trim(),
       date_of_birth: form.value.dateOfBirth,
       gender: form.value.gender,
     })

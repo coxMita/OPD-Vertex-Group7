@@ -1,5 +1,6 @@
 """Transcription router for transcription-service."""
 
+import asyncio
 import os
 import tempfile
 import uuid
@@ -34,7 +35,10 @@ async def transcribe(
         tmp_path = tmp.name
 
     try:
-        transcript, language, language_probability = transcribe_audio(tmp_path)
+        # Run in a thread: remote calls / local inference take a long time
+        transcript, language, language_probability = await asyncio.to_thread(
+            transcribe_audio, tmp_path
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     finally:

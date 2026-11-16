@@ -11,7 +11,7 @@ from src.messaging.messaging_manager import messaging_manager
 from src.messaging.pubsub_exchanges import TRANSCRIPTION_COMPLETED
 from src.messaging.pubsub_facade import PubSubFacade
 from src.transcription.router import router
-from src.transcription.whisper import get_model
+from src.transcription.whisper import get_model, use_remote
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,12 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, Any]:
     await messaging_manager.start_all()
     logger.info("Messaging manager started.")
 
-    logger.info("Pre-loading Whisper model...")
-    await asyncio.to_thread(get_model)  # runs blocking load off the event loop
-    logger.info("Whisper model ready.")
+    if use_remote():
+        logger.info("Using remote Whisper endpoint; skipping local model load.")
+    else:
+        logger.info("Pre-loading Whisper model...")
+        await asyncio.to_thread(get_model)  # runs blocking load off the event loop
+        logger.info("Whisper model ready.")
 
     yield
 
