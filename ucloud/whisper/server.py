@@ -18,7 +18,9 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse
 from faster_whisper import WhisperModel
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger("whisper-server")
 
 MODEL_SIZE = os.getenv("WHISPER_MODEL", "large-v3")
@@ -27,7 +29,9 @@ COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "float16")
 BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "5"))
 VAD_FILTER = os.getenv("WHISPER_VAD", "true").lower() == "true"
 
-logger.info("Loading faster-whisper '%s' on %s (%s)...", MODEL_SIZE, DEVICE, COMPUTE_TYPE)
+logger.info(
+    "Loading faster-whisper '%s' on %s (%s)...", MODEL_SIZE, DEVICE, COMPUTE_TYPE
+)
 model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
 logger.info("Model loaded.")
 _lock = threading.Lock()  # one transcription at a time on the small GPU slice
@@ -78,7 +82,10 @@ def transcribe(
     text = " ".join(s.text.strip() for s in segs).strip()
     logger.info(
         "Transcribed %.1fs of audio, lang=%s (%.2f), %d chars",
-        info.duration, info.language, info.language_probability, len(text),
+        info.duration,
+        info.language,
+        info.language_probability,
+        len(text),
     )
 
     if response_format == "text":
