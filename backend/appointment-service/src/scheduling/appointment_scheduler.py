@@ -27,15 +27,26 @@ async def _notify_session(
     repo: AppointmentRepository,
     messaging: MessagingManager,
     time_preference: TimePreference,
-) -> None:
-    today = date.today()
+    appointment_date: date | None = None,
+) -> int:
+    """Publish session_started for every doctor with appointments in the window.
+
+    Args:
+        repo (AppointmentRepository): Repository used to load/update appointments.
+        messaging (MessagingManager): The messaging manager.
+        time_preference (TimePreference): The AM/PM session to start.
+        appointment_date (date | None): Session date; defaults to today.
+
+    Returns:
+        int: The number of appointments handed off.
+
+    """
+    today = appointment_date or date.today()
     appointments = repo.get_by_date_and_preference(today, time_preference)
 
     if not appointments:
-        logger.info(
-            "No %s appointments today (%s), skipping.", time_preference.value, today
-        )
-        return
+        logger.info("No %s appointments on %s, skipping.", time_preference.value, today)
+        return 0
 
     by_doctor: dict = defaultdict(list)
     for appt in appointments:
@@ -71,6 +82,8 @@ async def _notify_session(
         for appt in doctor_appointments:
             repo.update_status(appt, AppointmentStatus.HANDED_OFF)
             logger.info("Marked appointment %s as HANDED_OFF", appt.id)
+
+    return len(appointments)
 
 
 def build_scheduler(

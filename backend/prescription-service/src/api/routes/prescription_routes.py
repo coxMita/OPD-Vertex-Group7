@@ -4,8 +4,10 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import text
+from sqlmodel import Session
 
-from src.api.dependencies import get_prescription_service
+from src.api.dependencies import get_db_session, get_prescription_service
 from src.models.dto.prescription_response import PrescriptionResponse
 from src.services.prescription_service import PrescriptionService
 
@@ -103,3 +105,11 @@ async def approve_prescription(
         response.status_code = status.HTTP_404_NOT_FOUND
         return {MESSAGE: NOT_FOUND_MESSAGE}
     return result
+
+
+@router.delete("/dev", status_code=status.HTTP_200_OK)
+def clear_db(session: Annotated[Session, Depends(get_db_session)]) -> dict:
+    """Delete every prescription (dev only, used by the frontend /admin page)."""
+    result = session.exec(text("DELETE FROM prescription"))
+    session.commit()
+    return {MESSAGE: "Prescriptions cleared", "deleted": result.rowcount}

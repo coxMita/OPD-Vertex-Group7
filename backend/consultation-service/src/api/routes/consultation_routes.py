@@ -4,8 +4,10 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import text
+from sqlmodel import Session
 
-from src.api.dependencies import get_consultation_service
+from src.api.dependencies import get_consultation_service, get_db_session
 from src.models.dto.consultation_create_request import ConsultationCreateRequest
 from src.models.dto.consultation_response import ConsultationResponse
 from src.models.dto.consultation_status_update_request import (
@@ -133,3 +135,11 @@ async def update_consultation(
         response.status_code = status.HTTP_404_NOT_FOUND
         return {MESSAGE: NOT_FOUND_MESSAGE}
     return result
+
+
+@router.delete("/dev", status_code=status.HTTP_200_OK)
+def clear_db(session: Annotated[Session, Depends(get_db_session)]) -> dict:
+    """Delete every consultation (dev only, used by the frontend /admin page)."""
+    result = session.exec(text("DELETE FROM consultation"))
+    session.commit()
+    return {MESSAGE: "Consultations cleared", "deleted": result.rowcount}
