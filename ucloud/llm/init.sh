@@ -112,6 +112,10 @@ fi
 
 # ── [5/6] Hugging Face cache (+ optional token for gated models) ─────────────
 export HF_HOME="$BASE_DIR/hf-cache"
+
+# DeepGEMM (used for FP8 models) JIT-compiles kernels and needs a full CUDA
+# toolkit, which these nodes don't have -> use vLLM's precompiled FP8 kernels.
+export VLLM_USE_DEEP_GEMM="${VLLM_USE_DEEP_GEMM:-0}"
 if [ -s "$SECRETS_DIR/hf_token" ]; then
   HF_TOKEN="$(tr -d '[:space:]' < "$SECRETS_DIR/hf_token")"
   export HF_TOKEN
@@ -138,6 +142,7 @@ vllm serve "$EMBED_MODEL" \
   --served-model-name "$EMBED_SERVED_NAME" \
   --trust-remote-code \
   --gpu-memory-utilization "$EMBED_GPU_UTIL" \
+  --enforce-eager \
   ${EMBED_EXTRA_ARGS:-} \
   > "$LOG_DIR/embed.log" 2>&1 &
 EMBED_PID=$!

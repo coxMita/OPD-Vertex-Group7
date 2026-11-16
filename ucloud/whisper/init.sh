@@ -80,7 +80,11 @@ else
   source "$VENV/bin/activate"
   echo "==> [3/4] Done: reusing existing venv."
 fi
-LD_LIBRARY_PATH="$(python -c 'import os, nvidia.cublas.lib, nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__))'):${LD_LIBRARY_PATH:-}"
+# cuBLAS/cuDNN from the pip wheels: add every nvidia/*/lib dir in the venv
+# (newer wheels are namespace packages, so we search the folders instead of importing)
+NV_LIBS="$(find "$VENV/lib" -type d -path '*/site-packages/nvidia/*/lib' | tr '\n' ':')"
+[ -n "$NV_LIBS" ] || echo "    WARNING: no nvidia/*/lib folders found in $VENV"
+LD_LIBRARY_PATH="${NV_LIBS}${LD_LIBRARY_PATH:-}"
 export LD_LIBRARY_PATH
 export HF_HOME="$BASE_DIR/hf-cache"
 
