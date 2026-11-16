@@ -16,7 +16,20 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse
+import av
 from faster_whisper import WhisperModel
+
+# Newer PyAV (>=15) removed the `metadata_errors` argument that faster-whisper
+# still passes to av.open() -> drop it so audio decoding works with any version.
+_av_open = av.open
+
+
+def _av_open_compat(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+    kwargs.pop("metadata_errors", None)
+    return _av_open(*args, **kwargs)
+
+
+av.open = _av_open_compat
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
