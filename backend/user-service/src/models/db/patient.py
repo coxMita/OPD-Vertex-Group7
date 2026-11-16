@@ -18,5 +18,5 @@ class Patient(SQLModel, table=True):
     last_name: str = Field(nullable=False)
     date_of_birth: date = Field(nullable=False)
     gender: str = Field(nullable=False)
-    phone_number: int = Field(nullable=False)
+    phone_number: str = Field(nullable=False)
     email: str = Field(nullable=False)
