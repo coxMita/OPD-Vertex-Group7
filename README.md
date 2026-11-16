@@ -26,4 +26,55 @@ uploaded to Codecov for analysis. The code coverage only includes all microservi
 
 [![codecov](https://codecov.io/github/coxMita/OPD-Vertex-Group7/graph/badge.svg)](https://codecov.io/github/coxMita/OPD-Vertex-Group7)
 
+  ## Running it locally
+
+  ### 1. Configure environment
+
+  ```bash
+  # Root env: then fill in LLM_API_KEY and WHISPER_API_KEY (UCloud tokens)
+  cp .env.example .env
+
+  # Per-service envs (the defaults work as-is for Docker)
+  for d in backend/*/; do [ -f "$d.env.example" ] && cp "$d.env.example" "$d.env"; done
+  ```
+
+  ### 2. Start the backend
+
+  ```bash
+  docker compose up -d --build
+  ```
+
+  Migrations run and the doctors are seeded automatically when the services start.
+
+  ### 3. Start the frontend
+
+  ```bash
+  cd frontend/OPD-Vertex
+  npm install
+  npm run dev
+  ```
+
+  ## Pages
+
+  | Page | URL | Login |
+  |---|---|---|
+  | Patient booking | http://localhost:5173/patient | – |
+  | Doctor calendar & consultations | http://localhost:5173/doctor | Doctor account |
+  | Demo control panel (book, start AM/PM sessions, wipe data) | http://localhost:5173/admin | Doctor account |
+
+  ## Doctor accounts (Keycloak)
+
+  You can log in with either the username or the email.
+
+  | Username | Email | Doctor | Department | Password |
+  |---|---|---|---|---|
+  | `a.hansen` | a.hansen@opd-vertex.dk | Anders Hansen | General Practice | `admin123` |
+  | `m.nielsen` | m.nielsen@opd-vertex.dk | Maria Nielsen | Cardiology | `admin123` |
+  | `l.christensen` | l.christensen@opd-vertex.dk | Lars Christensen | Neurology | `admin123` |
+  | `s.pedersen` | s.pedersen@opd-vertex.dk | Sofie Pedersen | Orthopedics | `admin123` |
+  | `m.andersen` | m.andersen@opd-vertex.dk | Mikkel Andersen | Dermatology | `admin123` |
+
+
+
+
 

@@ -128,6 +128,22 @@ class AppointmentRepository:
             )
         )
 
+    def get_all(self, appointment_date: date | None = None) -> list[Appointment]:
+        """Retrieve all appointments, optionally limited to a single date.
+
+        Args:
+            appointment_date (date | None): Optional date filter.
+
+        Returns:
+            list[Appointment]: Appointments ordered by date and assigned_time.
+
+        """
+        query = select(Appointment)
+        if appointment_date is not None:
+            query = query.where(Appointment.appointment_date == appointment_date)
+        query = query.order_by(Appointment.appointment_date, Appointment.assigned_time)
+        return list(self._session.exec(query))
+
     def get_by_patient_id(self, patient_id: int) -> list[Appointment]:
         """Retrieve all appointments for a specific patient.
 

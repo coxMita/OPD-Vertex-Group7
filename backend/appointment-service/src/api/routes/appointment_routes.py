@@ -6,8 +6,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import text
+from sqlmodel import Session
 
 from src.api.dependencies import get_appointment_service, get_db_session
+from src.messaging.messaging_manager import messaging_manager
+from src.models.db.appointment import TimePreference
 from src.models.dto.appointment_create_request import AppointmentCreateRequest
 from src.models.dto.appointment_reschedule_request import AppointmentRescheduleRequest
 from src.models.dto.appointment_response import AppointmentResponse
@@ -15,6 +18,8 @@ from src.models.dto.appointment_status_update_request import (
     AppointmentStatusUpdateRequest,
 )
 from src.models.dto.queue_reorder_request import QueueReorderRequest
+from src.repositories.appointment_repository import AppointmentRepository
+from src.scheduling.appointment_scheduler import _notify_session
 from src.services.appointment_service import AppointmentService
 
 MESSAGE = "message"
@@ -205,10 +210,47 @@ async def reschedule_appointment(
     return result
 
 
-@router.delete("/dev/")
-def clear_db() -> dict[str, str]:
-    """Clear Database."""
-    with next(get_db_session()) as session:
-        session.exec(text("DELETE FROM appointment"))
-        session.commit()
-        return {"message": "Database cleared"}
+# ── Dev / demo helpers ───────────────────────────────────────────────────────
+# Used by the frontend /admin page to drive a demo without waiting for cron.
+
+
+@router.get("/dev/all", status_code=status.HTTP_200_OK)
+async def list_all_appointments(
+    session: Annotated[Session, Depends(get_db_session)],
+    appointment_date: date | None = None,
+) -> list[AppointmentResponse]:
+    """List every appointment, optionally filtered by date (dev only)."""
+    repo = AppointmentRepository(session)
+    return [AppointmentResponse.from_entity(a) for a in repo.get_all(appointment_date)]
+
+
+@router.post("/dev/start-session", status_code=status.HTTP_200_OK)
+async def start_session(
+    session: Annotated[Session, Depends(get_db_session)],
+    time_preference: TimePreference,
+    appointment_date: date | None = None,
+) -> dict:
+    """Run the AM/PM session job now instead of waiting for the cron (dev only).
+
+    Publishes session_started (consultation-service creates the consultations)
+    and marks the appointments as handed_off.
+    """
+    count = await _notify_session(
+        AppointmentRepository(session),
+        messaging_manager,
+        time_preference,
+        appointment_date,
+    )
+    return {
+        "time_preference": time_preference.value,
+        "appointment_date": str(appointment_date or date.today()),
+        "handed_off": count,
+    }
+
+
+@router.delete("/dev", status_code=status.HTTP_200_OK)
+def clear_db(session: Annotated[Session, Depends(get_db_session)]) -> dict:
+    """Delete every appointment (dev only)."""
+    result = session.exec(text("DELETE FROM appointment"))
+    session.commit()
+    return {MESSAGE: "Appointments cleared", "deleted": result.rowcount}
