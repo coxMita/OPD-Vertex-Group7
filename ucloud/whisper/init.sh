@@ -19,6 +19,22 @@ SECRETS_DIR="$BASE_DIR/secrets"
 VENV="$BASE_DIR/.venv"
 mkdir -p "$LOG_DIR" "$SECRETS_DIR"
 
+# If a server crashes: show why, then keep the job alive so you can open a
+# terminal on the job page and debug (instead of the job silently ending).
+fail_and_wait() {  # fail_and_wait <message> <logfile>
+  set +e
+  echo ""
+  echo "############################################################"
+  echo "### FAILED: $1"
+  echo "### Last 80 lines of $2:"
+  echo "############################################################"
+  tail -n 80 "$2"
+  echo "############################################################"
+  nvidia-smi
+  echo "### Job kept alive for debugging. Fix, then restart the job."
+  sleep infinity
+}
+
 # ── [1/4] API token ──────────────────────────────────────────────────────────
 echo "==> [1/4] Loading API token..."
 if [ ! -s "$SECRETS_DIR/api_token" ]; then
@@ -71,5 +87,8 @@ export HF_HOME="$BASE_DIR/hf-cache"
 # ── [4/4] Start the server (foreground) ──────────────────────────────────────
 echo "==> [4/4] Starting faster-whisper server ($WHISPER_MODEL) — logs follow below."
 cd "$BASE_DIR"
-uvicorn server:app --host 127.0.0.1 --port 9000 2>&1 | tee "$LOG_DIR/whisper.log"
-echo "==> [4/4] Whisper server exited."
+uvicorn server:app --host 127.0.0.1 --port 9000 > "$LOG_DIR/whisper.log" 2>&1 &
+SRV_PID=$!
+tail -n +1 -f "$LOG_DIR/whisper.log" &   # show server output in the job log
+wait "$SRV_PID" || true
+fail_and_wait "faster-whisper server exited" "$LOG_DIR/whisper.log"

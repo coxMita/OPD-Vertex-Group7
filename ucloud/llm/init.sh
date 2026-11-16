@@ -34,6 +34,22 @@ SECRETS_DIR="$BASE_DIR/secrets"
 VENV="$BASE_DIR/.venv"
 mkdir -p "$LOG_DIR" "$SECRETS_DIR"
 
+# If a server crashes: show why, then keep the job alive so you can open a
+# terminal on the job page and debug (instead of the job silently ending).
+fail_and_wait() {  # fail_and_wait <message> <logfile>
+  set +e
+  echo ""
+  echo "############################################################"
+  echo "### FAILED: $1"
+  echo "### Last 80 lines of $2:"
+  echo "############################################################"
+  tail -n 80 "$2"
+  echo "############################################################"
+  nvidia-smi
+  echo "### Job kept alive for debugging. Fix, then restart the job."
+  sleep infinity
+}
+
 # ── [1/6] API token ──────────────────────────────────────────────────────────
 echo "==> [1/6] Loading API token..."
 if [ ! -s "$SECRETS_DIR/api_token" ]; then
@@ -109,7 +125,7 @@ wait_for() {  # wait_for <port> <name> <logfile>
   echo "    Waiting for $2 on port $1 (first run downloads the model)..."
   until curl -sf "http://127.0.0.1:$1/health" > /dev/null; do
     if ! kill -0 "$EMBED_PID" 2>/dev/null; then
-      echo "    ERROR: $2 exited. Last log lines:"; tail -n 50 "$3"; exit 1
+      fail_and_wait "$2 exited during start-up" "$3"
     fi
     sleep 5
   done
@@ -135,5 +151,8 @@ vllm serve "$LLM_MODEL" \
   --max-model-len "$LLM_MAX_LEN" \
   --gpu-memory-utilization "$LLM_GPU_UTIL" \
   ${LLM_EXTRA_ARGS:-} \
-  2>&1 | tee "$LOG_DIR/llm.log"
-echo "==> [6/6] vLLM chat server exited."
+  > "$LOG_DIR/llm.log" 2>&1 &
+LLM_PID=$!
+tail -n +1 -f "$LOG_DIR/llm.log" &   # show vLLM output in the job log
+wait "$LLM_PID" || true
+fail_and_wait "vLLM chat server ($LLM_MODEL) exited" "$LOG_DIR/llm.log"
