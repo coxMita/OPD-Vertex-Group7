@@ -150,22 +150,3 @@ and `docker compose --profile local-llm up -d`. Whisper then runs on the local C
 > ⚠️ Embeddings from Ollama's `nomic-embed-text` and vLLM's `nomic-embed-text-v1.5`
 > are not interchangeable. After switching between them, old RAG chunks in
 > `ai-db` give poor matches — re-process consultations or clear the table.
-
----
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| `401` from the public link | Wrong/missing token. Header must be exactly `Authorization: Bearer <token>`. |
-| `502 Bad Gateway` | nginx is up but the model server is not (still loading, or crashed). Check the job log and `logs/*.log` in the folder. |
-| `CUDA out of memory` at vLLM start | Smaller `LLM_MAX_LEN` (e.g. 8192), lower `LLM_GPU_UTIL`, or choose a bigger machine type. |
-| `deep_jit ... find_cuda_toolkit ... home_path` | DeepGEMM needs a CUDA toolkit. `init.sh` sets `VLLM_USE_DEEP_GEMM=0`; if FP8 still fails, use `LLM_MODEL=Qwen/Qwen3-8B-AWQ` (4-bit, no FP8 kernels). |
-| `Could not find nvcc and default cuda_home='/usr/local/cuda'` (flashinfer) | `init.sh` sets `VLLM_USE_FLASHINFER_SAMPLER=0`. If another flashinfer JIT error appears, check `opd-llm/logs/cuda-install.log` — the CUDA toolkit (nvcc) is installed at every start (`INSTALL_CUDA_TOOLKIT=1`). |
-| vLLM complains about `nvcc` / CUDA toolkit | Set `INSTALL_CUDA_TOOLKIT=1` at the top of `ucloud/llm/init.sh` (slower start, it re-installs each job). |
-| Embedding server does not start | See `opd-llm/logs/embed.log`. With newer vLLM versions you may need `EMBED_EXTRA_ARGS="--runner pooling"` (older: `--task embed`). |
-| Whisper: `TypeError: expected str ... not NoneType` at step 3/4 | Old `init.sh`; upload the current one (finds the cuBLAS/cuDNN folders itself). |
-| Whisper: `libcudnn` / `libcublas` not found | Delete `opd-whisper/.venv/.whisper-installed` and restart the job to reinstall. |
-| Want to update vLLM | Delete `opd-llm/.venv/.vllm-installed`, restart. Pin a version with `VLLM_SPEC="vllm==X.Y.Z"`. |
-| Job stopped | UCloud jobs end when their hours run out → submit again (everything in `/work` is kept, start is fast). The URL stays the same as long as you pick the same public link. |
-| Gated model (e.g. Llama) | Put a Hugging Face token in `secrets/hf_token` in the job folder. |
