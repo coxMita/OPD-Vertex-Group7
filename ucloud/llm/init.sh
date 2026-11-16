@@ -45,6 +45,9 @@ fail_and_wait() {  # fail_and_wait <message> <logfile>
   echo "############################################################"
   tail -n 80 "$2"
   echo "############################################################"
+  echo "### ROOT CAUSE (error lines from $2):"
+  grep -E "(Error|Exception|error:|out of memory|Killed)" "$2" | grep -v "^ *File " | sort -u | tail -n 20
+  echo "############################################################"
   nvidia-smi
   echo "### Job kept alive for debugging. Fix, then restart the job."
   sleep infinity
