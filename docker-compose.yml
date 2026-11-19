@@ -139,7 +139,7 @@ services:
 
     # ── Appointment Service ───────────────────────────────────────────────────
     appointment-service:
-        image: mita28/opdvertex:appointment-service-3.0.5
+        image: mita28/opdvertex:appointment-service-3.1.0
         build: backend/appointment-service/.
         container_name: appointment-service
         restart: unless-stopped
@@ -178,7 +178,7 @@ services:
 
     # ── Consultation Service ──────────────────────────────────────────────────
     consultation-service:
-        image: mita28/opdvertex:consultation-service-3.0.0
+        image: mita28/opdvertex:consultation-service-3.1.0
         build: backend/consultation-service/.
         container_name: consultation-service
         restart: unless-stopped
@@ -236,7 +236,7 @@ services:
 
     # ── Prescription Service ──────────────────────────────────────────────────
     prescription-service:
-        image: mita28/opdvertex:prescription-service-4.0.0
+        image: mita28/opdvertex:prescription-service-4.1.0
         build: backend/prescription-service/.
         container_name: prescription-service
         restart: unless-stopped
@@ -297,7 +297,7 @@ services:
 
     # ── User Service ──────────────────────────────────────────────────────────
     user-service:
-        image: mita28/opdvertex:user-service-3.0.15
+        image: mita28/opdvertex:user-service-3.1.0
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
