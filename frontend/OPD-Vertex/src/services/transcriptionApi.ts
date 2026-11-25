@@ -13,6 +13,8 @@ export interface TranscriptionError {
  * POST /api/v1/transcription/?consultation_id={consultationId}
  * Accepts a WAV audio file and returns the transcript text.
  */
+const TRANSCRIPTION_TIMEOUT_MS = 11 * 60_000
+
 async function transcribeFile(
   file: File,
   consultationId: string,
@@ -27,7 +29,9 @@ async function transcribeFile(
     {
       params: { consultation_id: consultationId },
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120_000,
+      // Long consultations (30+ min) take a while to upload and transcribe.
+      // Slightly above the gateway's 10 min limit so the gateway reports its own error first.
+      timeout: TRANSCRIPTION_TIMEOUT_MS,
       onUploadProgress(ev) {
         if (onUploadProgress && ev.total) {
           onUploadProgress(Math.round((ev.loaded * 100) / ev.total))
@@ -53,6 +57,9 @@ function formatError(err: unknown, gatewayUrl: string): string {
     return detail
       ? `Service error: ${detail}`
       : `HTTP ${axiosErr.response.status}: ${axiosErr.response.statusText}`
+  }
+  if (axiosErr.code === 'ECONNABORTED') {
+    return `Transcription timed out after ${TRANSCRIPTION_TIMEOUT_MS / 60_000} minutes.`
   }
   if (axiosErr.request) {
     return `No response from gateway — is Docker running? (${gatewayUrl})`
