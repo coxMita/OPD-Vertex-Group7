@@ -1,7 +1,7 @@
 import Keycloak from 'keycloak-js'
 
 export const keycloak = new Keycloak({
-  url: 'http://localhost:8089',
+  url: import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8089/auth',
   realm: 'opd-vertex',
   clientId: 'vue-app',
 })
