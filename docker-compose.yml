@@ -52,6 +52,8 @@ services:
             KEYCLOAK_EXTERNAL_URL: ${PUBLIC_URL:-http://localhost:8089}/auth
             KEYCLOAK_INTERNAL_URL: http://keycloak:8080/auth
             KEYCLOAK_CLIENT_ID: vue-app
+            # Trust X-Forwarded-Proto from Caddy so redirects use https://
+            FORWARDED_ALLOW_IPS: "*"
         networks:
             - frontend
             - internal-api
