@@ -2,7 +2,7 @@
 import { useTheme } from 'vuetify'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { keycloak, initKeycloak } from '@/services/keycloak'
+import { requireLogin } from '@/services/keycloak'
 
 const router = useRouter()
 
@@ -11,19 +11,8 @@ const cardColor = computed(() =>
   theme.current.value.dark ? '#121212' : '#fefdf5'
 )
 
-const handleDoctorLogin = async () => {
-  // Ensure Keycloak is initialized
-  await initKeycloak()
-
-  if (keycloak.authenticated) {
-    router.push('/doctor')
-  } else {
-    // Explicitly redirect to doctor dashboard after login
-    keycloak.login({
-      redirectUri: window.location.origin + '/doctor'
-    })
-  }
-}
+// Always show the Keycloak login form, then land on the doctor dashboard
+const handleDoctorLogin = () => requireLogin('/doctor')
 </script>
 
 <template>

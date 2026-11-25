@@ -20,6 +20,7 @@ import type { ConsultationPatient } from '@/composables/useConsultationData'
 
 const props = defineProps<{
   doctorId: string
+  doctorName?: string
 }>()
 
 const router = useRouter()
@@ -270,9 +271,9 @@ const displayedSuggestionFailed = computed(
         <v-divider vertical class="mx-1" />
         <span class="top-bar-title">Doctor Dashboard</span>
         <v-spacer />
-        <v-chip color="teal" variant="tonal" size="small">
+        <v-chip v-if="doctorName" color="teal" variant="tonal" size="small">
           <v-icon start size="12">mdi-stethoscope</v-icon>
-          Dr. Hansen
+          {{ doctorName }}
         </v-chip>
         <v-btn
           variant="outlined"

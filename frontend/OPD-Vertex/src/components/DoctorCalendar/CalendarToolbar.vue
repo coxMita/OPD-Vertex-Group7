@@ -5,6 +5,7 @@ defineProps<{
   currentDateDisplay: string
   currentView: CalendarView
   editMode: boolean
+  doctorName?: string
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +35,11 @@ const emit = defineEmits<{
     </div>
 
     <div class="toolbar-right">
+      <v-chip v-if="doctorName" color="teal" variant="tonal" size="small">
+        <v-icon start size="12">mdi-stethoscope</v-icon>
+        {{ doctorName }}
+      </v-chip>
+
       <v-btn
         variant="outlined"
         color="default"

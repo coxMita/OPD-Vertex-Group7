@@ -9,7 +9,7 @@ import CalendarWeekView from '@/components/DoctorCalendar/CalendarWeekView.vue'
 import CalendarMonthView from '@/components/DoctorCalendar/CalendarMonthView.vue'
 import AppointmentDetailModal from '@/components/DoctorCalendar/AppointmentDetailModal.vue'
 import ConsultationView from '@/views/ConsultationView.vue'
-import { initKeycloak, keycloak } from '@/services/keycloak'
+import { keycloak, requireLogin, tokenDisplayName } from '@/services/keycloak'
 import type { Appointment } from '@/models/appointment/appointment.interface'
 import { userApi } from '@/services/userApi'
 
@@ -21,16 +21,19 @@ const SLOT_HEIGHT_DAY = 56
 const SCROLL_START_HOUR = 6
 
 const doctorId = ref('')
+const doctorName = ref('')
+const profileError = ref<string | null>(null)
+
+function withTitle(name: string): string {
+  if (!name) return ''
+  return /^dr\.?\s/i.test(name) ? name : `Dr. ${name}`
+}
 
 async function loadDoctorProfile() {
-  await initKeycloak()
+  if (!(await requireLogin('/doctor'))) return
 
-  if (!keycloak.authenticated) {
-    await keycloak.login({
-      redirectUri: `${window.location.origin}/doctor`,
-    })
-    return
-  }
+  // Name from the Keycloak token until the user-service answers
+  doctorName.value = withTitle(tokenDisplayName())
 
   const keycloakSub = keycloak.tokenParsed?.sub
   if (!keycloakSub) {
@@ -41,9 +44,12 @@ async function loadDoctorProfile() {
   try {
     const doctorResponse = await userApi.getDoctorByKeycloakId(keycloakSub)
     doctorId.value = doctorResponse.doctor_id
+    doctorName.value = withTitle(doctorResponse.full_name) || doctorName.value
   } catch (err) {
     console.error('Could not fetch doctor profile:', err)
     doctorId.value = ''
+    profileError.value =
+      'Your Keycloak account is not linked to a doctor profile, so no appointments can be shown.'
   }
 }
 
@@ -177,11 +183,22 @@ watch(currentView, scrollTo6am)
       {{ error }}
     </v-alert>
 
+    <v-alert
+      v-if="profileError"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="mx-4 mt-2"
+    >
+      {{ profileError }}
+    </v-alert>
+
     <template v-if="activeSection === 'calendar'">
       <CalendarToolbar
         :currentDateDisplay="currentDateDisplay"
         :currentView="currentView"
         :editMode="editMode"
+        :doctorName="doctorName"
         @navigate="navigate"
         @go-to-today="goToToday"
         @update:currentView="currentView = $event"
@@ -241,7 +258,7 @@ watch(currentView, scrollTo6am)
     </template>
 
     <template v-if="activeSection === 'consultations'">
-      <ConsultationView :doctorId="doctorId" />
+      <ConsultationView :doctorId="doctorId" :doctorName="doctorName" />
     </template>
 
     <AppointmentDetailModal

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { initKeycloak, keycloak } from '@/services/keycloak'
+import { requireLogin } from '@/services/keycloak'
 import { adminApi } from '@/services/adminApi'
 import { appointmentApi } from '@/services/appointmentApi'
 import { userApi, type DoctorResponse } from '@/services/userApi'
@@ -98,11 +98,7 @@ async function refresh() {
 watch(selectedDate, refresh)
 
 onMounted(async () => {
-  await initKeycloak()
-  if (!keycloak.authenticated) {
-    await keycloak.login({ redirectUri: `${window.location.origin}/admin` })
-    return
-  }
+  if (!(await requireLogin('/admin'))) return
   ready.value = true
   await loadDoctors()
   if (doctors.value.length && !quick.doctorId) quick.doctorId = doctors.value[0]!.doctor_id
