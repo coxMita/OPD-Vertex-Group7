@@ -5,3 +5,6 @@ __pycache__/
 .venv/
 .idea/
 .codex/
+
+# Built frontend served by Caddy on the server
+frontend-dist/

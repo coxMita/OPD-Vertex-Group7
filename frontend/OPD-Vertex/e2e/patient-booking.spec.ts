@@ -45,7 +45,7 @@ async function mockBookingApis(page: Page) {
   })
 
   // POST create appointment
-  await page.route('**/api/v1/appointments', (route) => {
+  await page.route('**/api/v1/appointments/', (route) => {
     if (route.request().method() === 'POST') {
       route.fulfill({
         status: 201,
@@ -158,7 +158,7 @@ test.describe('Patient Page — Booking Form', () => {
 
   test('shows error alert when API returns 409 (no slots available)', async ({ page }) => {
     // Override the appointment creation route to return 409
-    await page.route('**/api/v1/appointments', (route) => {
+    await page.route('**/api/v1/appointments/', (route) => {
       if (route.request().method() === 'POST') {
         route.fulfill({
           status: 409,

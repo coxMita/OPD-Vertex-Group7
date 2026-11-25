@@ -1,0 +1,24 @@
+opdvertex.dk, www.opdvertex.dk {
+	encode gzip
+
+	# Gateway routes already start with /api/v1, so the prefix is kept
+	handle /api/* {
+		reverse_proxy gateway:8000
+	}
+
+	# Keycloak admin console is not public; use an SSH tunnel to port 8089
+	handle /auth/admin* {
+		respond 404
+	}
+
+	handle /auth/* {
+		reverse_proxy keycloak:8080
+	}
+
+	# Vue SPA: unknown paths fall back to index.html for client-side routing
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

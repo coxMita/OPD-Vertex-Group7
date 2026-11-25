@@ -31,6 +31,8 @@ volumes:
     pgadmin_data:
     ollama_data:
     keycloak_db_data:
+    caddy_data:
+    caddy_config:
 
 
 services:
@@ -42,14 +44,16 @@ services:
         container_name: gateway
         restart: unless-stopped
         ports:
-            - "8080:8000"
+            - "127.0.0.1:8080:8000"
         environment:
             EMAIL_SERVICE_URL: http://email-service:8000
             AI_SERVICE_URL: http://ai-service:8000
             KEYCLOAK_REALM: opd-vertex
-            KEYCLOAK_EXTERNAL_URL: http://localhost:8089
-            KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+            KEYCLOAK_EXTERNAL_URL: ${PUBLIC_URL:-http://localhost:8089}/auth
+            KEYCLOAK_INTERNAL_URL: http://keycloak:8080/auth
             KEYCLOAK_CLIENT_ID: vue-app
+            # Trust X-Forwarded-Proto from Caddy so redirects use https://
+            FORWARDED_ALLOW_IPS: "*"
         networks:
             - frontend
             - internal-api
@@ -69,7 +73,7 @@ services:
         profiles: ["local-llm"]
         restart: unless-stopped
         ports:
-            - "11434:11434"
+            - "127.0.0.1:11434:11434"
         volumes:
             - ollama_data:/root/.ollama
         networks:
@@ -97,7 +101,7 @@ services:
             POSTGRES_PASSWORD: ${AI_DB_PASS}
             POSTGRES_DB: ${AI_DB_NAME}
         ports:
-            - "5436:5432"
+            - "127.0.0.1:5436:5432"
         volumes:
             - ai_db_data:/var/lib/postgresql/data
         networks:
@@ -116,7 +120,7 @@ services:
         container_name: ai-service
         restart: unless-stopped
         ports:
-            - "8081:8000"
+            - "127.0.0.1:8081:8000"
         environment:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
             # LLM + embeddings: UCloud vLLM job (default) or local Ollama
@@ -144,7 +148,7 @@ services:
         container_name: appointment-service
         restart: unless-stopped
         ports:
-            - "8082:8000"
+            - "127.0.0.1:8082:8000"
         networks:
             - internal-api
             - bus
@@ -164,7 +168,7 @@ services:
             POSTGRES_PASSWORD: ${APPOINTMENT_DB_PASS}
             POSTGRES_DB: ${APPOINTMENT_DB_NAME}
         ports:
-            - "5432:5432"
+            - "127.0.0.1:5432:5432"
         volumes:
             - appointment_db_data:/var/lib/postgresql/data
         networks:
@@ -183,7 +187,7 @@ services:
         container_name: consultation-service
         restart: unless-stopped
         ports:
-            - "8083:8000"
+            - "127.0.0.1:8083:8000"
         networks:
             - internal-api
             - bus
@@ -203,7 +207,7 @@ services:
             POSTGRES_PASSWORD: ${CONSULTATION_DB_PASS}
             POSTGRES_DB: ${CONSULTATION_DB_NAME}
         ports:
-            - "5433:5432"
+            - "127.0.0.1:5433:5432"
         volumes:
             - consultation_db_data:/var/lib/postgresql/data
         networks:
@@ -222,7 +226,7 @@ services:
         container_name: email-service
         restart: unless-stopped
         ports:
-            - "8084:8000"
+            - "127.0.0.1:8084:8000"
         env_file:
             - backend/email-service/.env
         environment:
@@ -241,7 +245,7 @@ services:
         container_name: prescription-service
         restart: unless-stopped
         ports:
-            - "8085:8000"
+            - "127.0.0.1:8085:8000"
         networks:
             - internal-api
             - bus
@@ -261,7 +265,7 @@ services:
             POSTGRES_PASSWORD: ${PRESCRIPTION_DB_PASS}
             POSTGRES_DB: ${PRESCRIPTION_DB_NAME}
         ports:
-            - "5434:5432"
+            - "127.0.0.1:5434:5432"
         volumes:
             - prescription_db_data:/var/lib/postgresql/data
         networks:
@@ -280,7 +284,7 @@ services:
         container_name: transcription-service
         restart: unless-stopped
         ports:
-            - "8086:8000"
+            - "127.0.0.1:8086:8000"
         environment:
             AMQP_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
             # Remote faster-whisper on UCloud; leave WHISPER_API_URL empty for local CPU
@@ -301,8 +305,11 @@ services:
         build: backend/user-service/.
         container_name: user-service
         restart: unless-stopped
+        environment:
+            # Used to fetch Keycloak's signing keys from inside the Docker network
+            KEYCLOAK_EXTERNAL_URL: http://keycloak:8080/auth
         ports:
-            - "8087:8000"
+            - "127.0.0.1:8087:8000"
         networks:
             - internal-api
             - bus
@@ -324,7 +331,7 @@ services:
             POSTGRES_PASSWORD: ${USER_DB_PASS}
             POSTGRES_DB: ${USER_DB_NAME}
         ports:
-            - "5435:5432"
+            - "127.0.0.1:5435:5432"
         volumes:
             - user_db_data:/var/lib/postgresql/data
         networks:
@@ -342,8 +349,8 @@ services:
         container_name: rabbitmq
         restart: always
         ports:
-            - "9000:15672"
-            - "5672:5672"
+            - "127.0.0.1:9000:15672"
+            - "127.0.0.1:5672:5672"
         networks:
             - bus
         healthcheck:
@@ -359,8 +366,8 @@ services:
         container_name: mailpit
         restart: unless-stopped
         ports:
-            - "8025:8025"
-            - "1025:1025"
+            - "127.0.0.1:8025:8025"
+            - "127.0.0.1:1025:1025"
         networks:
             - bus
 
@@ -373,7 +380,7 @@ services:
             PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
             PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
         ports:
-            - "5050:80"
+            - "127.0.0.1:5050:80"
         volumes:
             - pgadmin_data:/var/lib/pgadmin
         networks:
@@ -396,9 +403,16 @@ services:
             KC_DB_SCHEMA: public
             KEYCLOAK_ADMIN: admin
             KEYCLOAK_ADMIN_PASSWORD: admin123
+            # Keycloak is served under /auth so Caddy can expose it on the same domain
+            KC_HTTP_RELATIVE_PATH: /auth
+            # Public URL the browser uses (set PUBLIC_URL=https://opdvertex.dk on the server)
+            KC_HOSTNAME_URL: ${PUBLIC_URL:-http://localhost:8089}/auth
+            # Admin console stays local-only: reach it through an SSH tunnel on port 8089
+            KC_HOSTNAME_ADMIN_URL: http://localhost:8089/auth
+            KC_PROXY_HEADERS: xforwarded
         command: start-dev --import-realm
         ports:
-            - "8089:8080"
+            - "127.0.0.1:8089:8080"
         volumes:
             - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
         networks:
@@ -424,7 +438,7 @@ services:
             POSTGRES_PASSWORD: keycloak_pass
             POSTGRES_DB: keycloak_db
         ports:
-            - "5437:5432"
+            - "127.0.0.1:5437:5432"
         volumes:
             - keycloak_db_data:/var/lib/postgresql/data
         networks:
@@ -435,3 +449,25 @@ services:
             timeout: 10s
             retries: 5
             start_period: 5s
+
+    # ── Caddy (HTTPS reverse proxy, production only) ──────────────────────────
+    # Started only with the "prod" profile (COMPOSE_PROFILES=prod in the server .env).
+    # Serves the built Vue app from ./frontend-dist and proxies /api and /auth.
+    caddy:
+        image: caddy:2
+        container_name: caddy
+        profiles: ["prod"]
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile:ro
+            - ./frontend-dist:/srv:ro
+            - caddy_data:/data
+            - caddy_config:/config
+        networks:
+            - frontend
+        depends_on:
+            - gateway
+            - keycloak

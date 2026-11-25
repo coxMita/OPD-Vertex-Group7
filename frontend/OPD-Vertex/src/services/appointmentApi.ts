@@ -32,7 +32,7 @@ export const appointmentApi = {
 
   createAppointment(data: CreateAppointmentRequest): Promise<Appointment> {
     return apiClient
-      .post<Appointment>('/api/v1/appointments', data)
+      .post<Appointment>('/api/v1/appointments/', data)
       .then((res) => res.data)
   },
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { transcriptionApi } from '@/services/transcriptionApi'
+import { toSpeechWav } from '@/utils/speechWav'
 
 const props = defineProps<{
   consultationId: string | null
@@ -14,6 +15,8 @@ const selectedFile = ref<File | null>(null)
 const isDragging = ref(false)
 const isProcessing = ref(false)
 const uploadProgress = ref(0)
+const isConverting = ref(false)
+const convertProgress = ref(0)
 const result = ref('')
 const error = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -58,8 +61,20 @@ async function runTranscription() {
   error.value = ''
 
   try {
+    // Shrink to 16 kHz mono first: a 30 min recording goes from ~300 MB to ~58 MB
+    isConverting.value = true
+    convertProgress.value = 0
+    let audio: File
+    try {
+      audio = await toSpeechWav(selectedFile.value, (p) => {
+        convertProgress.value = p
+      })
+    } finally {
+      isConverting.value = false
+    }
+
     const { transcript } = await transcriptionApi.transcribeFile(
-      selectedFile.value,
+      audio,
       props.consultationId,
       (percent) => {
         uploadProgress.value = percent
@@ -179,13 +194,19 @@ function formatSize(bytes: number) {
         <div v-if="isProcessing" class="mt-4">
           <div class="d-flex justify-space-between mb-1">
             <span class="processing-text">
-              {{ uploadProgress < 100 ? 'Uploading…' : 'Transcribing (may take a moment)…' }}
+              {{
+                isConverting
+                  ? 'Preparing audio (16 kHz mono)…'
+                  : uploadProgress < 100
+                    ? 'Uploading…'
+                    : 'Transcribing (long recordings can take a few minutes)…'
+              }}
             </span>
-            <span class="processing-text">{{ uploadProgress }}%</span>
+            <span class="processing-text">{{ isConverting ? convertProgress : uploadProgress }}%</span>
           </div>
           <v-progress-linear
-            :model-value="uploadProgress"
-            :indeterminate="uploadProgress === 100"
+            :model-value="isConverting ? convertProgress : uploadProgress"
+            :indeterminate="!isConverting && uploadProgress === 100"
             color="indigo"
             rounded
             height="4"
