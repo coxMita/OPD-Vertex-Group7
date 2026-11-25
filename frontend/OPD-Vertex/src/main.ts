@@ -10,7 +10,6 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import '@mdi/font/css/materialdesignicons.css'
 
 import App from './App.vue'
-import router from './router'
 
 const vuetify = createVuetify({
   components,
@@ -37,6 +36,11 @@ async function bootstrap() {
   } catch (error) {
     console.error('Failed to initialize Keycloak', error)
   }
+
+  // Import the router only after Keycloak has removed the login callback
+  // (#state=...&code=...) from the URL. createWebHistory() captures the URL
+  // when it is created and would otherwise put the long hash back.
+  const { default: router } = await import('./router')
 
   const app = createApp(App)
   app.use(createPinia())
